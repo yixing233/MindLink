@@ -5,3 +5,4 @@
 ## 🙏 致谢
 
 - [Ql1121 / Wex](https://github.com/Ql1121/Wex) —— 原项目，本项目基于它改进开发。
+- [Ujhhgtg / WeKit](https://github.com/Ujhhgtg/WeKit) —— 部分功能参考了它的实现。
