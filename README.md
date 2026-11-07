@@ -1,6 +1,6 @@
 # MindLink
 
-基于 Wex 改进开发的微信增强模块。
+基于 Wex 改进开发的微信娱乐模块。
 
 - 原项目：[Ql1121/Wex](https://github.com/Ql1121/Wex)
 - 载体：LSPosed / Xposed，作用域 com.tencent.mm（微信 8.0.76）
