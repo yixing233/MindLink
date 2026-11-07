@@ -1,0 +1,7 @@
+original/
+META-INF/
+*.jks
+*.keystore
+*.apk
+*.idsig
+build/
