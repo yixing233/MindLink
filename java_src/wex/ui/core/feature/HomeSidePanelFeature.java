@@ -754,7 +754,9 @@ public final class HomeSidePanelFeature {
         }
 
         private void bridgeError(String operation, Throwable error) {
-            log("组件" + operation + "失败 " + error.getClass().getSimpleName());
+            // The exception message is the only way to tell a resource/visibility failure
+            // from a payload/CreateView failure when the drawer shows its error text.
+            log("组件" + operation + "失败 " + error.getClass().getSimpleName() + ": " + error.getMessage());
         }
 
         /** Begin an editing session: capture the draft, keep the Compose root rendering.
@@ -859,6 +861,9 @@ public final class HomeSidePanelFeature {
         void open(boolean animated) {
             if (detached || activity.isFinishing() || activity.isDestroyed()) return;
             closing = false;
+            // A single failed construction used to latch for the whole process, so the drawer
+            // stayed dead until WeChat restarted; retry on every open instead.
+            bridgeFailed = false;
             displayCards = HomeSidePanelFeature.loadLayout();
             if (editorDraft == null) showDisplay();
             overlay.setVisibility(View.VISIBLE);

@@ -58,7 +58,9 @@ final class NavigationContactViewport {
             if (target.getId() != LIST_ID || !"com.tencent.mm.view.recyclerview.WxRecyclerView".equals(target.getClass().getName())) return null;
             reason = "wrapper";
             List<View> ancestry = path(target, pager);
-            if (reserveWrapper(ancestry, page, pager) == null) return null;
+            // The geometry pass below re-measures every ancestor, so the old wrapper-shape
+            // requirement only rejected valid contacts pages.
+            if (candidate == null || page != pager || ancestry == null || !ancestry.contains(page)) return null;
             reason = "visible";
             if (!target.isShown() || !page.isShown()) return null;
             int[] pagePosition = new int[2], pagerPosition = new int[2];
@@ -124,7 +126,7 @@ final class NavigationContactViewport {
     /** Bounded ancestor path only, never a tree scan or a blanket MATCH_PARENT rewrite. */
     private static List<View> path(View list, View pager) {
         List<View> result = new ArrayList<>();
-        for (View view = list; view != null && result.size() < 8;
+        for (View view = list; view != null && result.size() < 16;
                 view = view.getParent() instanceof View ? (View) view.getParent() : null) {
             result.add(view);
             if (view == pager) return result;
@@ -164,66 +166,7 @@ final class NavigationContactViewport {
 
     /** One layout mutation at most per frame. Return true until the new viewport has laid out. */
     boolean update(ViewGroup list, View pager, int nativeHeight) {
-        List<View> path = path(list, pager);
-        ViewGroup root = probedRoot.get();
-        View wrapper = reserveWrapper(path, root, pager);
-        if (probedList.get() != list || probedPager.get() != pager || wrapper == null || nativeHeight <= 0) {
-            diagnose("reserve-unavailable", list, pager, nativeHeight); return false;
-        }
-        boolean frosted = FROSTED.equals(root.getClass().getName());
-        if (frosted && !frostedConstraints(path, root)) {
-            diagnose("reserve-constraints", list, pager, nativeHeight); return false;
-        }
-        diagnose("before-update", list, pager, nativeHeight);
-        if (rootRef.get() != null && rootRef.get() != root) restore();
-        rootRef = new WeakReference<>(root);
-        for (int i = heights.size() - 1; i >= 0; i--) {
-            HeightState state = heights.get(i);
-            if (!path.contains(state.view.get())) { state.restore(); heights.remove(i); }
-        }
-        // Outside-in only for the original explicit-height LinearLayout path. The captured bounce
-        // path owns no LP or translation: all of its height comes from the exact root padding.
-        for (int i = frosted ? -1 : path.size() - 1; i >= 0; i--) {
-            View view = path.get(i);
-            HeightState state = state(view);
-            if (state != null && !state.unchanged(view)) { heights.remove(state); state = null; }
-            if (state != null && view.getHeight() != state.last) return true;
-            if (!(view.getParent() instanceof FrameLayout)) continue;
-            FrameLayout parent = (FrameLayout) view.getParent();
-            ViewGroup.LayoutParams raw = view.getLayoutParams();
-            if (!(raw instanceof FrameLayout.LayoutParams)) continue;
-            FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) raw;
-            int vertical = lp.gravity & 0x70;
-            if (lp.height <= 0 || lp.height != view.getHeight() || lp.bottomMargin != 0
-                    || lp.topMargin < 0 || lp.leftMargin < 0 || lp.rightMargin < 0
-                    || lp.gravity != -1 && vertical != 0 && vertical != Gravity.TOP
-                    || view.getTranslationY() != 0f || parent.getScrollY() != 0
-                    || view.getTop() != parent.getPaddingTop() + lp.topMargin
-                    || view.getLeft() != parent.getPaddingLeft() + lp.leftMargin
-                    || view.getRight() != parent.getWidth() - parent.getPaddingRight() - lp.rightMargin) continue;
-            int gap = parent.getHeight() - parent.getPaddingBottom() - view.getBottom();
-            if (gap != nativeHeight) continue;
-            if (state == null) { state = new HeightState(view, parent, lp); heights.add(state); }
-            state.last = lp.height + gap;
-            lp.height = state.last; view.setLayoutParams(lp); view.requestLayout();
-            return true;
-        }
-        int bottom = root.getPaddingBottom();
-        if (paddingOwned && bottom != lastPadding) paddingOwned = false;
-        // Static y0 writes native bar height to this exact getView root. In the observed Frosted
-        // path it is the direct bounce child (below the fixed title), not the inner recycler frame,
-        // that consumes root's bottom reserve. Compare local layout bounds, never overscroll ty.
-        ViewGroup.LayoutParams wrapperParams = wrapper.getLayoutParams(), listParams = list.getLayoutParams();
-        if (!paddingOwned && bottom == nativeHeight && wrapper.getBottom() == root.getHeight() - bottom
-                && wrapper.getTop() >= root.getPaddingTop() && wrapper.getHeight() > 0
-                && wrapperParams != null && wrapperParams.height == ViewGroup.LayoutParams.MATCH_PARENT
-                && listParams != null && listParams.height == ViewGroup.LayoutParams.MATCH_PARENT) {
-            originalPadding = bottom; lastPadding = 0; paddingOwned = true;
-            root.setPadding(root.getPaddingLeft(), root.getPaddingTop(), root.getPaddingRight(), 0);
-            root.requestLayout(); return true;
-        }
-        // Do not compute end padding from the previous, shorter inner wrapper frame.
-        return paddingOwned && wrapper.getBottom() != root.getHeight() - root.getPaddingBottom();
+        return ContactsViewportSupport.update(this, probedRoot.get(), list, pager, nativeHeight);
     }
 
     boolean ownsReserve() { return paddingOwned || !heights.isEmpty(); }
@@ -234,6 +177,7 @@ final class NavigationContactViewport {
     }
 
     void restore() {
+        ContactsViewportSupport.restore(this);
         for (HeightState state : heights) state.restore();
         heights.clear();
         ViewGroup root = rootRef.get();

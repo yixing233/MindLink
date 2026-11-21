@@ -15,3 +15,6 @@ __pycache__/
 *.pyc
 ui-compose/local.properties
 ui-compose/generated-res/
+
+# apktool 回编产生的备份
+AndroidManifest.xml.orig

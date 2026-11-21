@@ -541,6 +541,7 @@ final class NavigationBarViews {
             if (session.disposed) return true;
             updateNavigationSpace();
             syncForeground();
+            GestureNavigationApply.inspect(this);
             session.frosted.refresh();
             View pager = session.pagerRef.get();
             if (pager == null || !pager.isAttachedToWindow()) return true;

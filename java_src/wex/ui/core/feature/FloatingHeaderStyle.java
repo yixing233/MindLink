@@ -446,8 +446,20 @@ final class FloatingHeaderStyle {
         void update(int c,int g,int e,int padding){corner=c;gap=g;elevation=e;shadowPadding=padding;invalidate();}
         /** WeKit strokes pills 1dp 0x24FFFFFF in dark mode only; light mode keeps shadow-only definition. */
         void stroke(float density,boolean dark){float width=dark?Math.max(1f,density):0f;int color=0x24FFFFFF;if(strokeWidth!=width||strokeColor!=color){strokeWidth=width;strokeColor=color;invalidate();}}
+        /** Live window-space offsets; a sibling layer awaiting layout must not draw a stale frame. */
+        private boolean syncOffsets(){
+            if(root==null||!root.isShown()||!root.isAttachedToWindow()||getWindowToken()!=root.getWindowToken()
+                    ||root.getWidth()<=0||root.getHeight()<=0||getWidth()<=0||getHeight()<=0) return false;
+            int[] rootAt=new int[2],selfAt=new int[2];
+            root.getLocationInWindow(rootAt); getLocationInWindow(selfAt);
+            int x=rootAt[0]-selfAt[0],y=rootAt[1]-selfAt[1];
+            if(x+root.getWidth()<=0||y+root.getHeight()<=0||x>=getWidth()||y>=getHeight()) return false;
+            offsetX=x;offsetY=y;return true;
+        }
+
         @Override protected void onDraw(android.graphics.Canvas canvas){
             if(backHost.getParent()!=root||titleHost.getParent()!=root||menuHost.getParent()!=root)return;
+            if(!syncOffsets())return;
             geometry();
             float d=getResources().getDisplayMetrics().density;
             if(root.getHeight()<=0)return;

@@ -300,7 +300,7 @@ public final class FloatingChatHeaderFeature {
         }
     }
 
-    private static void observe(View layout) {
+    static void observe(View layout) {
         if (layout == null || !LAYOUT.equals(layout.getClass().getName())) return;
         if (Looper.myLooper() != Looper.getMainLooper()) {
             WeakReference<View> ref = new WeakReference<>(layout); MAIN.post(() -> observe(ref.get())); return;
@@ -684,6 +684,11 @@ public final class FloatingChatHeaderFeature {
     }
 
     private static View findHeader(View layout, Activity activity) {
+        // Notification-entry chats reach the header from outside the feature's own island.
+        return ChatEntrySupport.headerFallback(layout, activity, findHeaderOriginal(layout, activity));
+    }
+
+    private static View findHeaderOriginal(View layout, Activity activity) {
         HeaderSearch local = titleSearch(layout, activity, 512);
         if (!local.complete || local.titles > 1) return null;
         if (local.title != null) return local.title;

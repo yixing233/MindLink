@@ -77,6 +77,7 @@ public final class ProfileView {
                 try { SidePanelComposeBridge.lifecycle(toolbar, true); }
                 catch (RuntimeException | LinkageError error) { report("恢复", error); }
             }
+            if (toolbar == null) ensureNativeProfile();
             if (!subscribed) {
                 subscribed = true;
                 SelfProfile.subscribe(changed);
@@ -112,6 +113,20 @@ public final class ProfileView {
             try { SidePanelComposeBridge.update(toolbar, HomeSidePanelSnapshot.toolbar(getContext(), changed)); }
             catch (RuntimeException | LinkageError error) { report("更新", error); }
             finally { updating = false; }
+        }
+
+        /**
+         * The Compose toolbar needs the module package to be visible to WeChat; when that or the
+         * payload fails, the top bar would be empty. Keep a clickable native profile instead.
+         */
+        private void ensureNativeProfile() {
+            if (getChildCount() != 0) return;
+            Activity activity = owner.get();
+            if (activity == null) return;
+            try {
+                addView(new Header(activity, false),
+                        new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT));
+            } catch (RuntimeException | LinkageError error) { report("native fallback", error); }
         }
 
         private void report(String operation, Throwable error) {

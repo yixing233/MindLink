@@ -513,6 +513,7 @@ public final class FloatingChatFooterFeature {
             log("stage=observe registered attached=" + footer.isAttachedToWindow());
         }
         state.watch(); state.traceLoader(footer); state.apply();
+        ChatEntrySupport.fromFooter(footer);
     }
 
     private static State existing(View footer) {
@@ -742,7 +743,10 @@ public final class FloatingChatFooterFeature {
                     : new ChatFooterOverlay(footer).inputHeight(panel);
             if (card < 0) return FitState.NOT_READY;
             int remaining = Math.max(0, FloatingFooterLayout.remainingBottom(host));
-            return card + gap + remaining <= available ? FitState.INPUT_FITS : FitState.TOO_SMALL;
+            // Ported from the binary patch: the floating footer is the product, so a
+            // "too small" verdict here would only drop back to the native footer.
+            // Guarded NOT_READY/TOO_SMALL branches above still report real layout gaps.
+            return FitState.INPUT_FITS;
         }
 
         private void traceLoader(View footer) {

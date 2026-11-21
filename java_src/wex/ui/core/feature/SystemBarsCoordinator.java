@@ -475,7 +475,10 @@ final class SystemBarsCoordinator {
         View decor = window.getDecorView();
         WindowInsets insets = decor.getRootWindowInsets();
         boolean buttons = insets != null && insets.getInsets(WindowInsets.Type.tappableElement()).bottom > 0;
-        int color = ChatWindowInsetsCoordinator.shouldExposeBottom(window) ? Color.TRANSPARENT : state.surface;
+        // A transparent Window colour alone is not enough: gesture navigation has no tappable
+        // buttons, and the EdgeToEdge wrapper draws its own strip from this same colour.
+        int color = (buttons || ChatWindowInsetsCoordinator.shouldExposeBottom(window))
+                ? Color.TRANSPARENT : state.surface;
         if (state.applied) {
             if (window.getNavigationBarColor() != state.lastNavigation) state.navigation = window.getNavigationBarColor();
             if (window.getNavigationBarDividerColor() != state.lastNavigation) state.divider = window.getNavigationBarDividerColor();
