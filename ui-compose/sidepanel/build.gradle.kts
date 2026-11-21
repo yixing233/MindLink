@@ -26,7 +26,9 @@ android {
     buildFeatures { compose = true }
     buildTypes {
         release {
-            isMinifyEnabled = true
+            // R8 shrank/renamed the Compose runtime into a 2.7k-class payload; the shipped
+            // payload keeps the full pinned runtime, so allow a parity build via -PmdlPayloadMinify=false.
+            isMinifyEnabled = providers.gradleProperty("mdlPayloadMinify").orNull?.toBoolean() ?: true
             isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
