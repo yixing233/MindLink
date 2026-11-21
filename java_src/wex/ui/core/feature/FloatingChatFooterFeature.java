@@ -637,7 +637,7 @@ public final class FloatingChatFooterFeature {
                         && scroll instanceof android.widget.LinearLayout
                         && footer.getLayoutParams() instanceof ViewGroup.MarginLayoutParams;
                 fitState = fitState(footer);
-                boolean useOverlay = supported && config.panelAbove && panelHooksReady() && !panelFailed
+                boolean useOverlay = supported && panelHooksReady() && !panelFailed
                         && fitState != FitState.TOO_SMALL && ChatFooterOverlay.input(footer) != null;
                 if (useOverlay && overlay == null) overlay = new ChatFooterOverlay(footer);
                 if (!useOverlay && overlay != null) releaseOverlay();
@@ -743,10 +743,8 @@ public final class FloatingChatFooterFeature {
                     : new ChatFooterOverlay(footer).inputHeight(panel);
             if (card < 0) return FitState.NOT_READY;
             int remaining = Math.max(0, FloatingFooterLayout.remainingBottom(host));
-            // Ported from the binary patch: the floating footer is the product, so a
-            // "too small" verdict here would only drop back to the native footer.
-            // Guarded NOT_READY/TOO_SMALL branches above still report real layout gaps.
-            return FitState.INPUT_FITS;
+            remaining = Math.max(remaining, FloatingFooterLayout.pillClearance(host));
+            return card + gap + remaining <= available ? FitState.INPUT_FITS : FitState.TOO_SMALL;
         }
 
         private void traceLoader(View footer) {
@@ -916,6 +914,9 @@ public final class FloatingChatFooterFeature {
                     +" card="+footer.getHeight()+" visibleTop="+visible.top+" visibleBottom="+visible.bottom
                     +" host="+host.getHeight()+" marginTop="+appliedTop+" marginBottom="+appliedBottom
                     +" nav="+nav+" navRemain="+remaining+" pillClear="+clearance+" correction="+correction+" ime="+ime+" hostVisible="+(hostBounds.bottom-hostBounds.top)
+                    +" hostWidth="+host.getWidth()+" visibleWidth="+hostBounds.width()
+                    +" minimumWidth="+Math.round((160+config.side*2)*footer.getResources().getDisplayMetrics().density)
+                    +" inputBand="+new ChatFooterOverlay(footer).inputHeight(panel)+" overlay="+(overlay!=null)
                     +" cardBottom="+cardBottom+" layoutBottom="+(cardLocation[1]+footer.getHeight())
                     +" targetBottom="+targetBottom+" delta="+(cardBottom-targetBottom)
                     +" fit="+fitState.name());

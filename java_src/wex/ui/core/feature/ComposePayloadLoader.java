@@ -28,6 +28,7 @@ final class ComposePayloadLoader {
         if (!"dev.mindlink".equals(packaged.getPackageName()))
             throw new IllegalStateException("Compose payload must belong to the installed module");
         if (!("compose-payload".equals(prefix) && "dev.mindlink.compose.DesktopUi".equals(entryName))
+                && !("sidepanel-compose-payload".equals(prefix) && "dev.mindlink.compose.DesktopUi".equals(entryName))
                 && !("sidepanel-compose-payload".equals(prefix) && "dev.mindlink.compose.SidePanelUi".equals(entryName))
                 && !("sidepanel-compose-payload".equals(prefix) && "dev.mindlink.compose.SettingsUi".equals(entryName)))
             throw new IllegalStateException("Unknown packaged Compose entry");

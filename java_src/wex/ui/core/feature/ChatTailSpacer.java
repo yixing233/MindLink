@@ -15,6 +15,8 @@ final class ChatTailSpacer implements InvocationHandler {
     private static final WeakHashMap<View, Boolean> FAILED = new WeakHashMap<>();
     private final WeakReference<View> recycler;
     private int height, pending = -1, stable;
+    private int viewport = -1, pendingViewport = -1, followScroll;
+    private boolean atEnd, changing, followEnd;
 
     // Device-verified bridge for WeChat 8.0.76's optimized p2/h3 ABI. Compile-only
     // AndroidX classes must never enter the module class loader.
@@ -48,16 +50,54 @@ final class ChatTailSpacer implements InvocationHandler {
     }
 
     boolean update(int value) {
-        if (pending != value) { pending = value; stable = 0; return false; }
+        View view = recycler.get();
+        if (view == null || !view.isShown() || view.getHeight() <= 0) return true;
+        if (view.isLayoutRequested()) return false;
+        if (followScroll > 0) {
+            if (followEnd) view.scrollBy(0, followScroll);
+            followScroll = 0;
+            changing = false;
+            atEnd = !view.canScrollVertically(1);
+        }
+        int nextViewport = view.getHeight();
+        if (pending != value || pendingViewport != nextViewport) {
+            captureEnd(view);
+            pending = value; pendingViewport = nextViewport; stable = 0;
+            return false;
+        }
         if (++stable < 2) return false;
-        if (height != value) { height = value; invalidate(); }
+        if (height != value || viewport != nextViewport) {
+            // Keep the old end anchor until the decoration has been laid out. The
+            // host may already have moved it; scrollBy clamps to the remaining range.
+            int distance = Math.max(0, value - height + (viewport < 0 ? 0 : viewport - nextViewport));
+            boolean offsetsChanged = height != value;
+            height = value; viewport = nextViewport;
+            if (offsetsChanged) invalidate();
+            if (followEnd && distance > 0) { followScroll = distance; return false; }
+        }
+        changing = false;
+        atEnd = !view.canScrollVertically(1);
         return true;
+    }
+
+    void transition() {
+        View view = recycler.get();
+        if (view != null) captureEnd(view);
+    }
+
+    private void captureEnd(View view) {
+        if (changing) return;
+        // A resized viewport can make canScrollVertically true before this pass.
+        // In that case the last stable frame still describes the user's anchor.
+        followEnd = !view.canScrollVertically(1) || viewport >= 0 && viewport != view.getHeight() && atEnd;
+        changing = true;
     }
 
     void release() {
         // Retain the zero-height decoration for reuse by this list: no footer or
         // Activity is held by its callback and reattachment never duplicates it.
-        pending = -1; stable = 0;
+        pending = pendingViewport = viewport = -1; stable = followScroll = 0;
+        changing = followEnd = atEnd = false;
         if (height != 0) { height = 0; invalidate(); }
     }
 

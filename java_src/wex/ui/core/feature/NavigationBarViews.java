@@ -236,6 +236,7 @@ final class NavigationBarViews {
         final WeakHashMap<ViewGroup, PaddingState> paddings = new WeakHashMap<>();
         final WeakHashMap<ViewGroup, ClipState> contactClips = new WeakHashMap<>();
         final NavigationContactViewport contactViewport = new NavigationContactViewport();
+        private WeakReference<ViewGroup> contactList = new WeakReference<>(null);
         final NavigationFrostedController frosted;
         NavigationBarFeature.Config config;
         boolean disposed, moving, nativeOwned;
@@ -343,25 +344,22 @@ final class NavigationBarViews {
             if (!config.enabled || !config.floating || !nativeOwned || pager == null
                     || !bar.lifecycleStarted || !NavigationBarFeature.homeVisible(activity, pager)) {
                 if (bar.selected == 1) contactViewport.diagnose("session-gate", pager, pager, nativeReserveHeight);
+                releaseContacts();
                 return false;
             }
             // Do not acquire dimensions from a partially visible offscreen page or an early selected callback.
-            if (bar.pagerScrolling || bar.pagerOffset || bar.selected != 1) {
+            if (bar.selected != 1) { releaseContacts(); return false; }
+            if (bar.pagerScrolling || bar.pagerOffset) {
                 if (bar.selected == 1) contactViewport.diagnose("pager-moving", pager, pager, nativeReserveHeight);
                 return false;
             }
             ViewGroup list = NavigationContactViewport.currentList(pager, adapterRef.get(), contactViewport, nativeReserveHeight);
-            if (list == null) return false;
-            boolean pending = contactViewport.update(list, pager, nativeReserveHeight);
-            if (contactViewport.ownsReserve()) {
-                View current = list.getParent() instanceof View ? (View) list.getParent() : null;
-                for (int depth = 0; current instanceof ViewGroup && current != pager && depth < 8; depth++) {
-                    ViewGroup group = (ViewGroup) current;
-                    if (!contactClips.containsKey(group)) contactClips.put(group, new ClipState(group));
-                    group.setClipChildren(false); group.setClipToPadding(false);
-                    current = current.getParent() instanceof View ? (View) current.getParent() : null;
-                }
+            if (list == null) { releaseContacts(); return false; }
+            if (contactList.get() != list) {
+                releaseContacts();
+                contactList = new WeakReference<>(list);
             }
+            boolean pending = contactViewport.update(list, pager, nativeReserveHeight);
             if (!pending && bar.isShown()) applyEndSpace(list);
             contactViewport.diagnose(pending ? "layout-pending" : "settled", list, pager, nativeReserveHeight);
             return pending;
@@ -385,6 +383,12 @@ final class NavigationBarViews {
             contactViewport.restore();
             for (Map.Entry<ViewGroup, ClipState> entry : contactClips.entrySet()) entry.getValue().restore(entry.getKey());
             contactClips.clear();
+        }
+
+        void releaseContacts() {
+            restorePaddings();
+            restoreContactViewport();
+            contactList.clear();
         }
 
         private void restorePaddings() {
@@ -525,6 +529,7 @@ final class NavigationBarViews {
         }
 
         void stop() {
+            session.releaseContacts();
             if (observer != null && observer.isAlive()) observer.removeOnPreDrawListener(this);
             observer = null; sampler.stop(); baseGlass.release(); indicatorGlass.release(); decoration.release(); gravity.stop(); activeCapture = false;
             combined.discardDisplayList(); lens.discardDisplayList();
@@ -565,7 +570,7 @@ final class NavigationBarViews {
                 boolean viewportPending = session.updateContactViewport();
                 if (endSpaceDirty) { endSpaceDirty = false; session.updateEndSpace(); }
                 if (viewportPending) endSpaceDirty = true;
-            }
+            } else session.releaseContacts();
             return true;
         }
 
@@ -737,6 +742,7 @@ final class NavigationBarViews {
             Activity activity = ChatToolbarLifecycle.findActivity(getContext());
             boolean started = NavigationBarFeature.resumed(activity);
             boolean inactive = !NavigationBarFeature.homeVisible(activity, session.pagerRef.get());
+            if (!started || inactive) session.releaseContacts();
             if (lifecycleStarted == started && suspended == inactive) return;
             lifecycleStarted = started; suspended = inactive;
             if (!started) { pagerScrolling = pagerOffset = false; clearClickTarget(); }

@@ -70,7 +70,7 @@ public final class SystemBarsChecks {
         eq(PAGE,f.wrapper.color,"three-button wrapper opaque");checks++;
         check(f.window.isNavigationBarContrastEnforced(),"three-button contrast preserved");checks++;
         f.window.decor.insets.tap=0;f.window.decor.insets.ime=300;f.draw();
-        eq(PAGE,f.window.getNavigationBarColor(),"IME owned by native keyboard");checks++;
+        eq(0,f.window.getNavigationBarColor(),"gesture background stays transparent during IME");checks++;
         f.window.decor.insets.ime=0;f.draw();eq(0,f.wrapper.color,"gesture returns after IME");checks++;
         f.chat.height=776;f.draw();eq(0,f.wrapper.color,"uncovered strip exposes window background by user request, not page surface");checks++;
         f.chat.height=800;f.wrapper.paddingBottom=24;f.draw();eq(0,f.wrapper.color,"ancestor padding clip no longer blocks owned transparency");checks++;
@@ -82,7 +82,7 @@ public final class SystemBarsChecks {
         eq(0xFF234567,f.wrapper.color,"latest host wrapper restored");checks++;
         check(f.window.decor.observer.listeners.isEmpty(),"owner observer removed");checks++;
         Fixture top=new Fixture();ChatWindowInsetsCoordinator.acquire(top.activity,1);top.resume();
-        eq(PAGE,top.window.getNavigationBarColor(),"TOP alone does not expose gesture bottom");checks++;
+        eq(0,top.window.getNavigationBarColor(),"gesture transparency does not require a chat BOTTOM owner");checks++;
         eq(0,top.window.getStatusBarColor(),"existing TOP transparency preserved");checks++;
         ChatWindowInsetsCoordinator.acquire(top.activity,2);top.resume();eq(0,top.wrapper.color,"BOTTOM independent from TOP");checks++;
         ChatWindowInsetsCoordinator.release(top.window,2);eq(0,top.window.getStatusBarColor(),"BOTTOM release does not restore TOP");checks++;

@@ -19,8 +19,8 @@
       "sourceSha256": "0123433d60a6bbfe00e1ac578f881171b96815c45741d712fbcaaec8f5f0832c",
       "sourceLines": 172,
       "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelCardFrame.kt",
-      "targetSha256": "ab7176bad1a251c44dfaae1d9f0b0a012beb6c922f67112a91ede4a963390fb0",
-      "modifications": "package and resource names only; badge/card/animation bodies unchanged",
+      "targetSha256": "5747ecc25f3439bd74b76e4cad0b7c184e344308fbca0d370151532c547e0e37",
+      "modifications": "shared MindLink Material3 card surface; badge actions and animation bodies retained",
       "diff": "HomeSidePanelCardFrame.kt.patch"
     },
     {
@@ -145,8 +145,8 @@
       "sourceSha256": "3ef246258f3440e43a04a4c1c30a970ea41856f9add8a0f192b62301e28f1b72",
       "sourceLines": 43,
       "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelTheme.kt",
-      "targetSha256": "af25315bc88459a50fbe5a635931d006a4044d8515f0afb17456354633ac9a48",
-      "modifications": "retain original WeKit injected default green color schemes and MaterialExpressiveTheme/expressive motion; no module theme preference/HostInfo dependencies",
+      "targetSha256": "0a8f9c6bcf004877690d861e51f158fbb27d1ce3b7c67243e64dde6cd6c095cc",
+      "modifications": "delegate to the shared MindLink Material3 theme and expressive motion; no host dependencies",
       "diff": "HomeSidePanelTheme.kt.patch"
     },
     {
@@ -731,6 +731,12 @@
         "sha256": "911b8e1595d8dc81f2d85308f661081ac9118c1c75b0ac2a6fbaa94f13fac98e"
       }
     ]
+  },
+  "localAdaptations": {
+    "date": "2026-11-21",
+    "baseCommit": "deaed13eebc74d48a6fb0f363f5adbef4025a178",
+    "diff": "mindlink-material3.patch",
+    "description": "Shared Material3 theme, card surfaces and editor switch rows"
   },
   "notCopied": [
     "HomeSidePanel.kt 1549-line Xposed/drawer host",

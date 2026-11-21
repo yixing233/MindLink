@@ -110,6 +110,7 @@ def main():
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=False)
     actual = [args.source_dir / (n + ".java") for n in ("SettingsShell", "SettingsTheme")]
+    actual += sorted((ROOT / "shared-ui/src/main/java").rglob("*.java"))
     sources = []
     for name, content in fixtures().items():
         path = args.out / "fixtures" / name

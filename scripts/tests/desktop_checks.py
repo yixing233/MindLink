@@ -17,6 +17,7 @@ def checks(jdk, output):
     classes.mkdir(exist_ok=True)
     names = ["PlusMenuExtra", "SettingsTheme", "AboutPageBuilder", "ComposePayloadBridge", "ComposePayloadLoader"]
     sources = [ROOT / "java_src/wex/ui/core/feature" / (name + ".java") for name in names]
+    sources += sorted((ROOT / "shared-ui/src/main/java").rglob("*.java"))
     sources += sorted((ROOT / "scripts/tests/menu").rglob("*.java"))
     sources += [source for source in sorted((ROOT / "scripts/tests/compose-boundary").rglob("*.java"))
                 if source.name != "ApplicationInfo.java"]
@@ -29,12 +30,17 @@ def checks(jdk, output):
     if compile_result.returncode:
         print(compile_result.stdout + compile_result.stderr)
         return compile_result.returncode
-    result = subprocess.run([str(jdk / "bin/java.exe"), "-cp", str(classes),
-                             "wex.ui.core.feature.ComposeBoundaryChecks", str(output)],
-                            capture_output=True, text=True, encoding="utf-8", errors="replace")
-    (output / "behavior.txt").write_text(result.stdout + result.stderr, encoding="utf-8")
-    print(result.stdout + result.stderr)
-    return result.returncode
+    logs = []
+    for test in ("ComposeBoundaryChecks", "SettingsThemeChecks"):
+        result = subprocess.run([str(jdk / "bin/java.exe"), "-cp", str(classes),
+                                 "wex.ui.core.feature." + test, str(output)],
+                                capture_output=True, text=True, encoding="utf-8", errors="replace")
+        logs.append(result.stdout + result.stderr)
+        (output / "behavior.txt").write_text("".join(logs), encoding="utf-8")
+        print(logs[-1])
+        if result.returncode:
+            return result.returncode
+    return 0
 
 
 def main():

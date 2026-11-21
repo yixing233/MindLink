@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 FEATURE = ROOT / "java_src/wex/ui/core/feature"
 
 SOURCES = {
+"wex/ui/core/feature/ChatEntrySupport.java": "package wex.ui.core.feature;public final class ChatEntrySupport {public static void fromFooter(android.view.View footer){} public static void releaseFooter(android.view.View footer){}}",
 "android/content/Context.java": r'''package android.content;
 public class Context { private final android.content.res.Resources resources=new android.content.res.Resources(); public android.content.res.Resources getResources(){return resources;} }
 ''',
@@ -242,7 +243,11 @@ public class h3 {public int count;public int b(){return count;}}''',
 public class RecyclerView extends android.view.ViewGroup {
 public final java.util.List<p2> decorations=new java.util.ArrayList<>();public int invalidations,position;public final Manager manager=new Manager();
 public static class Manager {public boolean h;}
-public RecyclerView(android.content.Context c){super(c);}public void N(p2 d){decorations.add(d);}public void D0(){invalidations++;}
+public int contentHeight,scrollOffset,tailHeight,scrollCalls;
+public RecyclerView(android.content.Context c){super(c);}public void N(p2 d){decorations.add(d);}public void D0(){invalidations++;if(contentHeight>0)layoutRequested=true;}
+public void layoutItems(){if(contentHeight<=0)return;h3 state=new h3();state.count=1;android.graphics.Rect offsets=new android.graphics.Rect();tailHeight=0;for(p2 d:decorations){d.getItemOffsets(offsets,new android.view.View(getContext()),this,state);tailHeight+=offsets.bottom;}scrollOffset=Math.min(scrollOffset,Math.max(0,contentHeight+tailHeight-getHeight()));layoutRequested=false;}
+@Override public boolean canScrollVertically(int direction){return contentHeight>0&&(direction>0?scrollOffset<Math.max(0,contentHeight+tailHeight-getHeight()):scrollOffset>0);}
+@Override public void scrollBy(int x,int y){if(contentHeight<=0)return;scrollCalls++;scrollOffset=Math.max(0,Math.min(scrollOffset+y,Math.max(0,contentHeight+tailHeight-getHeight())));}
 public int u0(android.view.View v){return position;}public Object getLayoutManager(){return manager;}}''',
     "dalvik/system/InMemoryDexClassLoader.java": r'''package dalvik.system;
 public class InMemoryDexClassLoader extends ClassLoader {
@@ -322,6 +327,7 @@ def main():
     parser.add_argument("--variants", nargs="+", default=["missing", "present", "pre-fix-observe", "pre-fix-panel",
                                                          "pre-fix-pill", "pre-fix-glass"])
     parser.add_argument("--geometry-only", action="store_true")
+    parser.add_argument("--overlay-only", action="store_true")
     parser.add_argument("--repair-only", action="store_true")
     parser.add_argument("--repair-case", choices=["owned", "lazy", "keyboard", "native-ime"], default="owned")
     parser.add_argument("--footer-source", type=Path, help="Replay an exact frozen footer source with the same real hooks")
@@ -393,8 +399,9 @@ def main():
             sources = sorted(src.rglob("*.java")) + production + sorted((ROOT / "scripts/tests/chat-footer-hooks").rglob("*.java"))
             print(f"[{variant}] compiling actual FloatingChatFooterFeature + structural helpers")
             run([str(args.jdk / "bin/javac.exe"), "-J-Duser.language=en", "-encoding", "UTF-8", "-d", str(classes), *map(str, sources)])
-            run([str(args.jdk / "bin/java.exe"), "-cp", str(classes), "wex.ui.core.feature.ChatFooterHookChecks", variant,
-                 *(["repair-only", args.repair_case] if args.repair_only else ["geometry-only"] if args.geometry_only else [])])
+            if not args.overlay_only:
+                run([str(args.jdk / "bin/java.exe"), "-cp", str(classes), "wex.ui.core.feature.ChatFooterHookChecks", variant,
+                     *(["repair-only", args.repair_case] if args.repair_only else ["geometry-only"] if args.geometry_only else [])])
             if variant == "present" and not args.geometry_only and not args.repair_only:
                 run([str(args.jdk / "bin/java.exe"), "-cp", str(classes),
                      "wex.ui.core.feature.ChatFooterOverlayChecks"])

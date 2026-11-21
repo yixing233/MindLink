@@ -37,7 +37,7 @@ final class ComposePayloadBridge {
         if(!"dev.mindlink".equals(activity.getPackageName())||!"dev.mindlink".equals(Application.getProcessName()))
             throw new IllegalStateException("Compose UI is desktop-process only");
         if(entry!=null)return entry;
-        entry=ComposePayloadLoader.entry(activity,"compose-payload","dev.mindlink.compose.DesktopUi");
+        entry=ComposePayloadLoader.entry(activity,"sidepanel-compose-payload","dev.mindlink.compose.DesktopUi");
         return entry;
     }
     private static IllegalStateException failure(Exception error){Throwable cause=error instanceof InvocationTargetException?((InvocationTargetException)error).getCause():error;return new IllegalStateException("Material3/Compose desktop failed",cause);}

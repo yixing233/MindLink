@@ -60,7 +60,7 @@ final class NavigationContactViewport {
             List<View> ancestry = path(target, pager);
             // The geometry pass below re-measures every ancestor, so the old wrapper-shape
             // requirement only rejected valid contacts pages.
-            if (candidate == null || page != pager || ancestry == null || !ancestry.contains(page)) return null;
+            if (page == pager || ancestry == null || !ancestry.contains(page)) return null;
             reason = "visible";
             if (!target.isShown() || !page.isShown()) return null;
             int[] pagePosition = new int[2], pagerPosition = new int[2];

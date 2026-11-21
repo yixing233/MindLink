@@ -19,6 +19,7 @@ def main():
     classes.mkdir(exist_ok=True)
     sources = [repo / "java_src/wex/ui/core/feature" / (name + ".java") for name in
                ["PlusMenuExtra", "SettingsTheme", "AboutPageBuilder", "ComposePayloadBridge", "ComposePayloadLoader"]]
+    sources += sorted((repo / "shared-ui/src/main/java").rglob("*.java"))
     sources += sorted((repo / "scripts/tests/menu").rglob("*.java"))
     sources += [p for p in sorted((repo / "scripts/tests/compose-boundary").rglob("*.java")) if p.name != "ApplicationInfo.java"]
     sources += [repo / "scripts/tests/dashboard/wex/ui/core/WexStore.java",

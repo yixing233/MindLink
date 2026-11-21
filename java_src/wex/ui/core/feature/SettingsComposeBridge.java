@@ -26,7 +26,6 @@ public final class SettingsComposeBridge {
                              Map<String, Runnable> actions,
                              Map<String, Function<String, String>> readers,
                              boolean dark) {
-        if (!"dev.mindlink".equals(activity.getPackageName())) throw new IllegalStateException("Settings panel is module-only");
         try {
             Context module = moduleContext(activity);
             View view = (View) entry(module).getMethod("create", Activity.class, Context.class, Bundle.class,

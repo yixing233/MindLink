@@ -63,7 +63,7 @@ final class ChatFooterOverlay {
     static View input(View root) { return input(root, new int[]{0}, 0); }
 
     private static View input(View view, int[] budget, int depth) {
-        if (view == null || depth > 8 || ++budget[0] > 256 || !view.isShown()) return null;
+        if (view == null || depth > 14 || ++budget[0] > 256 || !view.isShown()) return null;
         if (view instanceof EditText && view.getWidth() > 0) return view;
         if (PANEL.equals(view.getClass().getName()) || APP.equals(view.getClass().getName())) return null;
         if (view instanceof ViewGroup) {
@@ -98,6 +98,7 @@ final class ChatFooterOverlay {
     }
 
     void transition(int mode) {
+        if (tail != null) tail.transition();
         restoreMore();
         if (mode != 2 && mode != 3) translationOwned = false;
         candidate = null; stable = 0;
@@ -117,8 +118,8 @@ final class ChatFooterOverlay {
 
     boolean apply(int mode, int depth, int natural, int gapDp, int sideDp, boolean preDraw) {
         changed = false;
-        if (applied != null) updateTail();
         if (!preDraw || depth > 0 || footer.getHeight() <= 0) return false;
+        if (applied != null && !footer.isLayoutRequested()) updateTail();
         View panel = component(footer, PANEL);
         // A native closed panel can remain VISIBLE behind negative margins.
         // Only a witnessed switch identifies an open panel.
@@ -132,6 +133,9 @@ final class ChatFooterOverlay {
         next.visible = open ? Math.max(card, bounds(panel).bottom) : card;
         next.panelHeight = open ? panel.getHeight() : 0;
         next.gap = Math.round(gapDp * density()); next.side = Math.round(sideDp * density());
+        View host = footer.getParent() instanceof View ? (View) footer.getParent() : footer;
+        next.gap += Math.max(FloatingFooterLayout.remainingBottom(host), FloatingFooterLayout.pillClearance(host))
+                - FloatingFooterLayout.bottomCorrection(host);
         if (open && footer.getTranslationY() != 0f) {
             originalTranslation = footer.getTranslationY(); translationOwned = true;
             translationParent = footer.getParent() instanceof View ? (View) footer.getParent() : null;
@@ -249,10 +253,11 @@ final class ChatFooterOverlay {
         if (tail == null) return;
         int[] footerAt = new int[2], listAt = new int[2];
         footer.getLocationOnScreen(footerAt); list.getLocationOnScreen(listAt);
-        int lift = applied.open ? 0 : Math.round(Math.max(0f, -footer.getTranslationY()));
-        int obstruction = Math.max(applied.visible + applied.gap + lift,
-                listAt[1] + list.getHeight() - footerAt[1]);
-        if (!tail.update(Math.max(0, obstruction))) retry();
+        // Screen coordinates already include IME translation and viewport resize.
+        // Reserving the lift again would leave an extra keyboard-sized blank tail.
+        int obstruction = Math.max(0, Math.min(list.getHeight(),
+                listAt[1] + list.getHeight() - footerAt[1]));
+        if (!tail.update(obstruction)) retry();
     }
 
     void restore() {

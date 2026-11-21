@@ -45,6 +45,7 @@ import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.outlined.Close
 import com.composables.icons.materialsymbols.outlined.Edit
 import dev.mindlink.sidepanel.R
+import dev.mindlink.ui.MindLinkCard
 
 @Composable
 fun HomeSidePanelCardFrame(
@@ -63,9 +64,8 @@ fun HomeSidePanelCardFrame(
 ) {
     key(cardId) {
         Box(modifier = modifier) {
-            Card(
+            MindLinkCard(
                 modifier = cardModifier,
-                shape = shape,
                 colors = colors,
             ) {
                 content()

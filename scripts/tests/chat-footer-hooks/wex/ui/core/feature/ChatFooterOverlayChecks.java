@@ -20,8 +20,78 @@ public final class ChatFooterOverlayChecks {
         listReplacementReleasesSpace();
         nativeVisibilityAndSmallWindow();
         movedFooterDoesNotRestoreOldLift();
+        deepInputAndGestureBand();
         sourceEntry();
+        nativePanelOrderStillOverlays();
+        messagesFollowVisibleArea();
+        resizedImeDoesNotReserveTwice();
         System.out.println("GREEN phone footer integration: " + assertions + " assertions");
+    }
+
+    private static RecyclerView messageList(Tree tree) {
+        RecyclerView list = new RecyclerView(tree.footer.getContext());
+        tree.root.addView(list, 0, new ViewGroup.LayoutParams(400, 1000));
+        list.layout(0, 0, 400, 1000);
+        list.contentHeight = 2000; list.scrollOffset = 1000;
+        return list;
+    }
+
+    private static void settleMessages(Tree tree, RecyclerView list, ChatFooterOverlay overlay,
+            int mode, int footerTop, int panelHeight) {
+        overlay.transition(mode);
+        tree.panel.setVisibility(mode == 2 || mode == 3 ? View.VISIBLE : View.GONE);
+        tree.footer.layout(0, footerTop, 400, footerTop + 116 + panelHeight);
+        tree.row.layout(0, 0, 400, 106);
+        tree.row.getChildAt(0).layout(0, 40, 400, 100);
+        tree.panel.layout(0, 116, 400, 116 + panelHeight);
+        tree.app.layout(0, 0, 400, panelHeight);
+        for (int i = 0; i < 12; i++) {
+            list.layoutItems();
+            overlay.apply(mode, 0, 356, 10, 12, true);
+        }
+    }
+
+    private static void messagesFollowVisibleArea() {
+        Tree tree = new Tree(); RecyclerView list = messageList(tree);
+        ChatFooterOverlay overlay = new ChatFooterOverlay(tree.footer);
+        settleMessages(tree, list, overlay, 0, 874, 356);
+        check(list.contentHeight - list.scrollOffset == 874,
+                "default state keeps the last message above the floating input card");
+        tree.footer.setTranslationY(-300);
+        settleMessages(tree, list, overlay, 1, 874, 356);
+        check(list.contentHeight - list.scrollOffset == 574,
+                "IME lift keeps the last message in the visible message area");
+        settleMessages(tree, list, overlay, 2, 518, 356);
+        check(list.contentHeight - list.scrollOffset == 518,
+                "emoji panel follows the end without a second keyboard lift");
+        settleMessages(tree, list, overlay, 3, 654, 220);
+        check(list.contentHeight - list.scrollOffset == 654,
+                "More panel releases the unused emoji height");
+        settleMessages(tree, list, overlay, 0, 874, 356);
+        check(list.contentHeight - list.scrollOffset == 874,
+                "closing panels restores the default message position");
+        list.scrollBy(0, -500);
+        overlay.apply(0, 0, 356, 10, 12, true);
+        int history = list.scrollOffset;
+        settleMessages(tree, list, overlay, 2, 518, 356);
+        check(list.scrollOffset == history, "opening a panel preserves the history reading position");
+        check(list.getHeight() == 1000 && list.getPaddingBottom() == 0,
+                "message viewport still extends behind the floating footer");
+        overlay.restore();
+    }
+
+    private static void resizedImeDoesNotReserveTwice() {
+        Tree tree = new Tree(); RecyclerView list = messageList(tree);
+        ChatFooterOverlay overlay = new ChatFooterOverlay(tree.footer);
+        settleMessages(tree, list, overlay, 0, 874, 356);
+        // The host shortens the list and lifts its sibling footer by the same IME height.
+        list.layout(0, 0, 400, 700);
+        tree.footer.setTranslationY(-300);
+        settleMessages(tree, list, overlay, 1, 874, 356);
+        check(list.tailHeight == 126, "a resized list reserves only its actual overlap with the card");
+        check(list.contentHeight - list.scrollOffset == 574,
+                "a viewport resize retains the previously anchored last message");
+        overlay.restore();
     }
 
     private static void movedFooterDoesNotRestoreOldLift() {
@@ -138,7 +208,8 @@ public final class ChatFooterOverlayChecks {
         RecyclerView recycler = new RecyclerView(context); recycler.attach();
         ChatTailSpacer spacer = ChatTailSpacer.obtain(recycler);
         check(spacer != null && recycler.decorations.size() == 1, "host-loader bridge registers once");
-        check(!spacer.update(126) && !spacer.update(126) && spacer.update(126), "tail height settles across passes");
+        check(!spacer.update(126) && !spacer.update(126) && !spacer.update(126) && spacer.update(126),
+                "tail height settles before applying its end anchor on the next layout");
         h3 state = new h3(); state.count = 4;
         Rect offsets = new Rect(); View child = new View(context);
         recycler.position = 3;
@@ -195,6 +266,45 @@ public final class ChatFooterOverlayChecks {
         wex.ui.core.WexStore.INSTANCE.flags.put("floating_chat_footer_enabled", false);
         FloatingChatFooterFeature.refresh(); android.os.Handler.drain();
         check(tree.root.lastY == 0, "disabling after close does not replay an obsolete open-panel request");
+    }
+
+    private static void deepInputAndGestureBand() {
+        Tree tree = new Tree();
+        View edit = tree.row.getChildAt(0);
+        tree.row.removeView(edit);
+        ViewGroup parent = tree.row;
+        for (int i = 0; i < 10; i++) {
+            ViewGroup wrapper = new ViewGroup(edit.getContext());
+            parent.addView(wrapper, new ViewGroup.LayoutParams(400, 106));
+            wrapper.layout(0, 0, 400, 106);
+            parent = wrapper;
+        }
+        parent.addView(edit, new ViewGroup.LayoutParams(400, 60)); edit.layout(0, 40, 400, 100);
+        check(ChatFooterOverlay.input(tree.footer) == edit, "captured deep input path remains discoverable");
+        tree.root.insets = new android.view.WindowInsets(); tree.root.insets.nav = 24;
+        ChatFooterOverlay overlay = new ChatFooterOverlay(tree.footer);
+        for (int i = 0; i < 4; i++) overlay.apply(0, 0, 356, 10, 12, true);
+        ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) tree.footer.getLayoutParams();
+        check(overlay.applied != null && overlay.applied.visible == 116 && overlay.applied.gap == 34,
+                "only the input card clears the gesture band and configured gap");
+        check(lp.topMargin == -150 && tree.footer.getHeight() + lp.topMargin + lp.bottomMargin == 0,
+                "gesture clearance does not consume message viewport height");
+        overlay.restore();
+    }
+
+    private static void nativePanelOrderStillOverlays() throws Throwable {
+        wex.ui.core.WexStore.INSTANCE.flags.put("floating_chat_footer_panel_above", false);
+        wex.ui.core.WexStore.INSTANCE.flags.put("floating_chat_footer_enabled", true);
+        FloatingChatFooterFeature.refresh(); android.os.Handler.drain();
+        Tree tree = new Tree();
+        de.robv.android.xposed.XposedBridge.constructed(tree.footer);
+        for (int i = 0; i < 5; i++) tree.footer.getViewTreeObserver().draw();
+        ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) tree.footer.getLayoutParams();
+        check(tree.footer.getHeight() + lp.topMargin + lp.bottomMargin == 0,
+                "native panel order still leaves the message viewport full height");
+        wex.ui.core.WexStore.INSTANCE.flags.put("floating_chat_footer_enabled", false);
+        FloatingChatFooterFeature.refresh(); android.os.Handler.drain();
+        wex.ui.core.WexStore.INSTANCE.flags.put("floating_chat_footer_panel_above", true);
     }
 
     private static final class Tree {

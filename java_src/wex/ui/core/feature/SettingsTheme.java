@@ -16,17 +16,12 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import java.util.ArrayDeque;
+import dev.mindlink.ui.MindLinkColors;
 
 /** 模块设置共用的表面与状态颜色，不读取或写入业务配置。 */
 public final class SettingsTheme {
-    private static final Palette LIGHT = new Palette(
-            0xFFF2F1ED, 0xFFFFFFFF, 0xFF14171A, 0xFF6B7280,
-            0xFF2C6E49, 0xFFFFFFFF, 0xFFE8F0EA, 0xFFF2F4F2,
-            0xFFD1D9D3, 0xFF66736C);
-    private static final Palette DARK = new Palette(
-            0xFF0E100F, 0xFF181C1A, 0xFFF2F4F2, 0xFF98A29C,
-            0xFF8AD4A0, 0xFF102016, 0xFF1A2A20, 0xFF242A26,
-            0xFF3E4942, 0xFFC1CAC4);
+    private static final Palette LIGHT = new Palette(MindLinkColors.LIGHT);
+    private static final Palette DARK = new Palette(MindLinkColors.DARK);
     private static final int[][] ENABLED_STATES = {
             new int[]{-android.R.attr.state_enabled}, new int[0]
     };
@@ -37,18 +32,17 @@ public final class SettingsTheme {
     private static final class Palette {
         final int page, card, ink, sub, accent, onAccent, accentSurface, surface, outline, thumb;
 
-        Palette(int page, int card, int ink, int sub, int accent, int onAccent,
-                int accentSurface, int surface, int outline, int thumb) {
-            this.page = page;
-            this.card = card;
-            this.ink = ink;
-            this.sub = sub;
-            this.accent = accent;
-            this.onAccent = onAccent;
-            this.accentSurface = accentSurface;
-            this.surface = surface;
-            this.outline = outline;
-            this.thumb = thumb;
+        Palette(MindLinkColors.Palette colors) {
+            this.page = colors.surface;
+            this.card = colors.surfaceContainerLow;
+            this.ink = colors.onSurface;
+            this.sub = colors.onSurfaceVariant;
+            this.accent = colors.primary;
+            this.onAccent = colors.onPrimary;
+            this.accentSurface = colors.primaryContainer;
+            this.surface = colors.surfaceContainerHigh;
+            this.outline = colors.outline;
+            this.thumb = colors.onPrimary;
         }
     }
 
@@ -86,14 +80,14 @@ public final class SettingsTheme {
     public static LinearLayout.LayoutParams cardParams(Context context) {
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        params.bottomMargin = dp(context, 12);
+        params.bottomMargin = dp(context, MindLinkColors.SECTION_GAP_DP);
         return params;
     }
 
     /** 只处理返回的一级卡片根节点，不新增父卡，也不改内部功能预览。 */
     public static void applyCard(View view) {
         Context context = view.getContext();
-        view.setBackground(round(card(context), dp(context, 20)));
+        view.setBackground(round(card(context), dp(context, MindLinkColors.CARD_RADIUS_DP)));
         view.setBackgroundTintList(null);
         view.setElevation(0f);
         view.setTranslationZ(0f);
@@ -133,7 +127,7 @@ public final class SettingsTheme {
     }
 
     public static Drawable popupBackground(Context context) {
-        return round(card(context), dp(context, 20));
+        return round(card(context), dp(context, MindLinkColors.CARD_RADIUS_DP));
     }
 
     private static void button(TextView view, int foreground, int background) {

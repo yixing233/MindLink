@@ -24,7 +24,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -34,8 +33,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,80 +50,30 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-private val LightColors = lightColorScheme(
-    primary = Color(0xFF1F6F4E),
-    onPrimary = Color.White,
-    primaryContainer = Color(0xFFB6F0CE),
-    onPrimaryContainer = Color(0xFF08251A),
-    secondary = Color(0xFF4B6357),
-    onSecondary = Color.White,
-    secondaryContainer = Color(0xFFD7E9DD),
-    onSecondaryContainer = Color(0xFF17281E),
-    tertiary = Color(0xFF2F7F7A),
-    onTertiary = Color.White,
-    tertiaryContainer = Color(0xFFB7EDE9),
-    onTertiaryContainer = Color(0xFF042722),
-    background = Color(0xFFF2F1ED),
-    onBackground = Color(0xFF14171A),
-    surface = Color(0xFFF2F1ED),
-    onSurface = Color(0xFF14171A),
-    surfaceVariant = Color(0xFFDDE8E0),
-    onSurfaceVariant = Color(0xFF54615A),
-    surfaceContainerLowest = Color(0xFFFFFFFF),
-    surfaceContainerLow = Color(0xFFF8FAF7),
-    surfaceContainer = Color(0xFFEFF3EF),
-    surfaceContainerHigh = Color(0xFFEAEFEA),
-    surfaceContainerHighest = Color(0xFFE3E9E4),
-    outline = Color(0xFF6F7F74),
-    outlineVariant = Color(0xFFC6D4C9),
-    error = Color(0xFFB3261E),
-    onError = Color.White,
-)
-
-private val DarkColors = darkColorScheme(
-    primary = Color(0xFF8AD4A0),
-    onPrimary = Color(0xFF102016),
-    primaryContainer = Color(0xFF1B5C41),
-    onPrimaryContainer = Color(0xFFA6F0C4),
-    secondary = Color(0xFFB4CCBD),
-    onSecondary = Color(0xFF1E2B22),
-    secondaryContainer = Color(0xFF33443A),
-    onSecondaryContainer = Color(0xFFD0E4D8),
-    tertiary = Color(0xFF89D4CF),
-    onTertiary = Color(0xFF062321),
-    tertiaryContainer = Color(0xFF1D4844),
-    onTertiaryContainer = Color(0xFFA8ECE7),
-    background = Color(0xFF0E100F),
-    onBackground = Color(0xFFF2F4F2),
-    surface = Color(0xFF0E100F),
-    onSurface = Color(0xFFF2F4F2),
-    surfaceVariant = Color(0xFF202B23),
-    onSurfaceVariant = Color(0xFF98A29C),
-    surfaceContainerLowest = Color(0xFF080A09),
-    surfaceContainerLow = Color(0xFF151A17),
-    surfaceContainer = Color(0xFF191F1B),
-    surfaceContainerHigh = Color(0xFF222925),
-    surfaceContainerHighest = Color(0xFF2B332E),
-    outline = Color(0xFF86968B),
-    outlineVariant = Color(0xFF3B4A40),
-    error = Color(0xFFF2B8B5),
-    onError = Color(0xFF601410),
-)
+import androidx.compose.ui.draw.rotate
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.outlined.Refresh
+import com.composables.icons.materialsymbols.outlined.Chevron_right
+import dev.mindlink.ui.MindLinkCard
+import dev.mindlink.ui.MindLinkPage
+import dev.mindlink.ui.MindLinkSectionHeader
+import dev.mindlink.ui.MindLinkSwitchRow
+import dev.mindlink.ui.MindLinkTheme
+import dev.mindlink.ui.MindLinkIconButton
+import dev.mindlink.ui.MindLinkTopBar
 
 @Composable
 internal fun SettingsScreen(state: SettingsState) {
     val dark = state.dark || isSystemInDarkTheme()
-    val colors: ColorScheme = if (dark) DarkColors else LightColors
-    MaterialTheme(colorScheme = colors) {
+    MindLinkTheme(dark = dark) {
+        val colors = MaterialTheme.colorScheme
         var editing by remember { mutableStateOf<Setting.Text?>(null) }
         var consent by remember { mutableStateOf<Setting.Flag?>(null) }
         var logOpen by remember { mutableStateOf(false) }
         var restarting by remember { mutableStateOf(false) }
 
-        Surface(Modifier.fillMaxSize(), color = colors.background) {
-            Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
-                Header(state) { restarting = true }
+        MindLinkPage {
+                Header { restarting = true }
                 Tabs(state)
                 if (state.pending) {
                     PendingBar { restarting = true }
@@ -158,7 +110,6 @@ internal fun SettingsScreen(state: SettingsState) {
                         }
                     }
                 }
-            }
         }
 
         editing?.let { row ->
@@ -221,47 +172,21 @@ internal fun SettingsScreen(state: SettingsState) {
 }
 
 @Composable
-private fun Header(state: SettingsState, onRestart: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            "设置",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = (-0.6).sp,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f),
-        )
-        TextButton(onClick = onRestart) { Text("重启") }
+private fun Header(onRestart: () -> Unit) {
+    MindLinkTopBar("设置") {
+        MindLinkIconButton(MaterialSymbols.Outlined.Refresh, "重启微信", onRestart)
     }
 }
 
 @Composable
 private fun Tabs(state: SettingsState) {
-    Row(
-        Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    PrimaryTabRow(
+        selectedTabIndex = state.tabIndex,
+        containerColor = MaterialTheme.colorScheme.surface,
+        modifier = Modifier.fillMaxWidth(),
     ) {
         settingsTabs.forEachIndexed { index, label ->
-            val selected = state.tabIndex == index
-            Surface(
-                shape = RoundedCornerShape(10.dp),
-                color = if (selected) MaterialTheme.colorScheme.primaryContainer
-                else MaterialTheme.colorScheme.surfaceContainerHigh,
-                contentColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
-                else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f).clickable { state.selectTab(index) },
-            ) {
-                Text(
-                    label,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-                    modifier = Modifier.padding(vertical = 9.dp).fillMaxWidth(),
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                )
-            }
+            Tab(selected = state.tabIndex == index, onClick = { state.selectTab(index) }, text = { Text(label) })
         }
     }
 }
@@ -287,27 +212,8 @@ private fun PendingBar(onRestart: () -> Unit) {
 @Composable
 private fun SectionBlock(section: Section, row: @Composable (Setting) -> Unit) {
     Column(Modifier.fillMaxWidth()) {
-        Text(
-            section.title,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 4.dp, bottom = 2.dp),
-        )
-        if (section.summary != null) {
-            Text(
-                section.summary,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 4.dp, bottom = 6.dp),
-            )
-        } else {
-            Spacer(Modifier.height(4.dp))
-        }
-        Surface(
-            shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
+        MindLinkSectionHeader(section.title, section.summary)
+        MindLinkCard(modifier = Modifier.fillMaxWidth()) {
             Column {
                 section.rows.forEachIndexed { index, entry ->
                     if (index > 0) HorizontalDivider(
@@ -323,23 +229,7 @@ private fun SectionBlock(section: Section, row: @Composable (Setting) -> Unit) {
 
 @Composable
 private fun FlagRow(row: Setting.Flag, checked: Boolean, onChange: (Boolean) -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().padding(start = 16.dp, end = 12.dp, top = 10.dp, bottom = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f).padding(end = 12.dp)) {
-            Text(row.title, style = MaterialTheme.typography.bodyLarge)
-            if (row.summary != null) {
-                Text(
-                    row.summary,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 1.dp),
-                )
-            }
-        }
-        Switch(checked = checked, onCheckedChange = onChange)
-    }
+    MindLinkSwitchRow(row.title, checked, row.summary, onChange)
 }
 
 @Composable
@@ -366,27 +256,13 @@ private fun RangeRow(row: Setting.Range, initial: Int, state: SettingsState) {
 private fun PickRow(row: Setting.Pick, current: String, onSelect: (String) -> Unit) {
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
         Text(row.title, style = MaterialTheme.typography.bodyLarge)
-        Row(
-            Modifier.fillMaxWidth().padding(top = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            row.options.forEach { (value, label) ->
-                val selected = value == current
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = if (selected) MaterialTheme.colorScheme.primaryContainer
-                    else MaterialTheme.colorScheme.surfaceContainerHigh,
-                    contentColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f).clickable { onSelect(value) },
-                ) {
-                    Text(
-                        label,
-                        style = MaterialTheme.typography.labelLarge,
-                        modifier = Modifier.padding(vertical = 10.dp).fillMaxWidth(),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                    )
-                }
+        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+            row.options.forEachIndexed { index, (value, label) ->
+                SegmentedButton(
+                    selected = value == current,
+                    onClick = { onSelect(value) },
+                    shape = SegmentedButtonDefaults.itemShape(index, row.options.size),
+                ) { Text(label) }
             }
         }
     }
@@ -405,7 +281,7 @@ private fun TextRow(row: Setting.Text, current: String, onClick: () -> Unit) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.width(180.dp),
+            modifier = Modifier.weight(1f).padding(start = 12.dp),
             textAlign = androidx.compose.ui.text.style.TextAlign.End,
         )
     }
@@ -459,8 +335,14 @@ private fun ToolsRow(row: Setting.Tools, state: SettingsState) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
-                TextButton(onClick = { state.action("toolUp:$name") }) { Text("▲") }
-                TextButton(onClick = { state.action("toolDown:$name") }) { Text("▼") }
+                MindLinkIconButton(
+                    MaterialSymbols.Outlined.Chevron_right, "上移",
+                    { state.action("toolUp:$name") }, Modifier.rotate(-90f),
+                )
+                MindLinkIconButton(
+                    MaterialSymbols.Outlined.Chevron_right, "下移",
+                    { state.action("toolDown:$name") }, Modifier.rotate(90f),
+                )
                 Switch(
                     checked = name in enabled,
                     onCheckedChange = { checked ->

@@ -25,7 +25,6 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import dev.mindlink.sidepanel.vendor.wekit.HomeSidePanelTheme
 import java.util.function.Function
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -46,6 +45,20 @@ object SettingsUi {
         actions: Map<String, Runnable>,
         readers: Map<String, Function<String, String>>,
         dark: Boolean,
+    ): View = createContent(activity, moduleResources, saved, values, writers, actions, readers, dark) {
+        SettingsScreen(it)
+    }
+
+    internal fun createContent(
+        activity: Activity,
+        moduleResources: Context,
+        saved: Bundle?,
+        values: Bundle,
+        writers: Map<String, Function<String, String>>,
+        actions: Map<String, Runnable>,
+        readers: Map<String, Function<String, String>>,
+        dark: Boolean,
+        content: @Composable (SettingsState) -> Unit,
     ): View {
         mainThread()
         check(moduleResources.packageName == "dev.mindlink") { "Settings resources must belong to MindLink" }
@@ -56,7 +69,7 @@ object SettingsUi {
             override fun getAssets(): AssetManager = moduleResources.assets
             override fun getApplicationContext(): Context = activity.applicationContext
         }
-        val panel = SettingsView(context, owner)
+        val panel = SettingsView(context, owner, content)
         try {
             panel.setViewTreeLifecycleOwner(owner)
             panel.setViewTreeViewModelStoreOwner(owner)
@@ -83,7 +96,17 @@ object SettingsUi {
         (view as SettingsView).dispose()
     }
 
-    private class SettingsView(context: Context, val owner: SettingsOwner) : AbstractComposeView(context) {
+    @JvmStatic
+    fun lifecycle(view: View, resumed: Boolean) {
+        mainThread()
+        (view as SettingsView).owner.resumed(resumed)
+    }
+
+    private class SettingsView(
+        context: Context,
+        val owner: SettingsOwner,
+        val content: @Composable (SettingsState) -> Unit,
+    ) : AbstractComposeView(context) {
         private var parentRecomposer: Recomposer? = null
         private var parentJob: Job? = null
         private var disposed = false
@@ -159,9 +182,7 @@ object SettingsUi {
         @Composable
         override fun Content() {
             if (disposed) return
-            HomeSidePanelTheme {
-                SettingsScreen(owner.state)
-            }
+            content(owner.state)
         }
     }
 
@@ -177,6 +198,7 @@ object SettingsUi {
         private val controller = SavedStateRegistryController.create(this)
         private var destroyed = false
         private var attached = false
+        private var resumed = true
         val state = SettingsState(values, writers, actions, readers, dark)
         override val lifecycle: Lifecycle get() = registry
         override val savedStateRegistry: SavedStateRegistry get() = controller.savedStateRegistry
@@ -191,7 +213,21 @@ object SettingsUi {
         fun attached(value: Boolean) {
             if (destroyed) return
             attached = value
-            registry.currentState = if (attached) Lifecycle.State.RESUMED else Lifecycle.State.CREATED
+            updateLifecycle()
+        }
+
+        fun resumed(value: Boolean) {
+            if (destroyed) return
+            resumed = value
+            updateLifecycle()
+        }
+
+        private fun updateLifecycle() {
+            registry.currentState = when {
+                !attached -> Lifecycle.State.CREATED
+                resumed -> Lifecycle.State.RESUMED
+                else -> Lifecycle.State.STARTED
+            }
         }
 
         fun save(output: Bundle) {

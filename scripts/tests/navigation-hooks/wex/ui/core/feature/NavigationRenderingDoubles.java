@@ -41,6 +41,7 @@ final class GlassGravity {
     void enable(boolean value) { }
 }
 final class NavigationIcons { static Path create(int index, boolean filled) { return new Path(); } }
+final class GestureNavigationApply { static void inspect(View view) { } }
 final class SystemBarsCoordinator {
     static int remainingBottom(View view) { return 0; }
     static Insets bars(View view) { return Insets.of(0,0,0,0); }

@@ -18,6 +18,7 @@ def main():
         sources = sorted((ROOT / "scripts/tests/menu").rglob("*.java"))
         sources += sorted((ROOT / "scripts/tests/navigation").rglob("*.java"))
         sources += [ROOT / "java_src/wex/ui/core/feature/NavigationFrostedController.java",
+                    ROOT / "shared-ui/src/main/java/dev/mindlink/ui/MindLinkColors.java",
                     ROOT / "java_src/wex/ui/core/feature/PlusMenuExtra.java",
                     ROOT / "java_src/wex/ui/core/feature/SettingsTheme.java"]
         commands = [[str(args.jdk / "bin/javac.exe"), "-J-Duser.language=en", "-J-Duser.country=US",
@@ -34,9 +35,10 @@ def main():
                         if source.relative_to(ROOT / "scripts/tests/menu") not in overridden]
         hook_sources += hook_overrides
         hook_sources += [ROOT / "scripts/tests/navigation/com/tencent/mm/pluginsdk/ui/chat/ChattingUILayout.java"]
+        hook_sources += [ROOT / "shared-ui/src/main/java/dev/mindlink/ui/MindLinkColors.java"]
         hook_sources += [ROOT / "java_src/wex/ui/core/feature" / (name + ".java") for name in
                          ["NavigationFrostedController", "NavigationBarFeature", "NavigationBarViews", "NativeTabBridge",
-                          "NavigationBottomSpace", "NavigationContactViewport", "NavigationTabModel", "NavigationScrollState", "LiquidGlassMotion", "ChatToolbarLifecycle", "PlusMenuExtra", "SettingsTheme"]]
+                          "NavigationBottomSpace", "NavigationContactViewport", "ContactsViewportSupport", "NavigationTabModel", "NavigationScrollState", "LiquidGlassMotion", "ChatToolbarLifecycle", "PlusMenuExtra", "SettingsTheme"]]
         hook_classes = Path(temporary) / "hooks"
         hook_classes.mkdir()
         commands = [[str(args.jdk / "bin/javac.exe"), "-J-Duser.language=en", "-J-Duser.country=US",

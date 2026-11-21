@@ -17,7 +17,9 @@ param(
   [string]$BaselineApk,
   [string]$BaselineSha256,
   [string]$ScopedPreparation,
-  [switch]$CandidateSkipSidePanelLint
+  [switch]$CandidateSkipSidePanelLint,
+  [switch]$Unsigned,
+  [switch]$Online
 )
 
 $ErrorActionPreference = 'Stop'
@@ -34,7 +36,7 @@ $DEX   = "$BUILD\dex"
 $STUB  = "$BUILD\stub"
 $KS    = "$root\build\mindlink.jks"
 $KSPASS = 'mindlink'
-if (-not (Test-Path $KS)) { throw "原签名密钥缺失，停止构建；不会创建替代密钥" }
+if (-not $Unsigned -and -not (Test-Path $KS)) { throw "原签名密钥缺失，停止构建；可用 -Unsigned 构建未签名包，不会创建替代密钥" }
 New-Item -ItemType Directory "$BUILD\logs" -Force | Out-Null
 
 # ============================================================ 工具链探测
@@ -172,7 +174,7 @@ function Write-ArgFile {
 }
 
 # ============================================================ Compose payloads
-Write-Host '[UI] 编译两个独立 Compose 运行时，共用已校验资源编号'
+Write-Host '[UI] 编译共享 Material3 载荷与资源表'
 $GRADLE = $env:MINDLINK_GRADLE
 if (-not $GRADLE) {
   $GRADLE = Get-ChildItem "$env:USERPROFILE\.gradle\wrapper\dists\gradle-9.7.1-bin" -Recurse -Filter gradle.bat -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
@@ -186,6 +188,7 @@ if (-not $SIDE_GRADLE -or -not (Test-Path $SIDE_GRADLE)) { throw '找不到侧�
 $env:JAVA_HOME = $JDK
 $env:ANDROID_HOME = $SDK
 $env:ANDROID_SDK_ROOT = $SDK
+$networkArgs = if ($Online) { @() } else { @('--offline') }
 $preserveInstalledDesktop = $false
 $resourceStage = "$BUILD\resources\res"
 $resourceAudit = "$BUILD\resources\staging.json"
@@ -199,9 +202,9 @@ $desktopFinal = "$BUILD\desktop-final"
 $sideFinal = "$BUILD\sidepanel-final"
 $desktopIds = "$BUILD\resources\desktop-final-ids.txt"
 $sideIds = "$BUILD\resources\sidepanel-final-ids.txt"
-$code = Invoke-Tool -Exe $GRADLE -Arguments @('-p', "$root\ui-compose", '--offline', '--no-daemon', '--console=plain', "-PmdlBuildRoot=$desktopInventoryRoot", ':app:writeRuntimeInventory')
+$code = Invoke-Tool -Exe $GRADLE -Arguments (@('-p', "$root\ui-compose", '--no-daemon', '--console=plain', "-PmdlBuildRoot=$desktopInventoryRoot", ':app:writeRuntimeInventory') + $networkArgs)
 if ($code -ne 0) { throw "桌面依赖清单失败（退出码 $code）" }
-$code = Invoke-Tool -Exe $SIDE_GRADLE -Arguments @('-p', "$root\ui-compose\sidepanel", '--offline', '--no-daemon', '--console=plain', "-PmdlSidePanelBuildRoot=$sideInventoryRoot", 'writeRuntimeInventory')
+$code = Invoke-Tool -Exe $SIDE_GRADLE -Arguments (@('-p', "$root\ui-compose\sidepanel", '--no-daemon', '--console=plain', "-PmdlSidePanelBuildRoot=$sideInventoryRoot", 'writeRuntimeInventory') + $networkArgs)
 if ($code -ne 0) { throw "侧栏依赖清单失败（退出码 $code）" }
 $prepareArgs = @('-I', "$root\scripts\prepare_compose_resources.py", '--source', "$root\res", '--output', $resourceStage,
   '--sidepanel-res', "$root\ui-compose\sidepanel\src\main\res", '--inventory', $desktopInventory,
@@ -213,8 +216,8 @@ if ($BaselineApk) { $prepareArgs += @('--baseline-apk', $BaselineApk, '--baselin
 $code = Invoke-Tool -Exe $PYTHON -Arguments $prepareArgs
 if ($code -ne 0) { throw "共享资源暂存失败（退出码 $code）" }
 $bootstrap = "$BUILD\desktop-bootstrap"
-$code = Invoke-Tool -Exe $GRADLE -Arguments @('-p', "$root\ui-compose", '--offline', '--no-daemon', '--console=plain',
-  "-PmdlBuildRoot=$bootstrap", "-PmdlResourceStage=$resourceStage", "-PmdlStableIds=$seedIds", "-PmdlEmitIds=$fullIds", ':app:processReleaseResources')
+$code = Invoke-Tool -Exe $GRADLE -Arguments (@('-p', "$root\ui-compose", '--no-daemon', '--console=plain',
+  "-PmdlBuildRoot=$bootstrap", "-PmdlResourceStage=$resourceStage", "-PmdlStableIds=$seedIds", "-PmdlEmitIds=$fullIds", ':app:processReleaseResources') + $networkArgs)
 if ($code -ne 0) { throw "共享资源引导链接失败（退出码 $code）" }
 $bootstrapApk = "$bootstrap\intermediates\linked_resources_binary_format\release\processReleaseResources\linked-resources-binary-format-release.ap_"
 $code = Invoke-Tool -Exe $PYTHON -Arguments @('-I', "$root\scripts\check_compose_resources.py", '--resource-only', '--apk', $bootstrapApk,
@@ -223,8 +226,8 @@ $code = Invoke-Tool -Exe $PYTHON -Arguments @('-I', "$root\scripts\check_compose
 if ($code -ne 0) { throw "引导资源编号检查失败（退出码 $code）" }
 # The standalone desktop UI was removed from the product: :app is only linked for the
 # shared resource table ($fullIds) and no desktop payload is compiled or shipped.
-$sideArgs = @('-p', "$root\ui-compose\sidepanel", '--offline', '--no-daemon', '--console=plain',
-  "-PmdlSidePanelBuildRoot=$sideFinal", "-PmdlSidePanelResourceStage=$resourceStage", "-PmdlSidePanelStableIds=$fullIds", "-PmdlSidePanelEmitIds=$sideIds")
+$sideArgs = @('-p', "$root\ui-compose\sidepanel", '--no-daemon', '--console=plain',
+  "-PmdlSidePanelBuildRoot=$sideFinal", "-PmdlSidePanelResourceStage=$resourceStage", "-PmdlSidePanelStableIds=$fullIds", "-PmdlSidePanelEmitIds=$sideIds") + $networkArgs
 if ($CandidateSkipSidePanelLint) {
   Write-Warning '仅此候选：侧栏 release lintVital 未执行；编译、AAR 元数据、重复类与资源校验仍必须通过。'
   $sideArgs += '-PmdlSkipPayloadLint=true'
@@ -269,7 +272,7 @@ if ($code -ne 0) { throw "stub 编译失败（退出码 $code）" }
 Write-Host '[2/7] 编译 java_src'
 if (Test-Path $OUT) { Remove-Item $OUT -Recurse -Force }
 New-Item -ItemType Directory $OUT | Out-Null
-$srcFiles = @(Get-ChildItem "$root\java_src" -Recurse -Filter *.java | ForEach-Object { $_.FullName })
+$srcFiles = @(Get-ChildItem "$root\java_src", "$root\shared-ui\src\main\java" -Recurse -Filter *.java | ForEach-Object { $_.FullName })
 Write-ArgFile "$BUILD\src-args.txt" $srcFiles -Quote
 $code = Invoke-Tool -Exe $JAVAC -Arguments @(
   "-nowarn", "-source", "11", "-target", "11",
@@ -300,7 +303,7 @@ if ($code -ne 0) { throw "apktool 回编失败（退出码 $code）" }
 }
 
 # ============================================================ 5. merge
-Write-Host '[5/7] 合并功能 DEX 与两个隔离 Compose 载荷'
+Write-Host '[5/7] 合并功能 DEX 与共享 Material3 载荷'
 $mergeArgs = @('-I', "$root\scripts\merge.py", $stageApk, $DEX, "$BUILD\merged.apk") + $dualArgs + @('--report', "$BUILD\merge-check.json")
 $code = Invoke-Tool -Exe $PYTHON -Arguments $mergeArgs
 if ($code -ne 0) { throw "合并失败（退出码 $code）" }
@@ -313,6 +316,13 @@ if ($code -ne 0) { throw "zipalign 失败（退出码 $code）" }
 
 # ============================================================ 7. sign
 Write-Host '[7/7] 签名'
+if ($Unsigned) {
+  $final = "$BUILD\MindLink-1.0-unsigned.apk"
+  Copy-Item -LiteralPath "$BUILD\aligned.apk" -Destination $final
+  Write-Host "未签名构建完成（不能直接安装）：$final"
+  Write-Host ("大小：{0:N2} MiB" -f ((Get-Item -LiteralPath $final).Length / 1MB))
+  return
+}
 if (-not (Test-Path $KS)) { throw "原签名密钥缺失，停止签名" }
 
 $final = "$BUILD\MindLink-1.0.apk"
@@ -338,7 +348,7 @@ $summary = [ordered]@{
   bytes = (Get-Item -LiteralPath $final).Length
   baseline = $BaselineApk
   baselineSha256 = $BaselineSha256
-  desktopPayload = 'removed'
+  desktopPayload = 'shared-sidepanel-runtime'
   sidePanelLintVital = $(if ($CandidateSkipSidePanelLint) { 'not-executed-explicit-offline-candidate' } else { 'executed' })
   deviceInstalled = $false
 }

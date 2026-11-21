@@ -22,8 +22,8 @@ public final class ComposeBoundaryChecks {
         denied(desktop,"desktop-process only");check(dalvik.system.InMemoryDexClassLoader.attempts==0,"host process never loads payload");
         Application.process="dev.mindlink";
         denied(new Activity(){@Override public String getPackageName(){return"com.tencent.mm";}},"desktop-process only");
-        denied(desktop,"Material3/Compose desktop failed");check(!Files.exists(directory.resolve("compose-payload/index.txt")),"missing asset not created");
-        Path payload=directory.resolve("compose-payload");Files.createDirectories(payload);
+        denied(desktop,"Material3/Compose desktop failed");check(!Files.exists(directory.resolve("sidepanel-compose-payload/index.txt")),"missing asset not created");
+        Path payload=directory.resolve("sidepanel-compose-payload");Files.createDirectories(payload);
         Files.writeString(payload.resolve("index.txt"),"../external.dex bad\n");denied(desktop,"Invalid packaged payload manifest");
         Files.writeString(payload.resolve("index.txt"),"classes.bin "+"0".repeat(64)+"\n");
         Files.write(payload.resolve("classes.bin"),new byte[]{'d','e','x'});denied(desktop,"integrity failed");

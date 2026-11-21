@@ -28,7 +28,7 @@ android {
         release {
             // R8 shrank/renamed the Compose runtime into a 2.7k-class payload; the shipped
             // payload keeps the full pinned runtime, so allow a parity build via -PmdlPayloadMinify=false.
-            isMinifyEnabled = providers.gradleProperty("mdlPayloadMinify").orNull?.toBoolean() ?: true
+            isMinifyEnabled = providers.gradleProperty("mdlPayloadMinify").orNull?.toBoolean() ?: false
             isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -43,6 +43,7 @@ android {
     }
     sourceSets {
         getByName("main") {
+            java.srcDir("../../shared-ui/src/main/java")
             val stage = providers.gradleProperty("mdlSidePanelResourceStage")
                 .orElse(providers.gradleProperty("mdlResourceStage")).orNull
             if (stage != null) res.setSrcDirs(listOf(stage))
@@ -110,15 +111,16 @@ val verifyVendoredSources = tasks.register("verifyVendoredSources") {
     doLast {
         @Suppress("UNCHECKED_CAST")
         val record = groovy.json.JsonSlurper().parse(proof) as Map<String, Any>
-        fun sha256(file: java.io.File): String = MessageDigest.getInstance("SHA-256")
-            .digest(file.readBytes()).joinToString("") { "%02x".format(it.toInt() and 255) }
+        fun sha256(file: java.io.File, source: Boolean = false): String = MessageDigest.getInstance("SHA-256")
+            .digest(if (source) file.readText().replace("\r\n", "\n").toByteArray(Charsets.UTF_8) else file.readBytes())
+            .joinToString("") { "%02x".format(it.toInt() and 255) }
         val icons = record["icons"] as Map<*, *>
         check(sha256(iconJar) == icons["sha256"]) { "Original selected Material Symbols checksum changed" }
         val sources = record["copiedAndModified"] as List<*>
         for (source in sources) {
             val entry = source as Map<*, *>
             val target = entry["target"] as? String ?: continue
-            check(sha256(rootProject.file(target)) == entry["targetSha256"]) {
+            check(sha256(rootProject.file(target), source = true) == entry["targetSha256"]) {
                 "WeKit copied source differs from its recorded diff: $target"
             }
         }

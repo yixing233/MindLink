@@ -11,9 +11,12 @@ build/
 .kotlin/
 .oil-ui/
 .zcode/
+hs_err_pid*.log
+replay_pid*.log
 __pycache__/
 *.pyc
 ui-compose/local.properties
+**/local.properties
 ui-compose/generated-res/
 
 # apktool 回编产生的备份

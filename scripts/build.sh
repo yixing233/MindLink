@@ -11,7 +11,7 @@
 # 可用环境变量覆盖：
 #   MINDLINK_JDK / MINDLINK_SDK / MINDLINK_GRADLE / MINDLINK_APKTOOL / MINDLINK_D8
 #   MINDLINK_AAPT2 / MINDLINK_KEYSTORE / MINDLINK_KS_PASS / MINDLINK_KEY_PASS / MINDLINK_KEY_ALIAS
-#   MINDLINK_PAYLOAD_MINIFY=true|false（默认 true）
+#   MINDLINK_PAYLOAD_MINIFY=true|false（默认 false）
 set -euo pipefail
 
 root=$(cd "$(dirname "$0")/.." && pwd)
@@ -59,7 +59,7 @@ find java_stub -name '*.java' > "$BUILD/stub-files.txt"
   -d "$BUILD/stub" @"$BUILD/stub-files.txt"
 
 log '[2/8] 编译 java_src'
-find java_src -name '*.java' > "$BUILD/src-files.txt"
+find java_src shared-ui/src/main/java -name '*.java' > "$BUILD/src-files.txt"
 "$JAVAC" -nowarn -source 11 -target 11 -classpath "$ANDROID_JAR:$BUILD/stub" -encoding UTF-8 \
   -d "$BUILD/srcout" @"$BUILD/src-files.txt"
 

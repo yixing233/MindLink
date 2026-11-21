@@ -7,6 +7,11 @@
 // Weather settings keep the existing city-code input (no city database ported yet).
 package dev.mindlink.sidepanel.vendor.wekit
 
+import dev.mindlink.ui.MindLinkCard
+import dev.mindlink.ui.MindLinkSwitchRow
+import dev.mindlink.ui.MindLinkTopBar
+import dev.mindlink.ui.MindLinkIconButton
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -80,15 +85,16 @@ private fun HomeSidePanelCardType.serialName(): String = when (this) {
 
 @Composable
 private fun HomeSidePanelEditorHeader(title: String, onBack: () -> Unit, modifier: Modifier = Modifier) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        IconButton(onClick = onBack) {
-            Icon(MaterialSymbols.Outlined.Close, contentDescription = stringResource(R.string.wekit_sp_home_side_panel_discard_editing))
-        }
-        Text(title, style = MaterialTheme.typography.titleLarge)
-    }
+    MindLinkTopBar(
+        title, modifier,
+        navigation = {
+            MindLinkIconButton(
+                MaterialSymbols.Outlined.Close,
+                stringResource(R.string.wekit_sp_home_side_panel_discard_editing),
+                onBack,
+            )
+        },
+    )
 }
 
 /** Add-card page: every card type shows a real preview card; tapping appends it to the draft. */
@@ -416,16 +422,7 @@ private fun SettingsColumn(
 
 @Composable
 private fun SettingsRow(title: String, checked: Boolean, onChange: () -> Unit) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onChange),
-    ) {
-        ListItem(
-            colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
-            headlineContent = { Text(title) },
-            trailingContent = { Switch(checked = checked, onCheckedChange = null) },
-            modifier = Modifier.fillMaxWidth(),
-        )
+    MindLinkCard(modifier = Modifier.fillMaxWidth()) {
+        MindLinkSwitchRow(title, checked, onChange = { onChange() })
     }
 }

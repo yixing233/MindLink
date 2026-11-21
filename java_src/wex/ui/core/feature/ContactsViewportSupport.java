@@ -46,6 +46,14 @@ public final class ContactsViewportSupport {
             pages.put(owner, page);
         }
         if (page.viewportHeight != pager.getHeight()) {
+            if (page.viewportHeight > 0) {
+                restore(owner);
+                page = new Page(root, list, pager);
+                pages.put(owner, page);
+                page.viewportHeight = pager.getHeight();
+                pager.postInvalidateOnAnimation();
+                return true;
+            }
             page.viewportHeight = pager.getHeight();
             page.hostOverride = false;
         }

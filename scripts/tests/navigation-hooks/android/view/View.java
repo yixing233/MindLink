@@ -23,7 +23,15 @@ public class View {
     public void setOutlineProvider(ViewOutlineProvider value) { }
     public void invalidateOutline() { }
     public int layoutRequests, measuredWidth, measuredHeight, drawCalls;
-    public void requestLayout() { layoutRequests++; }
+    private boolean layoutRequested, laidOut;
+    public void requestLayout() { layoutRequests++; layoutRequested = true; }
+    public boolean isLayoutRequested() { return layoutRequested; }
+    public boolean isLaidOut() { return laidOut; }
+    public void postInvalidateOnAnimation() { invalidate(); }
+    public boolean isPaddingRelative() { return false; }
+    public int getPaddingStart() { return getPaddingLeft(); }
+    public int getPaddingEnd() { return getPaddingRight(); }
+    public void setPaddingRelative(int start, int top, int end, int bottom) { setPadding(start, top, end, bottom); }
     public void setScaleX(float value) { }
     public void setScaleY(float value) { }
     public boolean performHapticFeedback(int value) { return true; }
@@ -145,6 +153,7 @@ public class View {
     }
     public ViewGroup.LayoutParams getLayoutParams() { return params; }
     public void layout(int left, int top, int right, int bottom) {
+        laidOut = true; layoutRequested = false;
         int oldLeft = this.left, oldTop = this.top, oldRight = this.right, oldBottom = this.bottom;
         this.left = left;
         this.top = top;

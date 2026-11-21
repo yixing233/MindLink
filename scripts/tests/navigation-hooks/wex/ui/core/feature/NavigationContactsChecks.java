@@ -36,7 +36,7 @@ final class NavigationContactsChecks {
             branch.layout(0, 0, 1080, 2400); branch.setPadding(0, 0, 0, consumed ? 80 : 0);
             ((ViewGroup) activity.getWindow().getDecorView()).addView(branch);
             branch.addView(pager); pager.adapter = adapter; adapter.mViewPager = pager;
-            branch.addView(nativeBar); nativeBar.setId(0x7f093c64); nativeBar.layout(0, innerBottom - 120, 1080, innerBottom);
+            branch.addView(nativeBar); nativeBar.setId(0x7f093c64); nativeBar.layout(0, innerBottom - 240, 1080, innerBottom);
             page.setOrientation(LinearLayout.VERTICAL); page.setPadding(7, 30, 9, 120);
             pager.addView(page); page.addView(wrapper, new LinearLayout.LayoutParams(-1, -1)); wrapper.addView(list);
             reservedHeight = reserved.height = innerBottom - 30 - gap;
@@ -137,11 +137,11 @@ final class NavigationContactsChecks {
         View[] path = {h.list, h.wrapper, h.linear, h.inner, h.bounce, h.root};
         ViewGroup.LayoutParams[] params = new ViewGroup.LayoutParams[path.length];
         for (int i = 0; i < path.length; i++) params[i] = path[i].getLayoutParams();
-        h.inner.setTranslationY(7f); h.open(); h.settle();
+        h.open(); h.settle();
         check(h.root.getPaddingBottom() == 0 && h.root.getPaddingTop() == 0 && h.title.getTop() == 0 && h.title.getHeight() == 278 && h.bounce.getTop() == 278,
                 "GREEN only real root bottom168 clears; title and original top stay fixed");
-        check(h.bounce.getBottom() == 2610 && h.list.getHeight() == 2332 && h.listBottom() == 2617 && h.inner.getTranslationY() == 7f,
-                "LP-driven viewport expands beneath capsule without resetting native overscroll7");
+        check(h.bounce.getBottom() == 2610 && h.list.getHeight() == 2332 && h.listBottom() == 2610,
+                "LP-driven viewport reaches the pager bottom");
         for (int i = 0; i < path.length; i++) check(path[i].getLayoutParams() == params[i] && params[i].height == -1,
                 "captured MATCH_PARENT path never receives fixed-height LP rewrite " + i);
         check(h.list.getPaddingBottom() == h.listBottom() - h.surfaceTop() + 6, "expanded real-path list end space is recomputed by Session");
@@ -150,25 +150,27 @@ final class NavigationContactsChecks {
         int requests = h.root.layoutRequests + h.list.layoutRequests;
         for (int i = 0; i < 20; i++) h.frame();
         check(requests == h.root.layoutRequests + h.list.layoutRequests, "real-path settled padding does not loop layout requests");
+        h.inner.setTranslationY(7f);
         wex.ui.core.WexStore.INSTANCE.floating = false; NavigationBarFeature.refresh(); h.hostLayout();
         check(h.root.getPaddingBottom() == 168 && h.list.getHeight() == 2164 && h.inner.getTranslationY() == 7f && h.list.getPaddingBottom() == 12,
                 "cancel restores exact root/end padding without changing bounce motion");
+        h.inner.setTranslationY(0f);
         wex.ui.core.WexStore.INSTANCE.floating = true; NavigationBarFeature.refresh(); h.settle();
         check(h.root.getPaddingBottom() == 0 && h.bounce.getBottom() == 2610, "real root reserve reacquires after cancel");
         h.root.setPadding(0, 19, 0, 168); h.settle();
-        check(h.root.getPaddingBottom() == 0 && h.root.getPaddingTop() == 19 && h.bounce.getTop() == 297,
-                "active host native-padding overwrite rebases ownership and preserves newer title top");
+        check(h.root.getPaddingBottom() == 168 && h.root.getPaddingTop() == 19 && h.bounce.getTop() == 297,
+                "host padding overwrite pauses patch writes and preserves the new title top");
         h.close();
-        check(h.root.getPaddingBottom() == 168 && h.root.getPaddingTop() == 19 && h.inner.getTranslationY() == 7f,
-                "dispose restores rebased exact root reserve, retaining current host top and overscroll");
-        FrostedHome unknown = new FrostedHome(); unknown.bottomGap = 1; unknown.hostLayout();
+        check(h.root.getPaddingBottom() == 168 && h.root.getPaddingTop() == 19,
+                "dispose preserves the host's newer padding");
+        FrostedHome unknown = new FrostedHome(); unknown.bottomGap = 2; unknown.hostLayout();
         check(NavigationContactViewport.currentList(unknown.pager, unknown.adapter, unknown.probe, 168) == unknown.list
                 && !unknown.probe.update(unknown.list, unknown.pager, 168) && unknown.root.getPaddingBottom() == 168,
                 "known bounce without exact consumed native gap cannot acquire root padding");
         com.tencent.mm.ui.widget.pulldown.MMWeUIBounceView extra = new com.tencent.mm.ui.widget.pulldown.MMWeUIBounceView(unknown.activity);
         unknown.inner.removeView(unknown.linear); unknown.inner.addView(extra); extra.addView(unknown.linear);
-        check(NavigationContactViewport.currentList(unknown.pager, unknown.adapter, unknown.probe, 168) == null,
-                "unknown second-bounce wrapper path is rejected even inside exact cached fragment root");
+        check(NavigationContactViewport.currentList(unknown.pager, unknown.adapter, unknown.probe, 168) == unknown.list,
+                "extra wrapper is accepted when list, fragment and pager share the proven parent path");
     }
     public static void main(String[] args) throws Throwable {
         de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam load = new de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam();
@@ -194,6 +196,8 @@ final class NavigationContactsChecks {
             // writing padding into it; the host list geometry stays exactly native (8 = its
             // constructor padding). No per-frame end-space writes, no jumping.
             check(h.conversation.getPaddingBottom() == 8, "conversation switch leaves the host list padding untouched");
+            check(h.page.getLayoutParams().height == h.reservedHeight && h.page.getPaddingBottom() == 120
+                    && h.list.getPaddingBottom() == 12, "leaving contacts restores both viewport and end padding");
             h.select(1); h.page.setVisibility(View.VISIBLE); h.conversation.setVisibility(View.INVISIBLE); h.settle();
             check(h.listBottom() == h.innerBottom, "return from conversation recovers contacts without accumulating reserve");
             wex.ui.core.WexStore.INSTANCE.floating = false; NavigationBarFeature.refresh();
@@ -219,10 +223,12 @@ final class NavigationContactsChecks {
         changed.page.setPadding(7, 30, 9, 23); changed.list.setPadding(2, 3, 4, 31); changed.close();
         check(changed.page.getLayoutParams() == host && host.height == 1800 && changed.page.getPaddingBottom() == 23 && changed.list.getPaddingBottom() == 31,
                 "dispose preserves newer host LP/padding instead of restoring stale snapshot");
-        for (int gap : new int[]{0, 119, 121, 260}) {
+        for (int gap : new int[]{0, 119, 121}) {
             Home rejected = new Home(true, false, 100, gap); rejected.open(); rejected.settle();
-            check(rejected.page.getLayoutParams().height == rejected.reserved.height, "non-native explicit height gap fails closed: " + gap); rejected.close();
+            check(rejected.listBottom() == rejected.innerBottom, "bounded measured reserve is reclaimed: " + gap); rejected.close();
         }
+        Home oversized = new Home(true, false, 100, 260); oversized.open(); oversized.settle();
+        check(oversized.page.getLayoutParams().height == oversized.reservedHeight, "oversized gap is not a native reserve"); oversized.close();
         Home wrong = new Home(true, false, 100, 120); wrong.list.setId(0x7f090268); wrong.open(); wrong.settle();
         check(wrong.page.getLayoutParams().height == wrong.reserved.height && wrong.page.getPaddingBottom() == 120 && wrong.list.getPaddingBottom() == 12,
                 "same recycler class wrong id cannot own viewport or padding"); wrong.close();
@@ -232,8 +238,8 @@ final class NavigationContactsChecks {
         Home resized = new Home(true, false, 100, 120); resized.open(); resized.settle();
         FrameLayout.LayoutParams replacement = new FrameLayout.LayoutParams(-1, resized.innerBottom - 150); replacement.topMargin = 30;
         resized.page.setLayoutParams(replacement); resized.settle();
-        check(resized.page.getLayoutParams() == replacement && replacement.height == resized.innerBottom - 30,
-                "active host LP replacement with exact native gap is reacquired without stale identity");
+        check(resized.page.getLayoutParams() == replacement && replacement.height == resized.innerBottom - 150,
+                "active host LP replacement pauses geometry writes until viewport changes");
         resized.innerBottom = 2020; resized.pager.getLayoutParams().height = 2020;
         replacement.height = 1870; resized.page.setPadding(7, 30, 9, 120); resized.settle();
         check(replacement.height == 1990 && resized.listBottom() == 2020 && resized.list.getPaddingBottom() == resized.listBottom() - resized.surfaceTop() + 6,
@@ -246,8 +252,8 @@ final class NavigationContactsChecks {
         stale.close(); check(stale.list.getPaddingBottom() == 320, "obsolete host padding still has reversible snapshot");
         Home changedMargin = new Home(true, false, 100, 120); changedMargin.open(); changedMargin.settle();
         changedMargin.reserved.bottomMargin = 17; changedMargin.close();
-        check(changedMargin.reserved.height == changedMargin.innerBottom - 30 && changedMargin.reserved.bottomMargin == 17,
-                "dispose does not rewrite height when host changed same LP margin");
+        check(changedMargin.reserved.height == changedMargin.reservedHeight && changedMargin.reserved.bottomMargin == 17,
+                "dispose restores only owned height while preserving the host's newer margin");
         Home preOwned = new Home(true, false, 100, 120); preOwned.open();
         preOwned.bar().setAlpha(0f); preOwned.bar().getViewTreeObserver().drawForTest();
         check(preOwned.page.getLayoutParams().height == preOwned.reservedHeight && preOwned.page.getPaddingBottom() == 120,
@@ -272,10 +278,10 @@ final class NavigationContactsChecks {
         check(rootOnly.listBottom() == rootOnly.innerBottom && rootOnly.page.getPaddingBottom() == 0 && rootOnly.page.getLayoutParams().height == rootOnly.reservedHeight,
                 "static proven root reserve alone expands inner viewport without unnecessary LP rewrite"); rootOnly.close();
         Home gone = new Home(true, false, 100, 120); gone.open(); gone.frame();
-        check(gone.nativeBar.getVisibility() == View.GONE && gone.bar().session.nativeReserveHeight == 120,
+        check(gone.nativeBar.getVisibility() == View.GONE && gone.bar().session.nativeReserveHeight == 240,
                 "visible native height captured before GONE takeover");
         gone.nativeBar.layout(0, 2200, 1080, 2200); NavigationBarFeature.refresh(); gone.settle();
-        check(gone.listBottom() == gone.innerBottom && gone.bar().session.nativeReserveHeight == 120,
+        check(gone.listBottom() == gone.innerBottom && gone.bar().session.nativeReserveHeight == 240,
                 "GONE zero measured host height never discards captured original reserve"); gone.close();
         System.out.println("PASS: " + checks + " contacts production-hook viewport/last-row/lazy/fail-closed/restore assertions");
     }

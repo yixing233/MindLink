@@ -94,7 +94,7 @@ public final class SettingsThemeChecks {
         check(host.getChildCount() == 1 && card.getParent() == host, "no extra wrapper");
         check(card.getChildCount() == 1 && preview.getBackground() == userBackground, "user preview untouched");
         check(fill(card).getColor().getDefaultColor() == SettingsTheme.card(context), "uniform root surface");
-        check(fill(card).getCornerRadius() == 60f, "20dp root corners");
+        check(fill(card).getCornerRadius() == dev.mindlink.ui.MindLinkColors.CARD_RADIUS_DP * 3f, "shared Material3 root corners");
         check(card.getElevation() == 0f && card.getTranslationZ() == 0f && card.getStateListAnimator() == null,
                 "no inconsistent shadow or host state animator");
         check(card.getBackgroundTintList() == null, "host tint does not override card");
