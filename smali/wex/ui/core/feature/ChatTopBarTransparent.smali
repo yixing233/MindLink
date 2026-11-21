@@ -2,6 +2,9 @@
 .super Ljava/lang/Object;
 .source "SourceFile"
 
+# 来源：聊天顶栏透明档位与头像/昵称同步的设计参照 WeKit 的
+# features/items/chat/FloatingChatHeader.kt（GPL-3.0）。
+
 
 # annotations
 .annotation build Landroidx/compose/runtime/internal/StabilityInferred;

@@ -59,7 +59,6 @@ public final class PickCallback implements InvocationHandler {
         try {
             if ("invoke".equals(method.getName()) && args != null && args.length == 1) {
                 String saved = args[0] == null ? "" : String.valueOf(args[0]);
-                toast("已保存，点「一键重启」后生效");
                 try {
                     de.robv.android.xposed.XposedBridge.log("WEX: 选图结果 -> " + saved);
                 } catch (Throwable ignore) {

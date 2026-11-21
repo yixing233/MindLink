@@ -83,18 +83,30 @@
 
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
-    iget-boolean v0, p0, Lz4/w;->c:Z
+    invoke-virtual {p0}, Landroid/view/View;->getContext()Landroid/content/Context;
 
-    if-eqz v0, :cond_0
+    move-result-object v0
 
-    iget v0, p0, Lz4/w;->g:I
+    iget-boolean v2, p0, Lz4/w;->c:Z
 
-    goto :goto_0
+    invoke-static {v0, v2}, Lwex/ui/core/feature/SettingsTheme;->switchThumb(Landroid/content/Context;Z)I
 
-    :cond_0
-    iget v0, p0, Lz4/w;->h:I
+    move-result v0
 
-    :goto_0
+    iget-object v2, p0, Lz4/w;->k:Landroid/graphics/Paint;
+
+    invoke-virtual {v2, v0}, Landroid/graphics/Paint;->setColor(I)V
+
+    invoke-virtual {p0}, Landroid/view/View;->getContext()Landroid/content/Context;
+
+    move-result-object v0
+
+    iget-boolean v2, p0, Lz4/w;->c:Z
+
+    invoke-static {v0, v2}, Lwex/ui/core/feature/SettingsTheme;->switchTrack(Landroid/content/Context;Z)I
+
+    move-result v0
+
     iget-object v8, p0, Lz4/w;->f:Landroid/graphics/Paint;
 
     invoke-virtual {v8, v0}, Landroid/graphics/Paint;->setColor(I)V
@@ -123,20 +135,16 @@
 
     iget-boolean p1, p0, Lz4/w;->c:Z
 
-    iget v0, p0, Lz4/w;->j:F
-
     iget v2, p0, Lz4/w;->i:F
 
     if-eqz p1, :cond_1
 
-    sub-float/2addr v4, v2
-
-    sub-float/2addr v4, v0
+    sub-float/2addr v4, v6
 
     goto :goto_1
 
     :cond_1
-    add-float v4, v2, v0
+    move v4, v6
 
     :goto_1
     iget-object p0, p0, Lz4/w;->k:Landroid/graphics/Paint;

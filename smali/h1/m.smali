@@ -45,6 +45,12 @@
     return-void
 
     :pswitch_2
+    invoke-static {}, Lx4/u0;->isUiVisible()Z
+
+    move-result p0
+
+    if-eqz p0, :goto_1
+
     sget-object p0, Lx4/u0;->q:Landroid/view/View;
 
     if-nez p0, :cond_0
@@ -89,6 +95,12 @@
     return-void
 
     :pswitch_3
+    invoke-static {}, Lx4/u0;->isUiVisible()Z
+
+    move-result p0
+
+    if-eqz p0, :goto_2
+
     sget-object p0, Lx4/u0;->a:Lx4/u0;
 
     sget-object p0, Lx4/u0;->q:Landroid/view/View;
@@ -159,6 +171,12 @@
     return-void
 
     :pswitch_4
+    invoke-static {}, Lx4/u0;->isUiVisible()Z
+
+    move-result p0
+
+    if-eqz p0, :goto_4
+
     sget-object p0, Lx4/u0;->q:Landroid/view/View;
 
     if-nez p0, :cond_7

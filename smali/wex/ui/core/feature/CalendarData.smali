@@ -1854,6 +1854,17 @@
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
     :try_start_0
+    invoke-static {}, Lwex/ui/core/feature/LocationPrivacy;->isEnabled()Z
+
+    move-result v6
+
+    if-nez v6, :weather_network_allowed
+
+    const/4 v6, 0x0
+
+    goto :goto_0
+
+    :weather_network_allowed
     sget-object v3, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
 
     const-string v4, "wp_lat"
@@ -2167,6 +2178,23 @@
     invoke-virtual {p2}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
     :try_start_0
+    const-string v1, "https://api.open-meteo.com/"
+
+    invoke-virtual {p1, v1}, Ljava/lang/String;->startsWith(Ljava/lang/String;)Z
+
+    move-result v1
+
+    if-eqz v1, :http_network_allowed
+
+    invoke-static {}, Lwex/ui/core/feature/LocationPrivacy;->isEnabled()Z
+
+    move-result v1
+
+    if-nez v1, :http_network_allowed
+
+    return-object v0
+
+    :http_network_allowed
     new-instance v1, Ljava/net/URL;
 
     invoke-direct {v1, p1}, Ljava/net/URL;-><init>(Ljava/lang/String;)V

@@ -1,0 +1,742 @@
+{
+  "upstream": "https://github.com/Ujhhgtg/WeKit",
+  "upstreamAlsoCredits": "https://github.com/cwuom/WeKit",
+  "license": "GPL-3.0-only",
+  "dateModified": "2026-11-14",
+  "referenceRoot": "C:\\code\\WeKit",
+  "copiedAndModified": [
+    {
+      "source": "app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelDataCards.kt",
+      "sourceSha256": "0004f4b0aba45a75dae957763bf8401af960e379e09d67dd24b3b8cd2bab092a",
+      "sourceLines": 760,
+      "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelDataCards.kt",
+      "targetSha256": "3c0089d5b372404347a916d707852bf12ab66c34acf32af7e4d2ec418734f500",
+      "modifications": "resource namespace and platform localized context/error text only; DateTime/Weather/Wallet/Hitokoto bodies retained",
+      "diff": "HomeSidePanelDataCards.kt.patch"
+    },
+    {
+      "source": "app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelCardFrame.kt",
+      "sourceSha256": "0123433d60a6bbfe00e1ac578f881171b96815c45741d712fbcaaec8f5f0832c",
+      "sourceLines": 172,
+      "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelCardFrame.kt",
+      "targetSha256": "ab7176bad1a251c44dfaae1d9f0b0a012beb6c922f67112a91ede4a963390fb0",
+      "modifications": "package and resource names only; badge/card/animation bodies unchanged",
+      "diff": "HomeSidePanelCardFrame.kt.patch"
+    },
+    {
+      "source": "app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelLunarDate.kt",
+      "sourceSha256": "2a460d968acb4a8e5b580276dd1bad29a6cabe1dbfef8137be72fe9cfa9ee3af",
+      "sourceLines": 55,
+      "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelLunarDate.kt",
+      "targetSha256": "141b849d4e87c8fac29f20e787cdfac6dfff29a3d7c3579d4d1ceb0214f6cf49",
+      "modifications": "package only; ICU lunar calendar calculation and formatter unchanged",
+      "diff": "HomeSidePanelLunarDate.kt.patch"
+    },
+    {
+      "source": "app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelPreview.kt",
+      "sourceSha256": "4e702d039de8bb89534af8d915f1230614c6f033e63eb1db7909a18faf6be95a",
+      "sourceLines": 28,
+      "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelPreview.kt",
+      "targetSha256": "3fc0c9b1d85ce79db3427d34a6d6a84102d643535f2313872e9053ae5316ae3e",
+      "modifications": "package only; original content variants retained",
+      "diff": "HomeSidePanelPreview.kt.patch"
+    },
+    {
+      "source": "app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelLayout.kt",
+      "sourceSha256": "537fead6aba1a166fffeedde4d0963d5663838308e98eed6a5c6e2990668d6c6",
+      "sourceLines": 308,
+      "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelLayout.kt",
+      "targetSha256": "4e802d6dfef61f9cbea3c516d9f68928e6e5541f1d9a2c4813cbaa183b8b5026",
+      "modifications": "retain original card/action/image models and constants; serialization/codec/host migration omitted; config-only weather city nullable during loading",
+      "diff": "HomeSidePanelLayout.kt.patch"
+    },
+    {
+      "source": "app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelWeather.kt",
+      "sourceSha256": "2d2207a28725be0530a4379030ebe0624441055692ea175d56143f40c7663abe",
+      "sourceLines": 727,
+      "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelWeather.kt",
+      "targetSha256": "a456bed6e815423aed214401a267ddd3b44ce006255602740f4ad3ea999db26a",
+      "modifications": "full display models and original icon-code mapping only; network/location/database/services/default city omitted; errors are platform strings",
+      "diff": "HomeSidePanelWeather.kt.patch"
+    },
+    {
+      "source": "app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelWallet.kt",
+      "sourceSha256": "2dd67606a43a8f7336064346562849708c34c09383e9d90fde12357d9d0d28b5",
+      "sourceLines": 97,
+      "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelWallet.kt",
+      "targetSha256": "c48c59ca70de801887c3299aa49efc54d34b432d27cb84ab9c8d55e1fe4be36f",
+      "modifications": "original balance display state/toggle/reset/decimal formatter only; host cache service/hook not copied",
+      "diff": "HomeSidePanelWallet.kt.patch"
+    },
+    {
+      "source": "app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelHitokoto.kt",
+      "sourceSha256": "5c6f7e24b470e15811e3e5910a9d09724f219a1bd4351ab1c22e6ea3a37c4427",
+      "sourceLines": 252,
+      "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelHitokoto.kt",
+      "targetSha256": "6601cf440c3d0359c8a2393ae0ffd176069eb4a10bc3b9c2c956cff679e3a74b",
+      "modifications": "retain full snapshot/settings/loading-ready-error models; no network client, request pool or host service copied",
+      "diff": "HomeSidePanelHitokoto.kt.patch"
+    },
+    {
+      "source": "app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelHome.kt",
+      "sourceSha256": "ff39ce97b45033e4b45ef4ca23b13ccaf5ad80260e6956fc79a984c9d9095ff4",
+      "sourceLines": 722,
+      "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelHome.kt",
+      "targetSha256": "3da5c7dd6bcd2012d249685bb3f9378d09c742af8d155b19e42cc715b293d55b",
+      "modifications": "original LazyColumn, in-place editor pulse, 58dp header, 32dp toolbar and all card dispatch retained; drag/full editor host omitted; typed callbacks/platform Bitmap bind existing host",
+      "diff": "HomeSidePanelHome.kt.patch"
+    },
+    {
+      "source": "app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelContent.kt",
+      "sourceSha256": "2c8103c5ce59416ba4b86ef8042be42eb2600308bf6aa81866641e74fccc7262",
+      "sourceLines": 221,
+      "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelContent.kt",
+      "targetSha256": "23e403fc0436c49546bf5322b853c4dfd7c3425b212460d127d6b91e5ad04852",
+      "modifications": "retain exact fill-size Material3 surface with topEnd/bottomEnd 28dp and original loading; 2026-11-16: editor routes (edit_home/add_card/card_settings) render inside the SAME Compose root, replacing the removed Java LinearLayout editor (WeKit HomeSidePanelEditor semantics)",
+      "diff": "HomeSidePanelContent.kt.patch"
+    },
+    {
+      "source": "app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelActionCards.kt",
+      "sourceSha256": "e1e5355eebfff15489f7a4016dc0dcb7ab5fc0a5f5a2e4be54ceb47c3b104bd4",
+      "sourceLines": 584,
+      "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelActionCards.kt",
+      "targetSha256": "adf6c868de2f04a805aedb06b4e9a0405b1056191778e5d2f674b57561bc6a67",
+      "modifications": "original FlowRow 3-column tiles/ListItems, shapes, spacing, badges and reflow animation retained; only drag insertion gaps/dragged preview omitted",
+      "diff": "HomeSidePanelActionCards.kt.patch"
+    },
+    {
+      "source": "app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelActions.kt",
+      "sourceSha256": "eed8ae0ccd53ee117967323da0b0fa712daceaf3f33e11d7a09c812ff387ebaa",
+      "sourceLines": 208,
+      "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelActions.kt",
+      "targetSha256": "ccc3b3a4bd47f2a6940aa0fdbd33cdade790af08772bfbbbb9c2971c46b08363",
+      "modifications": "original enum-label-MaterialSymbols mapping only; all native action/payment/service executor code remains in Java callbacks",
+      "diff": "HomeSidePanelActions.kt.patch"
+    },
+    {
+      "source": "app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelImageCard.kt",
+      "sourceSha256": "9c58967bc6be68e269225dd41f120e9e58d1057e5f7dc774d42338845ca13ce9",
+      "sourceLines": 418,
+      "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelImageCard.kt",
+      "targetSha256": "53588c6d8dda700f37bb859e73e5cc2ec8253f99081732b712c7a813a4efb1b1",
+      "modifications": "original image shape/heights/scale modes/placeholders/resize/dropdown bodies retained; already-decoded platform Bitmap replaces file/Coil/global image loader (no image networking)",
+      "diff": "HomeSidePanelImageCard.kt.patch"
+    },
+    {
+      "source": "app/src/main/java/dev/ujhhgtg/wekit/ui/content/m3/DropDownMenuWidget.kt",
+      "sourceSha256": "af8ad9ae5ef2e10e2b4e8bac29d2973f9608ede6079efc84287ec8745921baf5",
+      "sourceLines": 102,
+      "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelImageDropdown.kt",
+      "targetSha256": "1e4faf868383e9f672d0ba0305618101cc92eb864602c566606bedc8f471c579",
+      "modifications": "retain original GPL-3.0 InstallerX Revived expressive option dropdown used by WeKit image badge; omit unrelated BaseWidget",
+      "diff": "HomeSidePanelImageDropdown.kt.patch"
+    },
+    {
+      "source": "app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelDragState.kt",
+      "sourceSha256": "3c64c34a53e37a7b9ded8b643e614e8dfb3156b72c97369a02539d40b6934882",
+      "sourceLines": 603,
+      "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelPointerLifecycle.kt",
+      "targetSha256": "2f4ddc0a99463cd59bb5012faa4ea65569816627e37519169e981f7b0f875d01",
+      "modifications": "original pointer up/cancel decision only, required by image resize; not the drag host",
+      "diff": "HomeSidePanelPointerLifecycle.kt.patch"
+    },
+    {
+      "source": "app/src/main/java/dev/ujhhgtg/wekit/ui/utils/theme/InjectedUiTheme.kt",
+      "sourceSha256": "3ef246258f3440e43a04a4c1c30a970ea41856f9add8a0f192b62301e28f1b72",
+      "sourceLines": 43,
+      "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelTheme.kt",
+      "targetSha256": "af25315bc88459a50fbe5a635931d006a4044d8515f0afb17456354633ac9a48",
+      "modifications": "retain original WeKit injected default green color schemes and MaterialExpressiveTheme/expressive motion; no module theme preference/HostInfo dependencies",
+      "diff": "HomeSidePanelTheme.kt.patch"
+    },
+    {
+      "source": "app/src/main/java/dev/ujhhgtg/wekit/ui/utils/theme/Color.kt",
+      "sourceSha256": "3bd41ebc3a9096c1b01fea967855eae462d7499f92ae39fc9bbd8c09dab43330",
+      "copiedSymbols": "default light/dark color constants (no contrast variants)"
+    },
+    {
+      "source": "app/src/main/java/dev/ujhhgtg/wekit/ui/utils/theme/Theme.kt",
+      "sourceSha256": "624dd5464a593604bc2529a9a9f62e602fa3e06bcb0e3f97cd6a5b12a463e14e",
+      "copiedSymbols": "lightScheme, darkScheme"
+    }
+  ],
+  "resources": [
+    {
+      "source": "app/src/main/res/values/strings.xml",
+      "sourceSha256": "ee9301cd44f30608e366e3daf195b33cffe8feb22d2b89cbf279fb3623d19faf",
+      "entries": [
+        "action_add",
+        "fab_default_scan",
+        "fab_default_moments",
+        "fab_default_wallet",
+        "fab_default_channels",
+        "fab_default_settings",
+        "fab_default_favorites",
+        "fab_default_module_settings",
+        "fab_default_restart_wechat",
+        "fab_default_force_stop",
+        "fab_default_mark_all_read",
+        "home_side_panel_action_add_friend",
+        "loading",
+        "unknown",
+        "home_side_panel_wechat_user",
+        "home_side_panel_scan",
+        "home_side_panel_open_profile",
+        "home_side_panel_settings",
+        "home_side_panel_online",
+        "home_side_panel_fetch_failed",
+        "home_side_panel_refresh_status",
+        "home_side_panel_date_pattern",
+        "home_side_panel_lunar_prefix",
+        "home_side_panel_lunar_leap_prefix",
+        "home_side_panel_lunar_separator",
+        "home_side_panel_lunar_month_names",
+        "home_side_panel_lunar_day_names",
+        "home_side_panel_greeting_morning",
+        "home_side_panel_greeting_afternoon",
+        "home_side_panel_greeting_evening",
+        "home_side_panel_weather",
+        "home_side_panel_updated_at",
+        "home_side_panel_feels_like",
+        "home_side_panel_no_weather_data",
+        "home_side_panel_high_low",
+        "home_side_panel_humidity",
+        "home_side_panel_wind_speed",
+        "home_side_panel_current_balance",
+        "home_side_panel_payment_code",
+        "home_side_panel_hitokoto",
+        "home_side_panel_hitokoto_loading",
+        "home_side_panel_hitokoto_tap",
+        "home_side_panel_open_panel",
+        "home_side_panel_fallback_initial",
+        "home_side_panel_discard_editing",
+        "home_side_panel_save_editing",
+        "home_side_panel_add_card",
+        "home_side_panel_card_image",
+        "home_side_panel_image_select",
+        "home_side_panel_image_replace",
+        "home_side_panel_image_enter_edit",
+        "home_side_panel_image_load_failed",
+        "home_side_panel_image_load_failed_replace",
+        "home_side_panel_image_scale_mode",
+        "home_side_panel_image_scale_crop",
+        "home_side_panel_image_scale_fit",
+        "home_side_panel_image_scale_stretch",
+        "home_side_panel_image_scale_auto_ratio",
+        "home_side_panel_image_resize",
+        "home_side_panel_image_aspect_ratio_unsupported",
+        "home_side_panel_edit_card",
+        "home_side_panel_delete_card",
+        "home_side_panel_delete_action",
+        "home_side_panel_delete_empty_action_card",
+        "weather_sunny",
+        "weather_cloudy",
+        "weather_overcast",
+        "weather_shower",
+        "weather_thunderstorm",
+        "weather_hail_thunderstorm",
+        "weather_sleet",
+        "weather_light_rain",
+        "weather_moderate_rain",
+        "weather_heavy_rain",
+        "weather_rainstorm",
+        "weather_heavy_rainstorm",
+        "weather_severe_rainstorm",
+        "weather_snow_shower",
+        "weather_light_snow",
+        "weather_moderate_snow",
+        "weather_heavy_snow",
+        "weather_blizzard",
+        "weather_fog",
+        "weather_freezing_rain",
+        "weather_dust_storm",
+        "weather_light_to_moderate_rain",
+        "weather_moderate_to_heavy_rain",
+        "weather_heavy_rain_to_rainstorm",
+        "weather_rainstorm_to_heavy",
+        "weather_heavy_to_severe_rainstorm",
+        "weather_light_to_moderate_snow",
+        "weather_moderate_to_heavy_snow",
+        "weather_heavy_snow_to_blizzard",
+        "weather_dust",
+        "weather_sand",
+        "weather_severe_dust_storm",
+        "weather_squall",
+        "weather_tornado",
+        "weather_blowing_snow",
+        "weather_mist",
+        "weather_haze",
+        "home_side_panel_attribution_author_source",
+        "home_side_panel_attribution_author",
+        "home_side_panel_attribution_source"
+      ]
+    },
+    {
+      "source": "app/src/main/res/values-zh-rCN/strings.xml",
+      "sourceSha256": "5ce2c1a20ba775378fa776a56d8007fa18350848292a704ae6e858acd2f6efe4",
+      "entries": [
+        "action_add",
+        "fab_default_scan",
+        "fab_default_moments",
+        "fab_default_wallet",
+        "fab_default_channels",
+        "fab_default_settings",
+        "fab_default_favorites",
+        "fab_default_module_settings",
+        "fab_default_restart_wechat",
+        "fab_default_force_stop",
+        "fab_default_mark_all_read",
+        "home_side_panel_action_add_friend",
+        "loading",
+        "unknown",
+        "home_side_panel_wechat_user",
+        "home_side_panel_scan",
+        "home_side_panel_open_profile",
+        "home_side_panel_settings",
+        "home_side_panel_online",
+        "home_side_panel_fetch_failed",
+        "home_side_panel_refresh_status",
+        "home_side_panel_date_pattern",
+        "home_side_panel_lunar_prefix",
+        "home_side_panel_lunar_leap_prefix",
+        "home_side_panel_lunar_month_names",
+        "home_side_panel_lunar_day_names",
+        "home_side_panel_greeting_morning",
+        "home_side_panel_greeting_afternoon",
+        "home_side_panel_greeting_evening",
+        "home_side_panel_weather",
+        "home_side_panel_updated_at",
+        "home_side_panel_feels_like",
+        "home_side_panel_no_weather_data",
+        "home_side_panel_high_low",
+        "home_side_panel_humidity",
+        "home_side_panel_wind_speed",
+        "home_side_panel_current_balance",
+        "home_side_panel_payment_code",
+        "home_side_panel_hitokoto",
+        "home_side_panel_hitokoto_loading",
+        "home_side_panel_hitokoto_tap",
+        "home_side_panel_open_panel",
+        "home_side_panel_fallback_initial",
+        "home_side_panel_discard_editing",
+        "home_side_panel_save_editing",
+        "home_side_panel_add_card",
+        "home_side_panel_card_image",
+        "home_side_panel_image_select",
+        "home_side_panel_image_replace",
+        "home_side_panel_image_enter_edit",
+        "home_side_panel_image_load_failed",
+        "home_side_panel_image_load_failed_replace",
+        "home_side_panel_image_scale_mode",
+        "home_side_panel_image_scale_crop",
+        "home_side_panel_image_scale_fit",
+        "home_side_panel_image_scale_stretch",
+        "home_side_panel_image_scale_auto_ratio",
+        "home_side_panel_image_resize",
+        "home_side_panel_image_aspect_ratio_unsupported",
+        "home_side_panel_edit_card",
+        "home_side_panel_delete_card",
+        "home_side_panel_delete_action",
+        "home_side_panel_delete_empty_action_card",
+        "weather_sunny",
+        "weather_cloudy",
+        "weather_overcast",
+        "weather_shower",
+        "weather_thunderstorm",
+        "weather_hail_thunderstorm",
+        "weather_sleet",
+        "weather_light_rain",
+        "weather_moderate_rain",
+        "weather_heavy_rain",
+        "weather_rainstorm",
+        "weather_heavy_rainstorm",
+        "weather_severe_rainstorm",
+        "weather_snow_shower",
+        "weather_light_snow",
+        "weather_moderate_snow",
+        "weather_heavy_snow",
+        "weather_blizzard",
+        "weather_fog",
+        "weather_freezing_rain",
+        "weather_dust_storm",
+        "weather_light_to_moderate_rain",
+        "weather_moderate_to_heavy_rain",
+        "weather_heavy_rain_to_rainstorm",
+        "weather_rainstorm_to_heavy",
+        "weather_heavy_to_severe_rainstorm",
+        "weather_light_to_moderate_snow",
+        "weather_moderate_to_heavy_snow",
+        "weather_heavy_snow_to_blizzard",
+        "weather_dust",
+        "weather_sand",
+        "weather_severe_dust_storm",
+        "weather_squall",
+        "weather_tornado",
+        "weather_blowing_snow",
+        "weather_mist",
+        "weather_haze",
+        "home_side_panel_attribution_author_source",
+        "home_side_panel_attribution_author",
+        "home_side_panel_attribution_source"
+      ]
+    }
+  ],
+  "resourceAssetsLicense": "WeKit project GPL-3.0-only; only strings/arrays, no brand/avatar/banner/image assets copied",
+  "icons": {
+    "wrapperLicense": "MIT (Composable Horizons composeicons 2.2.1, cached POM)",
+    "geometryLicense": "Apache-2.0 (Google Material Symbols)",
+    "file": "thirdparty/material-symbols-selected-2.2.1.jar",
+    "sha256": "dbbc3443518e326dd717583ad8e5451b3e3ceab1ef3e01ab7faf325b187e9fe9",
+    "selected": [
+      {
+        "artifact": "com.composables:icons-material-symbols-cmp-android-debug:2.2.1",
+        "artifactSha256": "124577dfd2192fdd410e0a0ee2a51d60cf13f8792dc8c864bf4096cd71b79db1",
+        "class": "com/composables/icons/materialsymbols/MaterialSymbols$Outlined.class",
+        "sha256": "adb1f230c6d6e530fe3c3a7b373acf8e4937df73ea098d4b9715b1c08c72fbde"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-cmp-android-debug:2.2.1",
+        "artifactSha256": "124577dfd2192fdd410e0a0ee2a51d60cf13f8792dc8c864bf4096cd71b79db1",
+        "class": "com/composables/icons/materialsymbols/MaterialSymbols$OutlinedFilled.class",
+        "sha256": "952456866d17eb9d51b4fa23414370e72b0b49c4a8f5e4d1e98494ca7cbd9c05"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-cmp-android-debug:2.2.1",
+        "artifactSha256": "124577dfd2192fdd410e0a0ee2a51d60cf13f8792dc8c864bf4096cd71b79db1",
+        "class": "com/composables/icons/materialsymbols/MaterialSymbols$Rounded.class",
+        "sha256": "ee21dd9c78727234c1e3837ebf7f128291f95c3aa5840adaaf9fba6fc471d14d"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-cmp-android-debug:2.2.1",
+        "artifactSha256": "124577dfd2192fdd410e0a0ee2a51d60cf13f8792dc8c864bf4096cd71b79db1",
+        "class": "com/composables/icons/materialsymbols/MaterialSymbols$RoundedFilled.class",
+        "sha256": "eec93b84063f45b13887c288625ab603887215beccc02b0e049a79a29e992fb7"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-cmp-android-debug:2.2.1",
+        "artifactSha256": "124577dfd2192fdd410e0a0ee2a51d60cf13f8792dc8c864bf4096cd71b79db1",
+        "class": "com/composables/icons/materialsymbols/MaterialSymbols$Sharp.class",
+        "sha256": "231b1aa0461806963942f3e75270bec0057499f1cfcc20c370b8e2964c94d2b8"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-cmp-android-debug:2.2.1",
+        "artifactSha256": "124577dfd2192fdd410e0a0ee2a51d60cf13f8792dc8c864bf4096cd71b79db1",
+        "class": "com/composables/icons/materialsymbols/MaterialSymbols$SharpFilled.class",
+        "sha256": "a9703528259a64b60c213e34c9b5197b92f800843066d69afd2abc3dced5a40b"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-cmp-android-debug:2.2.1",
+        "artifactSha256": "124577dfd2192fdd410e0a0ee2a51d60cf13f8792dc8c864bf4096cd71b79db1",
+        "class": "com/composables/icons/materialsymbols/MaterialSymbols.class",
+        "sha256": "51dec83a2468169ef1322261278d0c62c4ac77509b9efbab1d8ab612705c4133"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-cmp-android-debug:2.2.1",
+        "artifactSha256": "124577dfd2192fdd410e0a0ee2a51d60cf13f8792dc8c864bf4096cd71b79db1",
+        "class": "META-INF/icons-material-symbols-cmp_debug.kotlin_module",
+        "sha256": "c8eecc668266bfd6e701e3d72060b961744b8923624430effe531d70fcaf14f0"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/AddKt.class",
+        "sha256": "99378643191876d2754d0531254a755636ef56275e74a6ef272e325a11c316be"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/AirKt.class",
+        "sha256": "6490cfa4cd40987b48fed81d92a86c9b7341de3cde1995012cc752b164d2071f"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/Aspect_ratioKt.class",
+        "sha256": "af69369a46c637ded72fdeb1f55f37e8d3d32a3dd7ed3187fbd46374924f9c36"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/Chevron_rightKt.class",
+        "sha256": "a90fd8b6f8ec45e47703bec90b6e6586aeef72d24d391d86f28f46ff29429d6c"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/CloseKt.class",
+        "sha256": "41901ba72fc3e599dc20d435b5c9c56cdea02b5eb7088c6fd9cd39c43f1b8d1c"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/CloudKt.class",
+        "sha256": "17ccee3f88567ddff583d11a2af28cb44fda181355992f69e23a06865ce9d9e9"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/Cloudy_snowingKt.class",
+        "sha256": "de518b9c4760d40da6ff0a73b69fec6e5c3a9dafda3ab2443d64df9b9ee07c79"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/CycloneKt.class",
+        "sha256": "ce3b80eaf3f6767d53f39d9da30e52a3a1234cdccc86afe718c4b6cf2f1a8f8a"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/Device_thermostatKt.class",
+        "sha256": "a71defa7b68a77daa579bef21779d72c339afc338c5604400d650029a1417c2e"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/Drag_handleKt.class",
+        "sha256": "5eb248a2777eb1f15c8e60dd737d301564100f60642e81bf3973b85384dd1ec1"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/EditKt.class",
+        "sha256": "cc23652bed9529dfca7f885871aa19fcd995a7ee6b67e9334fb6a79b105f35a0"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/FoggyKt.class",
+        "sha256": "4090dbd7029e170db96923f3e55424923139d4ffe35edac1a30f89104314690c"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/Format_quoteKt.class",
+        "sha256": "ddaca06a0e9814d5a5d320513de1f45467983d4fe48677f3f83b1ac1f40375f6"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/GrainKt.class",
+        "sha256": "80d25f1af5280b27de4da2fe7c4096ca07b285ecc53473969934fc8a6f67051b"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/Humidity_percentageKt.class",
+        "sha256": "a6e271fada4d20347b003e06eae48935370cdb2088486e06f3028acbeb9c0494"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/Location_onKt.class",
+        "sha256": "509157537d58f4a2a9fe881b4bab748602fffc28827787263378c2715bcba3e9"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/Partly_cloudy_dayKt.class",
+        "sha256": "22f4c9a7269e41d34e536b544fc264fb523ec4c25523ade700855c2976d82a7d"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/Qr_code_scannerKt.class",
+        "sha256": "fc2fdaedbaa9eba419935ea6dd6f552a43b3d3b2eb6e29e589da932f6c8458a5"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/Question_markKt.class",
+        "sha256": "952d21d4e0b6ac556accc9f810e815c99cc85709b15ad91281db762b24765049"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/RainyKt.class",
+        "sha256": "2be365eb3f7c1230c14a941c7fe8e671834cbad32944e58dc43481a267e5f29c"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/Rainy_heavyKt.class",
+        "sha256": "755d0d01d8fbff124408b5b701b3146a116cf9ae262b9304d121db460df60162"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/Rainy_lightKt.class",
+        "sha256": "7ce8cca639b3d84ed367ab950c9563b6df65c977af7c7db75d9ba2d9c0c99599"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/Rainy_snowKt.class",
+        "sha256": "cd16a48c381406adf96bb38f895696e0c09e9f2468bffa78e4b6e4a50f17cd08"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/RefreshKt.class",
+        "sha256": "d8c5bd7663b80fbf43b3472df8dab315d3be7b4fef0babedbac27481819391f5"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/SaveKt.class",
+        "sha256": "67eb6da9c645d7884bea669db15abb1f21544048b39f32f4ab80cbf23e6c8bfd"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/SettingsKt.class",
+        "sha256": "ccf877fc9e177ba120397183b9f92f89f27b68ab8936f363fe595d8e5d0eed0e"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/SnowingKt.class",
+        "sha256": "5573b1bdca42c85379a5e0e76a5685a7b331c05541d2ca65b9e064046e626e89"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/Snowing_heavyKt.class",
+        "sha256": "5e94223af50f86d8717c5ad0517bf3d418b07fe87a93cbf1f4f6a2c819d378ce"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/StormKt.class",
+        "sha256": "04a86e534771f150aae08a15037183a79b71d7c49de4f1f8e1619eee3e0469d0"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/SunnyKt.class",
+        "sha256": "063eb53131b79b4189a8ef9b7d7888ea3fc47b522a75f14a1db7c3fc70a896af"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/Sunny_snowingKt.class",
+        "sha256": "344de5b709e278391cea7051b90350f65b9261455b0e278122a647d026671123"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/ThunderstormKt.class",
+        "sha256": "89f14f57c6b179a12518c0b04eb5710138204fa9c7d7a6791efeac67fab3372a"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/TornadoKt.class",
+        "sha256": "627951d7ca6a435f2edaf28df9b444cc9194b10143d15b947b0ca3d5b01d8425"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/WalletKt.class",
+        "sha256": "d8c123d6ee9f009cc6523fee5049d6cb8830359000a5ce7338cc6fac65348083"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/Weather_hailKt.class",
+        "sha256": "061218a2760bd98b893a68f28363e84b28fde20ec8b22f608b4c9675ec4f5e2a"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "com/composables/icons/materialsymbols/outlined/Weather_snowyKt.class",
+        "sha256": "af3613e147606f88a4eea68d931715866b373ab3c6afce92e64ab8145d156f07"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-cmp-android-debug:2.2.1",
+        "artifactSha256": "0f77e6d3024ec88b5060bdbf1ff342d577ac5fc83157bf7210fd599de25be0e8",
+        "class": "META-INF/icons-material-symbols-outlined-cmp_debug.kotlin_module",
+        "sha256": "a393abcb72d223f32b880d322dc7022b5688ab3bc268ab72eb6487ca5bbabf80"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-filled-cmp-android-debug:2.2.1",
+        "artifactSha256": "00cbcb3ea1a813895a3cf966454f35fa71ec4662080d9af45f2d62a9db1bf4e2",
+        "class": "com/composables/icons/materialsymbols/outlinedfilled/CameraKt.class",
+        "sha256": "33001a488c17071650fc549f1d0180b5eeee29f86b9ccaefc1d9b57b8addc953"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-filled-cmp-android-debug:2.2.1",
+        "artifactSha256": "00cbcb3ea1a813895a3cf966454f35fa71ec4662080d9af45f2d62a9db1bf4e2",
+        "class": "com/composables/icons/materialsymbols/outlinedfilled/CancelKt.class",
+        "sha256": "1531dc936873bf99dba80e4807814f202d436df155c576f7a96e6d9af5728e60"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-filled-cmp-android-debug:2.2.1",
+        "artifactSha256": "00cbcb3ea1a813895a3cf966454f35fa71ec4662080d9af45f2d62a9db1bf4e2",
+        "class": "com/composables/icons/materialsymbols/outlinedfilled/ExtensionKt.class",
+        "sha256": "c5a521947682b3e6f20d0a85e71f245c625b2100c9041515fe400a6162b2b8f1"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-filled-cmp-android-debug:2.2.1",
+        "artifactSha256": "00cbcb3ea1a813895a3cf966454f35fa71ec4662080d9af45f2d62a9db1bf4e2",
+        "class": "com/composables/icons/materialsymbols/outlinedfilled/FavoriteKt.class",
+        "sha256": "217771d29e4d56e4d188d08dce6997e9a9a13c6521a92a7b11175e3d92d5a690"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-filled-cmp-android-debug:2.2.1",
+        "artifactSha256": "00cbcb3ea1a813895a3cf966454f35fa71ec4662080d9af45f2d62a9db1bf4e2",
+        "class": "com/composables/icons/materialsymbols/outlinedfilled/Mark_chat_readKt.class",
+        "sha256": "b77b81d1c7a81d2f3cb396f99eff746da833daa76924471347270377e01d053f"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-filled-cmp-android-debug:2.2.1",
+        "artifactSha256": "00cbcb3ea1a813895a3cf966454f35fa71ec4662080d9af45f2d62a9db1bf4e2",
+        "class": "com/composables/icons/materialsymbols/outlinedfilled/MovieKt.class",
+        "sha256": "9e3357a4bf23265a41079f17bc4a4d7e64c040e414831364a6e895e805b8c39e"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-filled-cmp-android-debug:2.2.1",
+        "artifactSha256": "00cbcb3ea1a813895a3cf966454f35fa71ec4662080d9af45f2d62a9db1bf4e2",
+        "class": "com/composables/icons/materialsymbols/outlinedfilled/Person_addKt.class",
+        "sha256": "c7331a33d747075d54e914faf9c037b68deba39831665d9280b31394ef1b5c22"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-filled-cmp-android-debug:2.2.1",
+        "artifactSha256": "00cbcb3ea1a813895a3cf966454f35fa71ec4662080d9af45f2d62a9db1bf4e2",
+        "class": "com/composables/icons/materialsymbols/outlinedfilled/Qr_code_scannerKt.class",
+        "sha256": "d730b055dc489704338c4271957d728d8ad21ad12f4780ebd569914112b3f01d"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-filled-cmp-android-debug:2.2.1",
+        "artifactSha256": "00cbcb3ea1a813895a3cf966454f35fa71ec4662080d9af45f2d62a9db1bf4e2",
+        "class": "com/composables/icons/materialsymbols/outlinedfilled/SettingsKt.class",
+        "sha256": "426b227894753e68bacebc9c07d4104fba6ec9c052b74f7f8a53255ed691443b"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-filled-cmp-android-debug:2.2.1",
+        "artifactSha256": "00cbcb3ea1a813895a3cf966454f35fa71ec4662080d9af45f2d62a9db1bf4e2",
+        "class": "com/composables/icons/materialsymbols/outlinedfilled/UpdateKt.class",
+        "sha256": "8761a092e31a93ad9c454f07111de3d673e30faefe04d17723f4dc588b845918"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-filled-cmp-android-debug:2.2.1",
+        "artifactSha256": "00cbcb3ea1a813895a3cf966454f35fa71ec4662080d9af45f2d62a9db1bf4e2",
+        "class": "com/composables/icons/materialsymbols/outlinedfilled/WalletKt.class",
+        "sha256": "25429d0517ebfd123290652080e956a73013c0883ade8c59ccf952b827511a45"
+      },
+      {
+        "artifact": "com.composables:icons-material-symbols-outlined-filled-cmp-android-debug:2.2.1",
+        "artifactSha256": "00cbcb3ea1a813895a3cf966454f35fa71ec4662080d9af45f2d62a9db1bf4e2",
+        "class": "META-INF/icons-material-symbols-outlined-filled-cmp_debug.kotlin_module",
+        "sha256": "911b8e1595d8dc81f2d85308f661081ac9118c1c75b0ac2a6fbaa94f13fac98e"
+      }
+    ]
+  },
+  "notCopied": [
+    "HomeSidePanel.kt 1549-line Xposed/drawer host",
+    "WeKit databases, services, network clients, weather city database, payment executors",
+    "Coil/network/image-loader",
+    "full drag/editor host",
+    "logos, avatars, banners, external assets"
+  ]
+}

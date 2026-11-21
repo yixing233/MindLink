@@ -153,6 +153,21 @@
 
     float-to-int v10, v0
 
+    invoke-static {}, Lwex/ui/core/feature/HomeSidebarCards;->hasWidthOverride()Z
+
+    move-result v0
+
+    if-eqz v0, :sidebar_width_done
+
+    invoke-static {v1}, Lwex/ui/core/feature/HomeSidebarCards;->width(Landroid/content/Context;)I
+
+    move-result v0
+
+    invoke-static {v10, v0}, Ljava/lang/Math;->min(II)I
+
+    move-result v10
+
+    :sidebar_width_done
     const/16 v0, 0xd7
 
     int-to-float v0, v0

@@ -1144,6 +1144,42 @@
 .method private final loadIcon(Ljava/lang/String;)Landroid/graphics/Bitmap;
     .locals 6
 
+    # --- Tabler 矢量图标：命中即用 ---
+    invoke-static {p1}, Lwex/ui/core/feature/TablerIcons;->has(Ljava/lang/String;)Z
+
+    move-result v0
+
+    if-eqz v0, :cond_tabler_miss
+
+    sget-object v0, Lwex/ui/core/feature/PlusCardFeature;->iconCache:Ljava/util/HashMap;
+
+    invoke-virtual {v0, p1}, Ljava/util/HashMap;->get(Ljava/lang/Object;)Ljava/lang/Object;
+
+    move-result-object v1
+
+    check-cast v1, Landroid/graphics/Bitmap;
+
+    if-eqz v1, :cond_tabler_render
+
+    return-object v1
+
+    :cond_tabler_render
+    const/high16 v1, 0x42140000    # 37.0f
+
+    invoke-static {p1, v1}, Lwex/ui/core/feature/TablerIcons;->bitmapDp(Ljava/lang/String;F)Landroid/graphics/Bitmap;
+
+    move-result-object v1
+
+    if-eqz v1, :cond_tabler_miss
+
+    invoke-virtual {v0, p1, v1}, Ljava/util/HashMap;->put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+
+    return-object v1
+
+    :cond_tabler_miss
+    # --- Tabler 分支结束 ---
+
+
     const-class p0, Landroid/content/res/AssetManager;
 
     sget-object v0, Lwex/ui/core/feature/PlusCardFeature;->iconCache:Ljava/util/HashMap;

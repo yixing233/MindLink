@@ -137,6 +137,12 @@
 
     :pswitch_5
     :try_start_3
+    invoke-static {p0}, Lwex/ui/core/feature/FilterBarPlacement;->isHome(Landroid/app/Activity;)Z
+
+    move-result v0
+
+    if-eqz v0, :cond_9
+
     sget-object v0, Lwex/ui/core/feature/ConversationFilterFeature;->INSTANCE:Lwex/ui/core/feature/ConversationFilterFeature;
 
     invoke-virtual {p0}, Landroid/app/Activity;->getWindow()Landroid/view/Window;
@@ -167,19 +173,19 @@
     goto/16 :goto_3
 
     :cond_2
-    invoke-static {p0}, Lwex/ui/core/feature/ConversationFilterFeature;->access$setListViewRef$p(Landroid/widget/ListView;)V
+    invoke-virtual {p0}, Landroid/view/View;->isAttachedToWindow()Z
 
-    invoke-virtual {p0}, Landroid/widget/ListView;->getAdapter()Landroid/widget/ListAdapter;
+    move-result v2
 
-    move-result-object v2
+    if-eqz v2, :cond_9
 
-    invoke-static {v0, v2}, Lwex/ui/core/feature/ConversationFilterFeature;->access$unwrapAdapter(Lwex/ui/core/feature/ConversationFilterFeature;Ljava/lang/Object;)Ljava/lang/Object;
+    invoke-static {v0, p0}, Lwex/ui/core/feature/ConversationFilterFeature;->access$refreshAdapterRef(Lwex/ui/core/feature/ConversationFilterFeature;Landroid/widget/ListView;)V
+
+    invoke-static {}, Lwex/ui/core/feature/ConversationFilterFeature;->access$getAdapterRef$p()Ljava/lang/Object;
 
     move-result-object v0
 
     if-eqz v0, :cond_7
-
-    invoke-static {v0}, Lwex/ui/core/feature/ConversationFilterFeature;->access$setAdapterRef$p(Ljava/lang/Object;)V
     :try_end_3
     .catchall {:try_start_3 .. :try_end_3} :catchall_3
 
@@ -293,33 +299,14 @@
     :catchall_2
     :cond_7
     :try_start_5
-    invoke-static {}, Lwex/ui/core/feature/ConversationFilterFeature;->access$getBarAdded$p()Z
-
-    move-result v0
-
-    if-nez v0, :cond_8
-
     sget-object v0, Lwex/ui/core/feature/ConversationFilterFeature;->INSTANCE:Lwex/ui/core/feature/ConversationFilterFeature;
 
     invoke-static {v0, p0}, Lwex/ui/core/feature/ConversationFilterFeature;->access$addFilterBar(Lwex/ui/core/feature/ConversationFilterFeature;Landroid/widget/ListView;)V
 
-    const/4 p0, 0x1
+    # Mount may release an old list; refresh only from this attached ListView.
+    invoke-static {v0, p0}, Lwex/ui/core/feature/ConversationFilterFeature;->access$refreshAdapterRef(Lwex/ui/core/feature/ConversationFilterFeature;Landroid/widget/ListView;)V
 
-    invoke-static {p0}, Lwex/ui/core/feature/ConversationFilterFeature;->access$setBarAdded$p(Z)V
-
-    :cond_8
-    # 从聊天页返回时微信会重建 adapter，旧 adapterRef 失效；
-    # 先用最新 ListView 的 adapter 刷新，再应用筛选，
-    # 否则表现成「筛选后点进会话、返回就跳回全部」。
-    sget-object v1, Lwex/ui/core/feature/ConversationFilterFeature;->INSTANCE:Lwex/ui/core/feature/ConversationFilterFeature;
-
-    sget-object v2, Lwex/ui/core/feature/ConversationFilterFeature;->listViewRef:Landroid/widget/ListView;
-
-    invoke-static {v1, v2}, Lwex/ui/core/feature/ConversationFilterFeature;->access$refreshAdapterRef(Lwex/ui/core/feature/ConversationFilterFeature;Landroid/widget/ListView;)V
-
-    sget-object p0, Lwex/ui/core/feature/ConversationFilterFeature;->INSTANCE:Lwex/ui/core/feature/ConversationFilterFeature;
-
-    invoke-static {p0}, Lwex/ui/core/feature/ConversationFilterFeature;->access$scheduleSync(Lwex/ui/core/feature/ConversationFilterFeature;)V
+    invoke-static {v0}, Lwex/ui/core/feature/ConversationFilterFeature;->access$scheduleSync(Lwex/ui/core/feature/ConversationFilterFeature;)V
     :try_end_5
     .catchall {:try_start_5 .. :try_end_5} :catchall_3
 

@@ -1,15 +1,14 @@
 package wex.ui.core.feature;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
-import android.text.InputType;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
@@ -25,6 +24,11 @@ import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Member;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,6 +42,10 @@ import wex.ui.core.WexStore;
 
 /**
  * 聊天工具栏。
+ *
+ * 来源：工具名表、系统拍摄、面板尺寸喂入算法（initAppGrid 前注入 width/height、
+ * MMDotView 22dp、竖屏 215dp / 横屏 158dp 兜底）与工具排序/启用配置均参照
+ * WeKit 的 `features/items/chat/ChatToolbar.kt`（GPL-3.0）；本文件改写为 Java 实现。
  *
  * 关键设计：
  *
@@ -63,10 +71,25 @@ public final class ChatToolbarFeature {
 
     private static final String TAG = "WEX: 聊天工具栏: ";
     private static final String KEY_ENABLED = "chat_toolbar_enabled";
-    private static final String KEY_REPLY = "chat_toolbar_reply";
-    private static final String TAG_TOOLBAR = "wex_chat_toolbar";
     private static final String KEY_ORDER = "chat_toolbar_order";
+    private static final String KEY_ENABLED_ITEMS = "chat_toolbar_enabled_items";
+    private static final String TAG_TOOLBAR = "wex_chat_toolbar";
     private static final int TAG_TRANSPARENT_WATCH = 0x7E000101;
+    private static final int TAG_LIFECYCLE = 0x7E000102;
+    private static final WeakHashMap<ViewGroup, ChatToolbarLifecycle> FOOTERS =
+            new WeakHashMap<ViewGroup, ChatToolbarLifecycle>();
+    private static final Set<Member> HOOKED = new HashSet<Member>();
+    private static final android.os.Handler MAIN = new android.os.Handler(android.os.Looper.getMainLooper());
+    private static final String LAUNCHER_ACTIVITY = "com.tencent.mm.ui.LauncherUI";
+    private static final String CHAT_ACTIVITY = "com.tencent.mm.ui.chatting.ChattingUI";
+    private static WeakReference<Activity> resumed = new WeakReference<>(null);
+    private static ToolbarDiscovery discovery;
+    private static final WeakHashMap<ViewGroup, InputWatch> INPUT_WATCHES = new WeakHashMap<>();
+    private static final WeakHashMap<ViewGroup, Runnable> LOAD_TASKS = new WeakHashMap<>();
+    private static final WeakHashMap<View, Drawable> ORIGINAL_BACKGROUNDS =
+            new WeakHashMap<View, Drawable>();
+    private static final WeakHashMap<View, View.OnLayoutChangeListener> BACKGROUND_LISTENERS =
+            new WeakHashMap<View, View.OnLayoutChangeListener>();
     /** 必须始终透明的 View（微信会反复重设背景，这里统一拦截）。 */
     private static final java.util.WeakHashMap<View, Boolean> KEEP_TRANSPARENT =
             new java.util.WeakHashMap<View, Boolean>();
@@ -74,115 +97,585 @@ public final class ChatToolbarFeature {
     private static boolean bgGuardInstalled = false;
     private static final String CLS_FOOTER = "com.tencent.mm.pluginsdk.ui.chat.ChatFooter";
     private static final String CLS_APP_PANEL = "com.tencent.mm.pluginsdk.ui.chat.AppPanel";
+    /** 工具栏图标渲染边长（dp）。 */
+    private static final float ICON_DP = 18f;
 
     private static final String[][] TOOLS = {
             {"相册", "album.png"},
             {"拍摄", "shoot.png"},
+            {"系统拍摄", "shoot.png"},
             {"视频通话", "video_call.png"},
             {"语音通话", "voice_call.png"},
             {"位置", "location.png"},
             {"红包", "redpacket.png"},
+            {"礼物", "gift.png"},
             {"转账", "transfer.png"},
+            {"语音输入", "voice_input.png"},
             {"文件", "file.png"},
             {"收藏", "favorite.png"},
             {"接龙", "chain.png"},
             {"个人名片", "card.png"},
             {"音乐", "music.png"},
-            {"快捷回复", "more.png"},
     };
 
-    /** 工具名 -> 点击动作（对应 panelTools / MenuItem 缓存）。 */
-    private static final Map<String, Runnable> itemClicks = new HashMap<String, Runnable>();
+    private static final class PanelActions {
+        final Map<String, Runnable> clicks = new HashMap<String, Runnable>();
+        Runnable systemCamera;
+    }
+
+    /** Each ChatFooter owns one AppPanel; actions must never leak between conversations. */
+    private static final WeakHashMap<ViewGroup, PanelActions> PANEL_ACTIONS =
+            new WeakHashMap<ViewGroup, PanelActions>();
     private static android.content.res.AssetManager moduleAssets;
+    private static volatile Method initAppGridMethod;
 
     public static final ChatToolbarFeature INSTANCE = new ChatToolbarFeature();
 
     private ChatToolbarFeature() {
     }
 
-    public void init(XC_LoadPackage.LoadPackageParam lpparam) {
+    public synchronized void init(XC_LoadPackage.LoadPackageParam lpparam) {
+        final ClassLoader cl = lpparam.classLoader;
         try {
-            if (!WexStore.INSTANCE.getBool(KEY_ENABLED, false)) {
-                return;
-            }
-            final ClassLoader cl = lpparam.classLoader;
-
-            // ---- 1. 挂 ChatFooter 构造，插工具栏 ----
             Class<?> footer = XposedHelpers.findClass(CLS_FOOTER, cl);
             for (Constructor<?> ctor : footer.getDeclaredConstructors()) {
+                if (HOOKED.contains(ctor)) {
+                    continue;
+                }
                 XposedBridge.hookMethod(ctor, new XC_MethodHook() {
                     @Override
                     protected void afterHookedMethod(MethodHookParam param) {
                         try {
-                            Object self = param.thisObject;
-                            if (self instanceof FrameLayout) {
-                                attach((FrameLayout) self);
+                            if (param.thisObject instanceof ViewGroup) {
+                                observeFooter((ViewGroup) param.thisObject);
+                            } else {
+                                log("输入组件不是 ViewGroup，无法挂载");
                             }
                         } catch (Throwable t) {
-                            log("挂载失败 " + t.getMessage());
+                            log("监听输入组件失败 " + t);
                         }
                     }
                 });
+                HOOKED.add(ctor);
             }
-
-            // ---- 2. hook AppPanel.initAppGrid----
-            Class<?> panel = XposedHelpers.findClass(CLS_APP_PANEL, cl);
-            Method initGrid = findInitAppGrid(panel);
-            if (initGrid != null) {
-                XposedBridge.hookMethod(initGrid, new XC_MethodHook() {
-                    @Override
-                    protected void beforeHookedMethod(MethodHookParam param) {
-                        try {
-                            Object arg = param.args.length > 0 ? param.args[0] : null;
-                            if (arg instanceof ViewGroup) {
-                                feedPanelSize((ViewGroup) arg);
-                            }
-                        } catch (Throwable t) {
-                            log("initAppGrid before 失败 " + t.getMessage());
-                        }
+            Method attached = inherited(footer, "onAttachedToWindow");
+            if (!HOOKED.contains(attached)) {
+                XposedBridge.hookMethod(attached, new XC_MethodHook() {
+                    @Override protected void afterHookedMethod(MethodHookParam param) {
+                        if (param.thisObject instanceof ViewGroup) observeFooter((ViewGroup) param.thisObject);
                     }
-
-                    @Override
-                    protected void afterHookedMethod(MethodHookParam param) {
-                        try {
-                            Object arg = param.args.length > 0 ? param.args[0] : null;
-                            if (arg instanceof ViewGroup) {
-                                snapshot((ViewGroup) arg);
-                                log("initAppGrid after 快照，工具数=" + itemClicks.size());
-                            }
-                        } catch (Throwable t) {
-                            log("initAppGrid after 失败 " + t.getMessage());
+                });
+                HOOKED.add(attached);
+            }
+            Method laidOut = inherited(footer, "onLayout", boolean.class, int.class, int.class, int.class, int.class);
+            if (!HOOKED.contains(laidOut)) {
+                XposedBridge.hookMethod(laidOut, new XC_MethodHook() {
+                    @Override protected void afterHookedMethod(MethodHookParam param) {
+                        if (param.thisObject instanceof ViewGroup && CLS_FOOTER.equals(param.thisObject.getClass().getName())
+                                && !FOOTERS.containsKey((ViewGroup) param.thisObject)) {
+                            observeFooter((ViewGroup) param.thisObject);
                         }
                     }
                 });
-                log("已 hook initAppGrid (" + initGrid.getName() + ")");
-            } else {
-                log("未找到 initAppGrid");
+                HOOKED.add(laidOut);
             }
-
-            log("已注册");
+            log("输入组件构造与 attach Hook 已注册，父类=" + footer.getSuperclass().getName()
+                    + "，开关=" + isEnabled());
         } catch (Throwable t) {
-            log("初始化失败 " + t.getMessage());
+            log("输入组件注册失败 " + t);
+        }
+        hookActivity(Activity.class);
+        for (String name : new String[]{LAUNCHER_ACTIVITY, CHAT_ACTIVITY}) {
+            try { hookActivity(XposedHelpers.findClass(name, cl)); }
+            catch (Throwable error) { log("stage=activity-class unavailable=" + error.getClass().getSimpleName()); }
+        }
+        try {
+            final Class<?> panel = XposedHelpers.findClass(CLS_APP_PANEL, cl);
+            HostTargetResolver.resolveMethod("chat_toolbar_init_grid", new HostTargetResolver.MethodSpec()
+                    .declaredClass(CLS_APP_PANEL).returnType("void").parameterTypes(CLS_APP_PANEL)
+                    .usingExactStrings("MicroMsg.AppPanel", "initAppGrid()"), new HostTargetResolver.MethodCallback() {
+                @Override public void onResolved(Method method) {
+                    MAIN.post(() -> {
+                        try { hookInitGrid(method); initAppGridMethod = method; }
+                        catch (Throwable error) { log("stage=init-grid unavailable=" + error.getClass().getSimpleName()); }
+                    });
+                }
+                @Override public void onFailure(Throwable error) { log("initAppGrid 解析失败；工具栏保留但原生工具暂不可派发"); }
+            });
+        } catch (Throwable t) {
+            log("工具列表注册失败 " + t);
+        }
+        probeEnable();
+    }
+
+    private static synchronized void hookInitGrid(Method initGrid) {
+        if (initGrid == null || HOOKED.contains(initGrid)) return;
+        XposedBridge.hookMethod(initGrid, new XC_MethodHook() {
+            @Override protected void beforeHookedMethod(MethodHookParam param) {
+                if (!isEnabled()) return;
+                Object panel = panelArgument(param);
+                if (panel instanceof ViewGroup) feedPanelSize((ViewGroup) panel);
+            }
+            @Override protected void afterHookedMethod(MethodHookParam param) {
+                if (!isEnabled()) return;
+                Object panel = panelArgument(param);
+                if (panel instanceof ViewGroup) {
+                    snapshot((ViewGroup) panel);
+                    PanelActions actions=panelActions((ViewGroup)panel,false);
+                    log("initAppGrid after 快照，工具数="+(actions==null?0:actions.clicks.size()));
+                    View current = (View) panel;
+                    StringBuilder parents = new StringBuilder();
+                    boolean found = false;
+                    for (int depth = 0; current != null && depth < 24; depth++) {
+                        if (panelOwnerLogs < 8 && depth < 8) {
+                            if (parents.length() > 0) parents.append(" > ");
+                            parents.append(current.getClass().getName());
+                        }
+                        if (CLS_FOOTER.equals(current.getClass().getName()) && current instanceof ViewGroup) {
+                            observeFooter((ViewGroup) current);
+                            found = true;
+                            break;
+                        }
+                        current = current.getParent() instanceof View ? (View) current.getParent() : null;
+                    }
+                    if (panelOwnerLogs < 8) {
+                        panelOwnerLogs++;
+                        log("stage=panel-owner found=" + found + " attached=" + ((View) panel).isAttachedToWindow()
+                                + " chain=" + parents);
+                    }
+                }
+            }
+        });
+        HOOKED.add(initGrid);log("已解析并 Hook initAppGrid "+initGrid.toGenericString());
+    }
+
+    private static int panelOwnerLogs;
+
+    private static Object panelArgument(XC_MethodHook.MethodHookParam param) {
+        if(param.thisObject instanceof ViewGroup&&CLS_APP_PANEL.equals(param.thisObject.getClass().getName()))return param.thisObject;
+        for(Object arg:param.args)if(arg instanceof ViewGroup&&CLS_APP_PANEL.equals(arg.getClass().getName()))return arg;
+        return null;
+    }
+
+    static boolean isEnabled() {
+        try {
+            return WexStore.INSTANCE.getBool(KEY_ENABLED, false);
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    private static void observeFooter(final ViewGroup footer) {
+        if (footer == null || !CLS_FOOTER.equals(footer.getClass().getName())) return;
+        if (android.os.Looper.myLooper() != android.os.Looper.getMainLooper()) {
+            WeakReference<ViewGroup> ref = new WeakReference<>(footer); MAIN.post(() -> observeFooter(ref.get())); return;
+        }
+        ChatToolbarLifecycle existing = FOOTERS.get(footer);
+        if (existing != null) {
+            InputWatch watch = INPUT_WATCHES.get(footer); if (watch != null) watch.sync();
+            existing.refresh();
+            return;
+        }
+        Object nativeTag = footer.getTag(TAG_LIFECYCLE);
+        if (nativeTag != null) log("stage=tag occupied type=" + nativeTag.getClass().getName());
+        final WeakReference<ViewGroup> ref = new WeakReference<ViewGroup>(footer);
+        final ChatToolbarLifecycle lifecycle = new ChatToolbarLifecycle(new ChatToolbarLifecycle.Target() {
+            @Override
+            public boolean isEnabled() {
+                return ChatToolbarFeature.isEnabled();
+            }
+
+            @Override
+            public boolean isAttached() {
+                ViewGroup view = ref.get();
+                return view != null && view.isAttachedToWindow();
+            }
+
+            @Override
+            public boolean mount() {
+                ViewGroup view = ref.get();
+                return view != null && attach(view);
+            }
+
+            @Override
+            public void unmount() {
+                ViewGroup view = ref.get();
+                if (view != null) {
+                    removeToolbar(view);
+                }
+            }
+
+            @Override
+            public boolean post(Runnable task, long delay) {
+                ViewGroup view = ref.get();
+                return view != null && view.postDelayed(task, delay);
+            }
+
+            @Override
+            public void cancel(Runnable task) {
+                ViewGroup view = ref.get();
+                if (view != null) {
+                    view.removeCallbacks(task);
+                }
+            }
+
+            @Override
+            public void onExhausted() {
+                ViewGroup view = ref.get();
+                log("挂载仍在等待输入容器，容器=" + (view != null && findInputContainer(view) != null)
+                        + " Activity=" + (view != null
+                        && ChatToolbarLifecycle.findActivity(view.getContext()) != null)
+                        + "（转为慢速重试，直到离开页面）");
+            }
+        });
+        FOOTERS.put(footer, lifecycle);
+        if (nativeTag == null) footer.setTag(TAG_LIFECYCLE, lifecycle);
+        final InputWatch inputWatch = new InputWatch(footer, lifecycle);
+        INPUT_WATCHES.put(footer, inputWatch);
+        log("观察输入组件 " + footer.getClass().getName()
+                + "，attached=" + footer.isAttachedToWindow());
+        footer.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+            @Override
+            public void onViewAttachedToWindow(View v) {
+                log("输入组件已附着，开始同步工具栏");
+                inputWatch.sync(); lifecycle.refresh();
+            }
+
+            @Override
+            public void onViewDetachedFromWindow(View v) {
+                inputWatch.stop(); lifecycle.detach();
+                if (discovery != null && discovery.activityRef.get() == ChatToolbarLifecycle.findActivity(v.getContext())) cancelDiscovery();
+                ViewGroup target = ref.get();
+                if (target != null) {
+                    View root = target.getRootView();
+                    boolean shared = false;
+                    for (ViewGroup other : new ArrayList<ViewGroup>(FOOTERS.keySet())) {
+                        if (other != null && other != target && other.isAttachedToWindow()
+                                && other.getRootView() == root && other.findViewWithTag(TAG_TOOLBAR) != null) {
+                            shared = true;
+                            break;
+                        }
+                    }
+                    if (!shared) {
+                        restoreBackgrounds(root);
+                    }
+                }
+            }
+        });
+        inputWatch.sync(); lifecycle.refresh();
+    }
+
+    /** Retry on input identity or mounted-shell loss, never on every layout frame. */
+    private static final class InputWatch implements android.view.ViewTreeObserver.OnGlobalLayoutListener, Runnable {
+        final WeakReference<ViewGroup> footerRef;
+        final ChatToolbarLifecycle lifecycle;
+        WeakReference<ViewGroup> input = new WeakReference<>(null);
+        android.view.ViewTreeObserver observer;
+        boolean ready, mounted;
+        boolean probeScheduled, settling;
+        InputWatch(ViewGroup footer, ChatToolbarLifecycle lifecycle) { footerRef = new WeakReference<>(footer); this.lifecycle = lifecycle; }
+        void sync() {
+            ViewGroup footer = footerRef.get();
+            if (!isEnabled() || footer == null || !footer.isAttachedToWindow()) { stop(); return; }
+            android.view.ViewTreeObserver next = footer.getViewTreeObserver();
+            if (observer != next) {
+                stop();
+                if (next.isAlive()) {
+                    observer = next;
+                    observer.addOnGlobalLayoutListener(this);
+                    schedule(0L);
+                }
+            }
+        }
+        void verifyAfterMount() {
+            if (!settling) {
+                settling = true;
+                schedule(300L);
+            }
+        }
+        private void schedule(long delay) {
+            if (probeScheduled || !isEnabled()) return;
+            probeScheduled = true;
+            if (!MAIN.postDelayed(this, delay)) probeScheduled = false;
+        }
+        void stop() {
+            if (observer != null && observer.isAlive()) observer.removeOnGlobalLayoutListener(this);
+            MAIN.removeCallbacks(this);
+            observer = null; input.clear(); ready = false; mounted = false;
+            probeScheduled = false; settling = false;
+        }
+        @Override public void onGlobalLayout() {
+            schedule(0L);
+        }
+        @Override public void run() {
+            probeScheduled = false;
+            ViewGroup footer = footerRef.get();
+            if (!isEnabled() || footer == null || !footer.isAttachedToWindow()) { stop(); return; }
+            ViewGroup current = findInputContainer(footer);
+            View shell = current == null ? null : footer.findViewWithTag(TAG_TOOLBAR);
+            boolean present = visuallyMounted(current, shell);
+            input = new WeakReference<>(current); ready = current != null;
+            if (present) {
+                mounted = true;
+                if (settling) {
+                    settling = false;
+                } else {
+                    verifyAfterMount();
+                }
+                return;
+            }
+            // Chat entrance animates visibility and the input column arrives late on a
+            // cold start, after a notification launch and on every re-entry. Ask again
+            // until the shell is really mounted instead of counting a few tries.
+            mounted = false;
+            settling = false;
+            if (!lifecycle.isPending()) lifecycle.refresh();
+        }
+    }
+
+    public static void refresh() {
+        MAIN.post(new Runnable() {
+            @Override
+            public void run() {
+                if (!isEnabled()) {
+                    synchronized (PANEL_ACTIONS) {
+                        PANEL_ACTIONS.clear();
+                    }
+                    restoreBackgrounds(null);
+                }
+                for (InputWatch watch : new ArrayList<InputWatch>(INPUT_WATCHES.values())) watch.sync();
+                for (ChatToolbarLifecycle lifecycle : new ArrayList<ChatToolbarLifecycle>(FOOTERS.values())) {
+                    lifecycle.refresh();
+                }
+                Activity activity = resumed.get();
+                if (!isEnabled() || !chatActivity(activity)) { cancelDiscovery(); return; }
+                if (discovery == null) { discovery = new ToolbarDiscovery(activity); MAIN.post(discovery); }
+            }
+        });
+    }
+
+    private static void hookActivity(Class<?> type) {
+        XC_MethodHook entered = new XC_MethodHook() {
+            @Override protected void afterHookedMethod(MethodHookParam param) {
+                if (!(param.thisObject instanceof Activity) || param.hasThrowable() || !chatActivity((Activity) param.thisObject)) return;
+                resumed = new WeakReference<>((Activity) param.thisObject);
+                logEntry(param);
+                refresh();
+            }
+        };
+        hookLifecycle(type, "onResume", entered);
+        // A notification tap can deliver the chat page through onNewIntent or onStart
+        // only, with no further onResume for that Activity.
+        hookLifecycle(type, "onNewIntent", entered, Intent.class);
+        hookLifecycle(type, "onStart", entered);
+        XC_MethodHook stop = new XC_MethodHook() {
+            @Override protected void afterHookedMethod(MethodHookParam param) {
+                if (resumed.get() == param.thisObject) {
+                    resumed.clear();
+                    cancelDiscovery();
+                    for (InputWatch watch : new ArrayList<InputWatch>(INPUT_WATCHES.values())) watch.stop();
+                    for (ChatToolbarLifecycle lifecycle : new ArrayList<ChatToolbarLifecycle>(FOOTERS.values())) lifecycle.suspend();
+                }
+            }
+        };
+        hookLifecycle(type, "onPause", stop); hookLifecycle(type, "onDestroy", stop);
+    }
+
+    private static int entryLogs;
+
+    private static void logEntry(XC_MethodHook.MethodHookParam param) {
+        if (entryLogs >= 8) return;
+        entryLogs++;
+        log("stage=entry trigger=" + param.method.getName() + " host=" + param.thisObject.getClass().getName());
+    }
+
+    private static void hookLifecycle(Class<?> type, String name, XC_MethodHook callback, Class<?>... parameters) {
+        try {
+            Method method = inherited(type, name, parameters);
+            if (!HOOKED.contains(method)) { XposedBridge.hookMethod(method, callback); HOOKED.add(method); }
+        } catch (Throwable error) { log("stage=" + name + " unavailable=" + error.getClass().getSimpleName()); }
+    }
+
+    private static boolean chatActivity(Activity activity) {
+        return activity != null && !activity.isFinishing() && !activity.isDestroyed()
+                && (LAUNCHER_ACTIVITY.equals(activity.getClass().getName()) || CHAT_ACTIVITY.equals(activity.getClass().getName()));
+    }
+
+    private static void cancelDiscovery() { if (discovery != null) discovery.cancel(); }
+
+    /** The config store lives on external media; a notification cold start can read it
+     *  before that storage is mounted. Each refusal unmounts and stops every retry, so
+     *  the first chat entry stayed bare until the page was left and re-entered. */
+    private static final long[] PROBE_DELAYS = {300L, 700L, 1500L, 3000L, 6000L, 9000L};
+    private static boolean probing;
+
+    static void probeEnable() {
+        if (probing) return;
+        probing = true;
+        probe(0);
+    }
+
+    private static void probe(final int attempt) {
+        if (attempt >= PROBE_DELAYS.length) { probing = false; return; }
+        MAIN.postDelayed(new Runnable() {
+            @Override public void run() {
+                refresh();
+                if (isEnabled()) { probing = false; return; }
+                probe(attempt + 1);
+            }
+        }, PROBE_DELAYS[attempt]);
+    }
+
+    private static final class ToolbarDiscovery implements Runnable, View.OnAttachStateChangeListener {
+        final WeakReference<Activity> activityRef;
+        final WeakReference<View> rootRef;
+        int attempts;
+        boolean cancelled;
+        ToolbarDiscovery(Activity activity) {
+            activityRef = new WeakReference<>(activity);
+            View root = activity.getWindow() == null ? null : activity.getWindow().getDecorView();
+            rootRef = new WeakReference<>(root); if (root != null) root.addOnAttachStateChangeListener(this);
+        }
+        void cancel() {
+            cancelled = true; MAIN.removeCallbacks(this);
+            View root = rootRef.get(); if (root != null) root.removeOnAttachStateChangeListener(this);
+            if (discovery == this) discovery = null;
+        }
+        @Override public void run() {
+            Activity activity = activityRef.get(); View root = rootRef.get();
+            // The decor identity is the stop condition. Resume can belong to another
+            // WeChat Activity after a notification launch while this tree stays alive.
+            if (cancelled || !isEnabled() || root == null || activity == null
+                    || activity.isFinishing() || activity.isDestroyed()
+                    || activity.getWindow() == null || activity.getWindow().getDecorView() != root) { cancel(); return; }
+            ViewGroup footer = root.isAttachedToWindow() ? findActiveFooter(root, activity) : null;
+            if (footer != null) { observeFooter(footer); log("stage=discover found"); cancel(); }
+            else {
+                attempts++;
+                if (attempts == 8) log("stage=discover waiting root=" + root.getClass().getName());
+                // The chat tree can remain attached while WeChat inflates the input
+                // column after a cold launch or notification transition. Keep one
+                // discoverer alive until the Activity/decor leaves, with a slow tail.
+                long delay = attempts < 8 ? 120L : 500L;
+                MAIN.postDelayed(this, delay);
+            }
+        }
+        @Override public void onViewAttachedToWindow(View view) {
+            if (cancelled) return;
+            attempts = 0;
+            MAIN.removeCallbacks(this);
+            MAIN.post(this);
+        }
+        @Override public void onViewDetachedFromWindow(View view) { cancel(); }
+    }
+
+    private static ViewGroup findActiveFooter(View root, Activity activity) {
+        ViewGroup structural = null, ready = null, visible = null;
+        int structuralCount = 0, readyCount = 0, visibleCount = 0;
+        java.util.ArrayDeque<View> queue = new java.util.ArrayDeque<>(); queue.add(root); int admitted = 1;
+        while (!queue.isEmpty()) {
+            View view = queue.removeFirst();
+            if (view.getVisibility() != View.VISIBLE) continue;
+            String name = view.getClass().getName();
+            if (CLS_FOOTER.equals(name)) {
+                if (view instanceof ViewGroup && view.isAttachedToWindow() && view.isShown()
+                        && ChatToolbarLifecycle.findActivity(view.getContext()) == activity) {
+                    structuralCount++;
+                    structural = (ViewGroup) view;
+                    if (findInputContainer((ViewGroup) view) != null) {
+                        readyCount++;
+                        ready = (ViewGroup) view;
+                    }
+                    if (visibleInTree(view)) {
+                        visibleCount++;
+                        visible = (ViewGroup) view;
+                    }
+                }
+                continue;
+            }
+            if (view instanceof android.widget.AbsListView || CLS_APP_PANEL.equals(name)
+                    || "com.tencent.mm.view.SmileyPanel".equals(name)
+                    || "com.tencent.mm.ui.chatting.view.MMChattingListView".equals(name)
+                    || "com.tencent.mm.pluginsdk.ui.tools.ScrollControlRecyclerView".equals(name)
+                    || "com.tencent.mm.pluginsdk.ui.tools.ChattingRecyclerView".equals(name)) continue;
+            if (view instanceof ViewGroup) {
+                ViewGroup group = (ViewGroup) view;
+                if (group.getChildCount() > 768 - admitted) return null;
+                for (int i = 0; i < group.getChildCount(); i++) { queue.addLast(group.getChildAt(i)); admitted++; }
+            }
+        }
+        // During a footer replacement the old tree can remain visible while the new
+        // one is structurally complete but still alpha-zero. Prefer the only footer
+        // that can actually host the input toolbar.
+        if (readyCount == 1) return ready;
+        // A cold or notification transition can temporarily animate the only footer's
+        // alpha to zero. Preserve the structural identity instead of waiting for a
+        // later layout that the host may never dispatch.
+        if (structuralCount == 1) return structural;
+        return visibleCount == 1 ? visible : null;
+    }
+
+    private static boolean visibleInTree(View view) {
+        if (view == null || !view.isAttachedToWindow() || !view.isShown()) return false;
+        for (View current = view; current != null;
+                current = current.getParent() instanceof View ? (View) current.getParent() : null) {
+            if (current.getAlpha() < 0.01f) return false;
+        }
+        return true;
+    }
+
+    private static void removeToolbar(ViewGroup footer) {
+        Runnable load = LOAD_TASKS.remove(footer); if (load != null) footer.removeCallbacks(load);
+        try {
+            removeTaggedToolbars(footer, null);
+            ViewGroup panel = findAppPanel(footer);
+            if (panel != null) {
+                synchronized (PANEL_ACTIONS) {
+                    PANEL_ACTIONS.remove(panel);
+                }
+            }
+        } catch (Throwable t) {
+            log("移除工具栏失败 " + t);
         }
     }
 
     // ------------------------------------------------------------ 插工具栏
 
-    private static void attach(FrameLayout footer) {
+    private static boolean attach(ViewGroup footer) {
         try {
+            if (!isEnabled() || !footer.isAttachedToWindow()) {
+                return false;
+            }
             ViewGroup host = findInputContainer(footer);
             if (host == null) {
-                log("未找到输入行容器");
-                return;
+                diagnoseMount(footer, null, null, "NO_INPUT_COLUMN");
+                return false;
             }
-            if (host.findViewWithTag(TAG_TOOLBAR) != null) {
-                return;
+            View previousToolbar = footer.findViewWithTag(TAG_TOOLBAR);
+            if (previousToolbar != null) {
+                if (previousToolbar.getParent() != host) {
+                    if (previousToolbar.getParent() instanceof ViewGroup) {
+                        ((ViewGroup) previousToolbar.getParent()).removeView(previousToolbar);
+                    }
+                    host.addView(previousToolbar, 0, new LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                }
+                removeTaggedToolbars(footer, previousToolbar);
+                if (previousToolbar.getVisibility() != View.VISIBLE) previousToolbar.setVisibility(View.VISIBLE);
+                if (previousToolbar.getAlpha() <= 0f) previousToolbar.setAlpha(1f);
+                InputWatch watch = INPUT_WATCHES.get(footer);
+                boolean mounted = visuallyMounted(host, previousToolbar);
+                if (watch != null) watch.mounted = mounted;
+                if (watch != null && mounted) watch.verifyAfterMount();
+                diagnoseMount(footer, host, previousToolbar, mounted ? "MOUNTED" : "NOT_VISIBLE");
+                return mounted;
             }
             Context ctx = footer.getContext();
-            if (!(ctx instanceof Activity)) {
-                return;
+            Activity activity = ChatToolbarLifecycle.findActivity(ctx);
+            if (activity == null || activity.isFinishing() || activity.isDestroyed()) {
+                diagnoseMount(footer, host, null, "NO_ACTIVITY");
+                return false;
             }
-            Activity activity = (Activity) ctx;
             float density = ctx.getResources().getDisplayMetrics().density;
 
             // 用的是「无背景的 LazyRow」：整条工具栏透明，
@@ -211,146 +704,175 @@ public final class ChatToolbarFeature {
 
             for (String[] tool : orderedTools()) {
                 final String name = tool[0];
-                final Activity act = activity;
-                final Runnable longPress = null;   // 长按已用于拖动排序
+                if (!isToolEnabled(name)) {
+                    continue;
+                }
                 row.addView(buildChip(activity, density, name, tool[1], new Runnable() {
                     @Override
                     public void run() {
                         dispatch(name, footer);
                     }
-                }, longPress));
+                }, null));
             }
+            installDragSort(row, scroll);
 
-            // DEBUG: 完整 dump footer 层级（类名/背景/尺寸/可见性），定位灰色底来源
-            try {
-                dumpTree(footer, 0);
-            } catch (Throwable ignore) {
-            }
             Drawable hostBg = host.getBackground();
-            int hostBgColor = 0;
-            if (hostBg instanceof android.graphics.drawable.ColorDrawable) {
-                hostBgColor = ((android.graphics.drawable.ColorDrawable) hostBg).getColor();
-            }
             log("插入前 host=" + host.getClass().getSimpleName()
                     + " 子数=" + host.getChildCount()
                     + " 背景=" + (hostBg == null ? "null" : hostBg.getClass().getSimpleName()));
-            // 注意：不能动 host 的背景。
-            // host 是微信的输入行容器（自带白色 ColorDrawable），
-            // 之前把它的背景清成透明，导致「工具栏区域和输入框一起变灰/透明」。
-            // 白条问题由工具栏自身背景透明解决，与 host 无关。
-            // host 是微信的输入行容器（自带白色 ColorDrawable），工具栏插在它「内部」
-            // 就会带上白底。这里把工具栏插到 host 内部的最上面，并把「工具栏那一层」
-            // 保持透明即可；关键是别动 host 背景（否则输入框也变）——
-            // 实测插在 host 内部第 0 位时，工具栏区域会继承 host 的白底，
-            // 所以这里给 shell 覆盖一层不透明背景来隔离，而不是把 shell 设透明。
-            // 关键：host 自带白色 ColorDrawable，会把整条工具栏区域染白。
-            // 做法：只把 host 的背景清成透明（输入框本身有自己的背景，不受影响），
-            // 然后把白底「只还给 host 里除工具栏以外的子 View」——
-            // 实测微信输入行的白底就来自这个 host，输入框内部是 EditText 自带圆角背景，
-            // 因此清掉 host 背景不会影响输入框外观。
-            try {
-                if (!(hostBg instanceof android.graphics.drawable.ColorDrawable)) {
-                    hostBg = null;
-                }
-                if (hostBg != null) {
-                    host.setBackground(null);
-                }
-            } catch (Throwable ignore) {
-            }
             host.addView(shell, 0, new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-
-            // 输入框上方那条固定色带：微信 ChatFooter 自身/其子 View 上挂了纯色背景。
-            // 这里递归清掉 footer 子树里所有「纯色且不透明」的背景，
-            // 但不碰 EditText（输入框自己的白底要留着）。
-            try {
-                // 灰底来源：ChatFooter 内部的 idMainArea（整块底栏背景）会被微信反复重设。
-                // 用 ChatFooterTransparent 缓存好的 id 找到它，并「持续」保持透明。
-                keepFooterMainAreaTransparent(footer);
-                // ChatFooter 自身根布局也挂了 #EDEDED，一并持续透明
-                try {
-                    Drawable fb = footer.getBackground();
-                    String fdesc = fb == null ? "null" : fb.getClass().getSimpleName();
-                    if (fb instanceof android.graphics.drawable.ColorDrawable) {
-                        fdesc = Integer.toHexString(
-                                ((android.graphics.drawable.ColorDrawable) fb).getColor());
-                    }
-                    log("footer 背景=" + fdesc);
-                    keepViewTransparent(footer);
-                } catch (Throwable ignore) {
-                }
-                // 页面根背景：底部那片浅灰其实是 Activity 内容区的根布局背景
-                // （footer 之外），这里从 footer 向上一直走到 DecorView，全部登记透明。
-                try {
-                    View root = footer.getRootView();
-                    if (root instanceof ViewGroup) {
-                        markTreeTransparentExceptEditable((ViewGroup) root, 0);
-                    }
-                } catch (Throwable ignore) {
-                }
-                android.view.ViewParent vp = host;
-                int depth = 0;
-                while (vp instanceof View && depth < 10) {
-                    View av = (View) vp;
-                    String cn = av.getClass().getSimpleName();
-                    Drawable abg = av.getBackground();
-                    String desc = "null";
-                    if (abg instanceof android.graphics.drawable.ColorDrawable) {
-                        int c = ((android.graphics.drawable.ColorDrawable) abg).getColor();
-                        desc = "Color(" + Integer.toHexString(c) + ")";
-                        // 只清「不透明纯色」；透明/半透明保留
-                        if (((c >>> 24) & 0xFF) >= 0xE0) {
-                            log("清理灰色底[" + depth + "]: " + cn + " " + desc);
-                            keepViewTransparent(av);
-                        }
-                    } else if (abg != null) {
-                        desc = abg.getClass().getSimpleName();
-                        if (abg instanceof android.graphics.drawable.NinePatchDrawable
-                                || abg instanceof android.graphics.drawable.LayerDrawable) {
-                            log("可疑背景[" + depth + "]: " + cn + " " + desc);
-                        }
-                    }
-                    vp = av.getParent();
-                    depth++;
-                }
-                // host 背景交给 tag 拦截保持透明即可（不再自绘壁纸）。
-            } catch (Throwable ignore) {
+            InputWatch watch = INPUT_WATCHES.get(footer);
+            boolean mounted = visuallyMounted(host, shell);
+            if (watch != null) watch.mounted = mounted;
+            if (watch != null) watch.verifyAfterMount();
+            diagnoseMount(footer, host, shell, mounted ? "MOUNTED" : "NOT_VISIBLE");
+            if (hostBg instanceof android.graphics.drawable.ColorDrawable) {
+                keepViewTransparent(host);
             }
-            log("工具栏已插入");
+
+            // 输入框上方固定色带仅在未启用悬浮输入栏时清理。
+            // 两项同时启用时，悬浮输入栏拥有 footer 圆角表面，工具栏不能把它重新置透明。
+            if (!FloatingChatFooterFeature.enabled()) {
+                try {
+                    keepFooterMainAreaTransparent(footer);
+                    Drawable fb = footer.getBackground();
+                    log("footer 背景=" + (fb == null ? "null" : fb.getClass().getSimpleName()));
+                    keepViewTransparent(footer);
+                    android.view.ViewParent vp = host;
+                    int depth = 0;
+                    while (vp instanceof View && depth < 10) {
+                        View av = (View) vp;
+                        Drawable abg = av.getBackground();
+                        if (abg instanceof android.graphics.drawable.ColorDrawable) {
+                            int c = ((android.graphics.drawable.ColorDrawable) abg).getColor();
+                            int r = (c >> 16) & 0xFF;
+                            int g = (c >> 8) & 0xFF;
+                            int b = c & 0xFF;
+                            boolean grayish = Math.abs(r - g) < 12 && Math.abs(g - b) < 12
+                                    && r > 0xE0 && ((c >>> 24) & 0xFF) >= 0xE0;
+                            if (grayish) {
+                                keepViewTransparent(av);
+                            }
+                        }
+                        vp = av.getParent();
+                        depth++;
+                    }
+                } catch (Throwable ignore) {
+                }
+            } else {
+                log("悬浮输入栏已启用，保留 footer 圆角表面");
+            }
+            log("工具栏已插入，host=" + host.getClass().getName());
+            shell.post(new Runnable() {
+                @Override
+                public void run() {
+                    log("工具栏布局尺寸=" + shell.getWidth() + "x" + shell.getHeight()
+                            + "，visible=" + shell.getVisibility()
+                            + "，shown=" + shell.isShown());
+                }
+            });
 
             // 微信自己在 AppPanel.init() 里会调 loadData()（延迟 1s）去拉工具列表，
             // 最终走到 initAppGrid，那一刻我们的 hookAfter 会做快照。
             // 这里只是在微信漏掉该调度时补一次（例如同时创建多个 footer 时任务被取消）。
-            footer.postDelayed(new Runnable() {
+            final WeakReference<ViewGroup> footerRef = new WeakReference<>(footer);
+            Runnable load = new Runnable() {
                 @Override
                 public void run() {
-                    triggerLoadData(footer);
+                    ViewGroup current = footerRef.get();
+                    if (current == null || LOAD_TASKS.get(current) != this) return;
+                    LOAD_TASKS.remove(current);
+                    if (isEnabled() && current.isAttachedToWindow() && current.findViewWithTag(TAG_TOOLBAR) != null) triggerLoadData(current);
                 }
-            }, 1200);
+            };
+            Runnable previous = LOAD_TASKS.put(footer, load); if (previous != null) footer.removeCallbacks(previous);
+            footer.postDelayed(load, 1200);
+            return mounted;
         } catch (Throwable t) {
-            log("插入异常 " + t.getMessage());
+            log("插入异常 " + t);
+            return false;
         }
     }
 
+    private static boolean visuallyMounted(ViewGroup host, View shell) {
+        if (host == null || shell == null || shell.getParent() != host) return false;
+        if (!host.isAttachedToWindow() || !host.isShown() || !shell.isAttachedToWindow() || !shell.isShown()) return false;
+        if (host.getWidth() <= 0 || host.getHeight() <= 0) return false;
+        if (shell.getWidth() <= 0 || shell.getHeight() <= 0) return false;
+        for (View current = shell; current != null;
+                current = current.getParent() instanceof View ? (View) current.getParent() : null) {
+            if (current.getAlpha() < 0.99f) return false;
+        }
+        android.graphics.Rect shellBounds = new android.graphics.Rect();
+        android.graphics.Rect hostBounds = new android.graphics.Rect();
+        if (!shell.getGlobalVisibleRect(shellBounds) || !host.getGlobalVisibleRect(hostBounds)) return false;
+        return shellBounds.left < hostBounds.right && shellBounds.right > hostBounds.left
+                && shellBounds.top < hostBounds.bottom && shellBounds.bottom > hostBounds.top;
+    }
+
+    private static void removeTaggedToolbars(View root, View keep) {
+        if (root == null) return;
+        List<View> shells = new ArrayList<>();
+        collectTagged(root, shells, 0);
+        for (View shell : shells) {
+            if (shell == keep || !(shell.getParent() instanceof ViewGroup)) continue;
+            ((ViewGroup) shell.getParent()).removeView(shell);
+        }
+    }
+
+    private static void collectTagged(View view, List<View> found, int visited) {
+        if (view == null || visited >= 512) return;
+        if (TAG_TOOLBAR.equals(view.getTag())) found.add(view);
+        if (!(view instanceof ViewGroup)) return;
+        ViewGroup group = (ViewGroup) view;
+        int limit = Math.min(group.getChildCount(), 512 - visited);
+        for (int i = 0; i < limit; i++) collectTagged(group.getChildAt(i), found, visited + 1 + i);
+    }
+
     private static ViewGroup findInputContainer(ViewGroup root) {
-        ViewGroup found = null;
-        for (int i = 0; i < root.getChildCount(); i++) {
-            View child = root.getChildAt(i);
-            if (!(child instanceof ViewGroup)) {
-                continue;
-            }
-            ViewGroup g = (ViewGroup) child;
-            if (g instanceof LinearLayout
-                    && ((LinearLayout) g).getOrientation() == LinearLayout.VERTICAL
-                    && containsEditText(g)) {
-                return g;
-            }
-            ViewGroup nested = findInputContainer(g);
-            if (nested != null) {
-                found = nested;
+        return ChatToolbarViews.findInputContainer(root);
+    }
+
+    private static final WeakHashMap<ViewGroup, String> MOUNT_STAGES = new WeakHashMap<>();
+    private static int mountLogs;
+
+    private static void diagnoseMount(ViewGroup footer, ViewGroup host, View shell, String reason) {
+        if (mountLogs >= 32) return;
+        String stage = reason + " host=" + (host == null ? "none" : host.getClass().getName());
+        if (stage.equals(MOUNT_STAGES.get(footer))) return;
+        MOUNT_STAGES.put(footer, stage); mountLogs++;
+        log("stage=mount reason=" + stage + " footer=" + footer.getWidth() + "x" + footer.getHeight()
+                + " shell=" + (shell == null ? "none" : shell.getWidth() + "x" + shell.getHeight()));
+        View current = shell == null ? footer : shell;
+        for (int depth = 0; current != null && depth < 5; depth++) {
+            int[] origin = new int[2]; current.getLocationOnScreen(origin);
+            log("stage=mount-node depth=" + depth + " class=" + current.getClass().getName()
+                    + " xy=" + origin[0] + "," + origin[1] + " size=" + current.getWidth() + "x" + current.getHeight()
+                    + " visibility=" + current.getVisibility() + " alpha=" + current.getAlpha());
+            current = current.getParent() instanceof View ? (View) current.getParent() : null;
+        }
+        if (host == null) {
+            List<View> nodes = new ArrayList<>(); List<Integer> depths = new ArrayList<>();
+            nodes.add(footer); depths.add(0);
+            int admitted = 1;
+            for (int i = 0; i < nodes.size() && i < 24; i++) {
+                View node = nodes.get(i); int depth = depths.get(i);
+                int[] origin = new int[2]; node.getLocationOnScreen(origin);
+                log("stage=mount-child depth=" + depth + " class=" + node.getClass().getName()
+                        + " id=" + node.getId() + " xy=" + origin[0] + "," + origin[1]
+                        + " size=" + node.getWidth() + "x" + node.getHeight()
+                        + " visibility=" + node.getVisibility()
+                        + " orientation=" + (node instanceof LinearLayout ? ((LinearLayout) node).getOrientation() : -1));
+                String name = node.getClass().getName();
+                if (depth >= 4 || !(node instanceof ViewGroup) || node instanceof android.widget.AbsListView
+                        || CLS_APP_PANEL.equals(name) || "com.tencent.mm.view.SmileyPanel".equals(name)) continue;
+                ViewGroup group = (ViewGroup) node;
+                for (int j = 0; j < group.getChildCount() && admitted < 24; j++) {
+                    nodes.add(group.getChildAt(j)); depths.add(depth + 1); admitted++;
+                }
             }
         }
-        return found;
     }
 
     private static boolean containsEditText(ViewGroup group) {
@@ -433,6 +955,76 @@ public final class ChatToolbarFeature {
     }
 
 
+    public static String[] toolNames() {
+        String[] names = new String[TOOLS.length];
+        for (int i = 0; i < TOOLS.length; i++) {
+            names[i] = TOOLS[i][0];
+        }
+        return names;
+    }
+
+    public static boolean isToolEnabled(String name) {
+        if (name == null) {
+            return false;
+        }
+        try {
+            String raw = WexStore.INSTANCE.getString(KEY_ENABLED_ITEMS, "");
+            if (raw == null || raw.length() == 0) {
+                return true;
+            }
+            for (String value : raw.split(",")) {
+                if (name.equals(value.trim())) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (Throwable ignored) {
+            return true;
+        }
+    }
+
+    public static void setToolEnabled(String name, boolean enabled) {
+        java.util.LinkedHashSet<String> values = new java.util.LinkedHashSet<String>();
+        for (String[] tool : orderedTools()) {
+            if (isToolEnabled(tool[0])) {
+                values.add(tool[0]);
+            }
+        }
+        if (enabled) {
+            values.add(name);
+        } else {
+            values.remove(name);
+        }
+        StringBuilder raw = new StringBuilder();
+        for (String value : values) {
+            if (raw.length() > 0) {
+                raw.append(',');
+            }
+            raw.append(value);
+        }
+        WexStore.INSTANCE.putString(KEY_ENABLED_ITEMS, raw.toString());
+        refresh();
+    }
+
+    public static void moveTool(String name, int direction) {
+        java.util.List<String[]> tools = orderedTools();
+        int index = -1;
+        for (int i = 0; i < tools.size(); i++) {
+            if (tools.get(i)[0].equals(name)) {
+                index = i;
+                break;
+            }
+        }
+        int target = index + direction;
+        if (index < 0 || target < 0 || target >= tools.size()) {
+            return;
+        }
+        String[] value = tools.remove(index);
+        tools.add(target, value);
+        saveOrder(tools);
+        refresh();
+    }
+
     /** 按用户拖拽保存的顺序返回工具表。 */
     private static java.util.List<String[]> orderedTools() {
         java.util.List<String[]> base = new java.util.ArrayList<String[]>();
@@ -467,6 +1059,20 @@ public final class ChatToolbarFeature {
             return out.isEmpty() ? base : out;
         } catch (Throwable t) {
             return base;
+        }
+    }
+
+    private static void saveOrder(java.util.List<String[]> tools) {
+        try {
+            StringBuilder raw = new StringBuilder();
+            for (String[] tool : tools) {
+                if (raw.length() > 0) {
+                    raw.append(',');
+                }
+                raw.append(tool[0]);
+            }
+            WexStore.INSTANCE.putString(KEY_ORDER, raw.toString());
+        } catch (Throwable ignored) {
         }
     }
 
@@ -763,104 +1369,93 @@ public final class ChatToolbarFeature {
         if (bgGuardInstalled) {
             return;
         }
-        bgGuardInstalled = true;
         try {
-            Class<?> viewCls = android.view.View.class;
             XC_MethodHook guard = new XC_MethodHook() {
                 @Override
-                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                    if (SELF_BG.get() != null) {
+                protected void afterHookedMethod(MethodHookParam param) {
+                    if (SELF_BG.get() != null || !(param.thisObject instanceof View)) {
                         return;
                     }
-                    Object t = param.thisObject;
-                    if (!(t instanceof View)) {
-                        return;
-                    }
-                    View v = (View) t;
-                    // 用 setTag 标记（WeakHashMap 在 View 重建后会失效）
-                    if (KEEP_TRANSPARENT.get(v) == null) {
-                        return;
-                    }
-                    // setBackground* 系列：把参数改成 null（不是 setResult）
-                    if (param.args != null && param.args.length > 0) {
-                        param.args[0] = null;
-                    } else {
-                        param.setResult(null);
+                    View view = (View) param.thisObject;
+                    if (KEEP_TRANSPARENT.containsKey(view)) {
+                        clearRegisteredBackground(view);
                     }
                 }
             };
-            for (String n : new String[]{"setBackground", "setBackgroundColor",
+            for (String name : new String[]{"setBackground", "setBackgroundColor",
                     "setBackgroundDrawable", "setBackgroundResource"}) {
-                try {
-                    XposedBridge.hookAllMethods(viewCls, n, guard);
-                } catch (Throwable ignore) {
-                }
+                XposedBridge.hookAllMethods(View.class, name, guard);
             }
-            // WeUIBounceViewV2 的 setBgColor 系列强制 0（灰色底常来自它）
-            try {
-                Class<?> bounce = XposedHelpers.findClass(
-                        "com.tencent.mm.ui.widget.pulldown.WeUIBounceViewV2",
-                        ChatToolbarFeature.class.getClassLoader());
-                for (String m : new String[]{"setStart2EndBgColorByActionBar",
-                        "setEnd2StartBgColorByNavigationBar", "setStart2EndBgColor",
-                        "setEnd2StartBgColor", "setBgColor"}) {
-                    try {
-                        XposedBridge.hookAllMethods(bounce, m, new XC_MethodHook() {
-                            @Override
-                            protected void beforeHookedMethod(MethodHookParam p) {
-                                if (p.args != null && p.args.length > 0) {
-                                    p.args[0] = 0;
-                                }
-                            }
-                        });
-                    } catch (Throwable ignore) {
-                    }
-                }
-                log("BounceView 背景色已置 0");
-            } catch (Throwable t2) {
-                log("BounceView hook 失败 " + t2.getMessage());
-            }
+            bgGuardInstalled = true;
             log("工具栏背景守卫已安装");
         } catch (Throwable t) {
-            log("背景守卫失败 " + t.getMessage());
+            log("背景守卫失败 " + t);
         }
     }
 
-    /** 让任意容器持续透明：立即清 + 每次布局后清 + post 兜底。 */
-    private static void keepViewTransparent(final View v) {
+    private static void clearRegisteredBackground(View view) {
+        if (!KEEP_TRANSPARENT.containsKey(view) || !isEnabled()) {
+            return;
+        }
+        Drawable background = view.getBackground();
+        if (background != null) {
+            ORIGINAL_BACKGROUNDS.put(view, background);
+            try {
+                SELF_BG.set(Boolean.TRUE);
+                view.setBackground(null);
+            } finally {
+                SELF_BG.remove();
+            }
+        }
+    }
+
+    /** 只登记本功能改过的背景，关闭时移除监听并恢复。 */
+    private static void keepViewTransparent(final View view) {
         try {
-            if (v.getTag(TAG_TRANSPARENT_WATCH) != null) {
+            if (KEEP_TRANSPARENT.containsKey(view)) {
                 return;
             }
-            v.setTag(TAG_TRANSPARENT_WATCH, Boolean.TRUE);
-            KEEP_TRANSPARENT.put(v, Boolean.TRUE);
+            KEEP_TRANSPARENT.put(view, Boolean.TRUE);
+            ORIGINAL_BACKGROUNDS.put(view, view.getBackground());
             installBgGuard();
-            final Runnable clear = new Runnable() {
+            clearRegisteredBackground(view);
+            final WeakReference<View> ref = new WeakReference<View>(view);
+            View.OnLayoutChangeListener listener = new View.OnLayoutChangeListener() {
                 @Override
-                public void run() {
-                    Drawable bg = v.getBackground();
-                    if (bg != null) {
-                        try {
-                            SELF_BG.set(Boolean.TRUE);
-                            v.setBackground(null);
-                        } finally {
-                            SELF_BG.remove();
-                        }
+                public void onLayoutChange(View v, int l, int t, int r, int b,
+                                           int ol, int ot, int or, int ob) {
+                    View target = ref.get();
+                    if (target != null) {
+                        clearRegisteredBackground(target);
                     }
                 }
             };
-            clear.run();
-            v.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
-                @Override
-                public void onLayoutChange(View vv, int l, int t, int r, int b,
-                                           int ol, int ot, int or, int ob) {
-                    clear.run();
-                }
-            });
-            v.post(clear);
-            v.postDelayed(clear, 150);
-            v.postDelayed(clear, 600);
-        } catch (Throwable ignore) {
+            BACKGROUND_LISTENERS.put(view, listener);
+            view.addOnLayoutChangeListener(listener);
+        } catch (Throwable t) {
+            log("保持背景透明失败 " + t);
+        }
+    }
+
+    private static void restoreBackgrounds(View root) {
+        for (View view : new ArrayList<View>(KEEP_TRANSPARENT.keySet())) {
+            if (view == null || (root != null && view.getRootView() != root)) {
+                continue;
+            }
+            KEEP_TRANSPARENT.remove(view);
+            View.OnLayoutChangeListener listener = BACKGROUND_LISTENERS.remove(view);
+            if (listener != null) {
+                view.removeOnLayoutChangeListener(listener);
+            }
+            Drawable original = ORIGINAL_BACKGROUNDS.remove(view);
+            try {
+                SELF_BG.set(Boolean.TRUE);
+                view.setBackground(original);
+            } catch (Throwable t) {
+                log("恢复背景失败 " + t);
+            } finally {
+                SELF_BG.remove();
+            }
         }
     }
 
@@ -1030,83 +1625,27 @@ public final class ChatToolbarFeature {
     }
 
     /**
-     * 读模块 assets 里的图标并「按可见内容」缩放。
-     *
-     * 实测这些 png 画布都是 202x202，但图形本身只占 36%~52%，
-     * 直接按 22dp 缩放，可见部分只有 8~11dp，看起来自然很小。
-     * 所以这里先裁掉透明边（alpha > 8 的包围盒），再缩放到目标尺寸：
-     * 让「图形本体」正好等于 22dp，与 13.5sp 文字视觉等高。
+     * 读取图标（默认主题色）。
      */
     private static Drawable loadAssetIcon(Context ctx, String name) {
         return loadAssetIcon(ctx, name, 0);
     }
 
+    /**
+     * 读取图标。
+     *
+     * 已换成 Tabler 矢量渲染：24 栅格、2px 描边、圆头圆角，与原手绘 PNG 同规格。
+     * 矢量没有透明边，不再需要裁边与位图缩放；染色沿用调用方传入的 tint。
+     */
     private static Drawable loadAssetIcon(Context ctx, String name, int tint) {
         try {
-            InputStream in = openModuleAsset(name);
-            if (in == null) {
+            if (!TablerIcons.has(name)) {
                 return null;
             }
-            Bitmap src = BitmapFactory.decodeStream(in);
-            in.close();
-            if (src == null) {
-                return null;
-            }
-            Bitmap trimmed = trimTransparent(src);
-            float density = ctx.getResources().getDisplayMetrics().density;
-            int size = dp(density, 18);
-            // 各图标可见内容的宽高比不同（有方有扁），等比缩放到 18dp 的方框内居中，
-            // 避免「有的撑满、有的变小」的比例不协调。
-            int tw = trimmed.getWidth();
-            int th = trimmed.getHeight();
-            float scale = Math.min((float) size / tw, (float) size / th);
-            int dw = Math.max(1, Math.round(tw * scale));
-            int dh = Math.max(1, Math.round(th * scale));
-            Bitmap scaled = Bitmap.createScaledBitmap(trimmed, dw, dh, true);
-            Bitmap canvasBmp = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
-            android.graphics.Canvas c = new android.graphics.Canvas(canvasBmp);
-            c.drawBitmap(scaled, (size - dw) / 2f, (size - dh) / 2f, null);
-            BitmapDrawable bd = new BitmapDrawable(ctx.getResources(), canvasBmp);
-            if (tint != 0) {
-                bd.setColorFilter(new android.graphics.PorterDuffColorFilter(
-                        tint, android.graphics.PorterDuff.Mode.SRC_IN));
-            }
-            return bd;
+            int color = tint != 0 ? tint : TablerIcons.themeColor();
+            return TablerIcons.drawableDp(name, ICON_DP, color);
         } catch (Throwable t) {
             return null;
-        }
-    }
-
-    /** 裁掉四周透明像素（alpha 阈值 8），返回内容紧密包围的位图。 */
-    private static Bitmap trimTransparent(Bitmap src) {
-        try {
-            int w = src.getWidth();
-            int h = src.getHeight();
-            int left = w, top = h, right = -1, bottom = -1;
-            int[] pixels = new int[w * h];
-            src.getPixels(pixels, 0, w, 0, 0, w, h);
-            for (int y = 0; y < h; y++) {
-                for (int x = 0; x < w; x++) {
-                    int alpha = (pixels[y * w + x] >>> 24) & 0xFF;
-                    if (alpha > 8) {
-                        if (x < left) left = x;
-                        if (x > right) right = x;
-                        if (y < top) top = y;
-                        if (y > bottom) bottom = y;
-                    }
-                }
-            }
-            if (right < left || bottom < top) {
-                return src;
-            }
-            int cw = right - left + 1;
-            int ch = bottom - top + 1;
-            if (cw <= 0 || ch <= 0) {
-                return src;
-            }
-            return Bitmap.createBitmap(src, left, top, cw, ch);
-        } catch (Throwable t) {
-            return src;
         }
     }
 
@@ -1133,33 +1672,20 @@ public final class ChatToolbarFeature {
         }
     }
 
-    /** 调 AppPanel.loadData()：这是微信自己打开「+」面板时的唯一数据入口。 */
+    /** Invokes the uniquely resolved AppPanel initializer when the host delayed load was cancelled. */
     private static void triggerLoadData(View footer) {
         try {
             ViewGroup panel = findAppPanel(footer);
-            if (panel == null) {
-                return;
-            }
-            if (!itemClicks.isEmpty()) {
-                return;
-            }
-            Method load = null;
-            for (Method m : panel.getClass().getDeclaredMethods()) {
-                if ("loadData".equals(m.getName()) && m.getParameterTypes().length == 0) {
-                    load = m;
-                    break;
-                }
-            }
-            if (load == null) {
-                log("未找到 loadData");
-                return;
-            }
-            load.setAccessible(true);
-            load.invoke(panel);
-            log("已调用 loadData() 触发面板初始化");
-        } catch (Throwable t) {
-            log("loadData 调用失败 " + t.getMessage());
-        }
+            if (panel == null) return;
+            PanelActions actions = panelActions(panel, false);
+            if (actions != null && (!actions.clicks.isEmpty() || actions.systemCamera != null)) return;
+            Method init = initAppGridMethod;
+            if (init == null) { log("initAppGrid 尚未解析"); return; }
+            Object receiver = java.lang.reflect.Modifier.isStatic(init.getModifiers()) ? null : panel;
+            Object[] args = init.getParameterTypes().length == 0 ? new Object[0] : new Object[]{panel};
+            init.invoke(receiver, args);
+            log("已直接调用 initAppGrid 触发面板初始化");
+        } catch (Throwable t) { log("initAppGrid 调用失败 " + t.getClass().getSimpleName()); }
     }
 
     private static ViewGroup findAppPanel(View footer) {
@@ -1249,14 +1775,35 @@ public final class ChatToolbarFeature {
 
     // ------------------------------------------------------------ 快照
 
+    private static PanelActions panelActions(ViewGroup panel, boolean create) {
+        synchronized (PANEL_ACTIONS) {
+            PanelActions actions = PANEL_ACTIONS.get(panel);
+            if (actions == null && create) {
+                actions = new PanelActions();
+                PANEL_ACTIONS.put(panel, actions);
+            }
+            return actions;
+        }
+    }
+
     private static void snapshot(ViewGroup panel) {
+        PanelActions actions = panelActions(panel, true);
+        if (actions == null) {
+            return;
+        }
+        actions.clicks.clear();
+        actions.systemCamera = null;
+        snapshot(panel, actions);
+    }
+
+    private static void snapshot(ViewGroup panel, PanelActions actions) {
         try {
             for (int i = 0; i < panel.getChildCount(); i++) {
                 View child = panel.getChildAt(i);
                 if (child instanceof android.widget.AbsListView) {
-                    snapshotGrid((android.widget.AbsListView) child);
+                    snapshotGrid((android.widget.AbsListView) child, actions);
                 } else if (child instanceof ViewGroup) {
-                    snapshot((ViewGroup) child);
+                    snapshot((ViewGroup) child, actions);
                 }
             }
         } catch (Throwable t) {
@@ -1264,13 +1811,16 @@ public final class ChatToolbarFeature {
         }
     }
 
-    private static void snapshotGrid(final android.widget.AbsListView grid) {
+    private static void snapshotGrid(final android.widget.AbsListView grid,
+                                     final PanelActions actions) {
         try {
             final android.widget.ListAdapter adapter = grid.getAdapter();
             if (adapter == null) {
                 return;
             }
             final android.widget.AdapterView.OnItemClickListener listener = readListener(grid);
+            final android.widget.AdapterView.OnItemLongClickListener longListener =
+                    grid.getOnItemLongClickListener();
             if (listener == null) {
                 return;
             }
@@ -1286,7 +1836,7 @@ public final class ChatToolbarFeature {
                     if (label == null) {
                         continue;
                     }
-                    itemClicks.put(label, new Runnable() {
+                    actions.clicks.put(label, new Runnable() {
                         @Override
                         public void run() {
                             View real = null;
@@ -1300,6 +1850,14 @@ public final class ChatToolbarFeature {
                             listener.onItemClick(grid, real != null ? real : item, pos, 0);
                         }
                     });
+                    if (pos == 0 && longListener != null && actions.systemCamera == null) {
+                        actions.systemCamera = new Runnable() {
+                            @Override
+                            public void run() {
+                                longListener.onItemLongClick(grid, item, 0, 0);
+                            }
+                        };
+                    }
                 } catch (Throwable ignore) {
                 }
             }
@@ -1323,11 +1881,13 @@ public final class ChatToolbarFeature {
 
     private static void dispatch(String name, View footer) {
         try {
-            if ("快捷回复".equals(name)) {
-                sendQuickReply(footer);
+            if (!isEnabled() || !footer.isAttachedToWindow()) {
                 return;
             }
-            Runnable action = itemClicks.get(name);
+            ViewGroup panel = findAppPanel(footer);
+            PanelActions actions = panel == null ? null : panelActions(panel, false);
+            Runnable action = actions == null ? null
+                    : ("系统拍摄".equals(name) ? actions.systemCamera : actions.clicks.get(name));
             if (action != null) {
                 action.run();
                 return;
@@ -1339,13 +1899,21 @@ public final class ChatToolbarFeature {
             footer.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    Runnable r = itemClicks.get(tool);
-                    if (r != null) {
-                        r.run();
+                    if (!isEnabled() || !f.isAttachedToWindow()) {
+                        return;
+                    }
+                    ViewGroup currentPanel = findAppPanel(f);
+                    PanelActions current = currentPanel == null ? null
+                            : panelActions(currentPanel, false);
+                    Runnable retry = current == null ? null
+                            : ("系统拍摄".equals(tool)
+                            ? current.systemCamera : current.clicks.get(tool));
+                    if (retry != null) {
+                        retry.run();
                     } else {
-                        Context c = f.getContext();
-                        if (c instanceof Activity) {
-                            toast((Activity) c, "工具准备中，请稍后重试");
+                        Activity activity = ChatToolbarLifecycle.findActivity(f.getContext());
+                        if (activity != null) {
+                            toast(activity, "工具准备中，请稍后重试");
                         }
                         log("dispatch: 缓存仍为空 " + tool);
                     }
@@ -1412,82 +1980,7 @@ public final class ChatToolbarFeature {
         }
     }
 
-    // ------------------------------------------------------------ 快捷回复
-
-    private static void sendQuickReply(View footer) {
-        String reply = "";
-        try {
-            reply = WexStore.INSTANCE.getString(KEY_REPLY, "");
-        } catch (Throwable ignore) {
-        }
-        Context ctx = footer.getContext();
-        if (reply == null || reply.trim().length() == 0) {
-            if (ctx instanceof Activity) {
-                toast((Activity) ctx, "还没有配置快捷回复，长按此按钮可编辑");
-            }
-            return;
-        }
-        EditText input = findEditText(footer);
-        if (input == null) {
-            if (ctx instanceof Activity) {
-                toast((Activity) ctx, "未找到输入框");
-            }
-            return;
-        }
-        input.setText(reply);
-        input.setSelection(input.getText().length());
-    }
-
-    private static EditText findEditText(View view) {
-        if (view instanceof EditText) {
-            return (EditText) view;
-        }
-        if (view instanceof ViewGroup) {
-            ViewGroup g = (ViewGroup) view;
-            for (int i = 0; i < g.getChildCount(); i++) {
-                EditText found = findEditText(g.getChildAt(i));
-                if (found != null) {
-                    return found;
-                }
-            }
-        }
-        return null;
-    }
-
-    public static void showReplyEditor(final Activity activity) {
-        if (activity == null) {
-            return;
-        }
-        try {
-            final EditText input = new EditText(activity);
-            input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-            input.setMinLines(3);
-            input.setGravity(Gravity.TOP | Gravity.START);
-            try {
-                String cur = WexStore.INSTANCE.getString(KEY_REPLY, "");
-                if (cur != null) {
-                    input.setText(cur);
-                    input.setSelection(cur.length());
-                }
-            } catch (Throwable ignore) {
-            }
-            new AlertDialog.Builder(activity)
-                    .setTitle("快捷回复内容")
-                    .setView(input)
-                    .setPositiveButton("保存", (dialog, which) -> {
-                        String text = input.getText() == null ? "" : input.getText().toString().trim();
-                        try {
-                            WexStore.INSTANCE.putString(KEY_REPLY, text);
-                        } catch (Throwable ignore) {
-                        }
-                        toast(activity, "已保存");
-                    })
-                    .setNegativeButton("取消", null)
-                    .show();
-        } catch (Throwable t) {
-            toast(activity, "打开失败: " + t.getMessage());
-        }
-    }
+    // ------------------------------------------------------------ 快捷回复（已按需求移除）
 
     // ------------------------------------------------------------ 工具
 
@@ -1540,6 +2033,8 @@ public final class ChatToolbarFeature {
         }
         return null;
     }
+
+    private static Method inherited(Class<?> type,String name,Class<?>...parameters)throws NoSuchMethodException{for(Class<?> current=type;current!=null;current=current.getSuperclass())try{Method method=current.getDeclaredMethod(name,parameters);method.setAccessible(true);return method;}catch(NoSuchMethodException ignored){}throw new NoSuchMethodException(name);}
 
     private static void toast(Activity activity, String msg) {
         try {

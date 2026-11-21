@@ -851,7 +851,7 @@
 
     check-cast v11, Ljava/lang/String;
 
-    invoke-virtual {v8, v2, v11}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    invoke-static {v8, v2, v11}, Lwex/ui/core/feature/SettingsChanges;->getString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 
     move-result-object v8
 
@@ -1082,15 +1082,7 @@
 
     sget-object p3, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
 
-    invoke-virtual {p3, p0, p1}, Lwex/ui/core/WexStore;->putString(Ljava/lang/String;Ljava/lang/String;)V
-
-    sget-object p0, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string p1, "\u5df2\u5207\u6362\uff0c\u6b63\u5728\u91cd\u542f\u5fae\u4fe1..."
-
-    invoke-virtual {p0, p2, p1}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
-
-    invoke-virtual {p0, p2}, Lwex/ui/core/feature/ImagePicker;->hotRestartWechat(Landroid/app/Activity;)V
+    invoke-static {p3, p0, p1}, Lwex/ui/core/feature/SettingsChanges;->putString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)V
 
     return-void
 .end method
@@ -1316,7 +1308,7 @@
 
     const-string v5, "bottom_bar_enabled"
 
-    invoke-virtual {p2, v5, v8}, Lwex/ui/core/WexStore;->getBool(Ljava/lang/String;Z)Z
+    invoke-static {p2, v5, v8}, Lwex/ui/core/feature/SettingsChanges;->getBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)Z
 
     move-result p2
 
@@ -1515,7 +1507,7 @@
 
     const-string v7, ""
 
-    invoke-virtual {v4, p6, v7}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    invoke-static {v4, p6, v7}, Lwex/ui/core/feature/SettingsChanges;->getString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 
     move-result-object v4
 
@@ -1704,13 +1696,7 @@
 
     const-string v0, ""
 
-    invoke-virtual {p4, p0, v0}, Lwex/ui/core/WexStore;->putString(Ljava/lang/String;Ljava/lang/String;)V
-
-    sget-object p0, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string p4, "\u5df2\u6062\u590d\u9ed8\u8ba4\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p0, p1, p4}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
+    invoke-static {p4, p0, v0}, Lwex/ui/core/feature/SettingsChanges;->putString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)V
 
     new-instance p0, Landroid/graphics/drawable/GradientDrawable;
 
@@ -1851,13 +1837,7 @@
 
     const-string v1, "bottom_bar_enabled"
 
-    invoke-virtual {v0, v1, p1}, Lwex/ui/core/WexStore;->putBool(Ljava/lang/String;Z)V
-
-    sget-object p1, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string v0, "\u5df2\u4fdd\u5b58\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p1, p0, v0}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
+    invoke-static {v0, v1, p1}, Lwex/ui/core/feature/SettingsChanges;->putBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)V
 
     sget-object p0, Lj3/x;->a:Lj3/x;
 
@@ -2039,7 +2019,7 @@
 
     const-string v14, ""
 
-    invoke-virtual {v13, v4, v14}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    invoke-static {v13, v4, v14}, Lwex/ui/core/feature/SettingsChanges;->getString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 
     move-result-object v13
 
@@ -2246,13 +2226,7 @@
 
     const-string v0, ""
 
-    invoke-virtual {p3, p0, v0}, Lwex/ui/core/WexStore;->putString(Ljava/lang/String;Ljava/lang/String;)V
-
-    sget-object p0, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string p3, "\u5df2\u6062\u590d\u9ed8\u8ba4\u56fe\u6807\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p0, p1, p3}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
+    invoke-static {p3, p0, v0}, Lwex/ui/core/feature/SettingsChanges;->putString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)V
 
     const-string p0, "\u9ed8\u8ba4"
 
@@ -2287,12 +2261,6 @@
     .locals 1
 
     invoke-virtual {p2}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
-
-    sget-object p2, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string v0, "\u56fe\u6807\u5df2\u8bbe\u7f6e\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p2, p0, v0}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
 
     const-string p0, "\u5df2\u8bbe\u7f6e"
 
@@ -2412,7 +2380,7 @@
 
     const-string v4, ""
 
-    invoke-virtual {v2, p6, v4}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    invoke-static {v2, p6, v4}, Lwex/ui/core/feature/SettingsChanges;->getString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 
     move-result-object v2
 
@@ -2545,13 +2513,7 @@
 
     const-string v0, ""
 
-    invoke-virtual {p3, p0, v0}, Lwex/ui/core/WexStore;->putString(Ljava/lang/String;Ljava/lang/String;)V
-
-    sget-object p0, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string p3, "\u5df2\u6062\u590d\u9ed8\u8ba4\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p0, p1, p3}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
+    invoke-static {p3, p0, v0}, Lwex/ui/core/feature/SettingsChanges;->putString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)V
 
     const-string p0, "\u9ed8\u8ba4"
 
@@ -2636,11 +2598,15 @@
 
     iget p0, p0, Landroid/util/DisplayMetrics;->density:F
 
+    const/high16 v1, 0x3f000000    # 0.5f
+
     const/16 v0, 0x30
 
     int-to-float v0, v0
 
     mul-float/2addr v0, p0
+
+    add-float/2addr v0, v1
 
     float-to-int v5, v0
 
@@ -2650,6 +2616,8 @@
 
     mul-float/2addr v0, p0
 
+    add-float/2addr v0, v1
+
     float-to-int v6, v0
 
     const/16 v0, 0xb
@@ -2658,7 +2626,13 @@
 
     mul-float v10, v0, p0
 
-    const/4 v0, 0x2
+    add-float/2addr v10, v1
+
+    float-to-int v10, v10
+
+    int-to-float v10, v10
+
+    const/4 v0, 0x3
 
     int-to-float v0, v0
 
@@ -2674,33 +2648,29 @@
 
     invoke-direct {v12, v0}, Landroid/graphics/Paint;-><init>(I)V
 
-    const/4 v1, -0x1
+    move-object v3, p1
 
-    invoke-virtual {v12, v1}, Landroid/graphics/Paint;->setColor(I)V
+    const/4 v0, 0x1
 
-    int-to-float v0, v0
+    invoke-static {v3, v0}, Lwex/ui/core/feature/SettingsTheme;->switchTrack(Landroid/content/Context;Z)I
 
-    mul-float/2addr v0, p0
+    move-result v8
 
-    const/high16 p0, 0x66000000
+    const/4 v0, 0x0
 
-    const/4 v1, 0x0
-
-    invoke-virtual {v12, v11, v1, v0, p0}, Landroid/graphics/Paint;->setShadowLayer(FFFI)V
-
-    const-string p0, "#DDDDDD"
-
-    invoke-static {p0}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
+    invoke-static {v3, v0}, Lwex/ui/core/feature/SettingsTheme;->switchTrack(Landroid/content/Context;Z)I
 
     move-result v9
 
-    new-instance v1, Lz4/w;
-
-    move-object v3, p1
-
-    move v8, p2
-
     move/from16 v2, p3
+
+    invoke-static {v3, v2}, Lwex/ui/core/feature/SettingsTheme;->switchThumb(Landroid/content/Context;Z)I
+
+    move-result v0
+
+    invoke-virtual {v12, v0}, Landroid/graphics/Paint;->setColor(I)V
+
+    new-instance v1, Lz4/w;
 
     move-object/from16 v4, p4
 
@@ -2984,7 +2954,7 @@
 
     sget-object v8, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
 
-    invoke-virtual {v8, v4, v11}, Lwex/ui/core/WexStore;->getBool(Ljava/lang/String;Z)Z
+    invoke-static {v8, v4, v11}, Lwex/ui/core/feature/SettingsChanges;->getBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)Z
 
     move-result v8
 
@@ -3179,7 +3149,7 @@
 
     const-string v8, "1"
 
-    invoke-virtual {v7, v5, v8}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    invoke-static {v7, v5, v8}, Lwex/ui/core/feature/SettingsChanges;->getString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 
     move-result-object v9
 
@@ -3187,72 +3157,7 @@
 
     move-result v9
 
-    if-eqz v9, :cond_0
-
-    const/4 v9, -0x1
-
-    goto :goto_1
-
-    :cond_0
-    move v9, v2
-
-    :goto_1
-    invoke-virtual {v12, v9}, Landroid/widget/TextView;->setTextColor(I)V
-
-    new-instance v9, Landroid/graphics/drawable/GradientDrawable;
-
-    invoke-direct {v9}, Landroid/graphics/drawable/GradientDrawable;-><init>()V
-
-    invoke-virtual {v7, v5, v8}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
-
-    move-result-object v13
-
-    invoke-static {v10, v13}, Lkotlin/jvm/internal/Intrinsics;->areEqual(Ljava/lang/Object;Ljava/lang/Object;)Z
-
-    move-result v13
-
-    if-eqz v13, :cond_1
-
-    move v13, v2
-
-    goto :goto_2
-
-    :cond_1
-    const/4 v13, 0x0
-
-    :goto_2
-    invoke-virtual {v9, v13}, Landroid/graphics/drawable/GradientDrawable;->setColor(I)V
-
-    invoke-interface {v3, v15}, Lw3/c;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object v13
-
-    check-cast v13, Ljava/lang/Number;
-
-    invoke-virtual {v13}, Ljava/lang/Number;->intValue()I
-
-    move-result v13
-
-    int-to-float v13, v13
-
-    invoke-virtual {v9, v13}, Landroid/graphics/drawable/GradientDrawable;->setCornerRadius(F)V
-
-    invoke-virtual {v7, v5, v8}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
-
-    move-result-object v7
-
-    invoke-static {v10, v7}, Lkotlin/jvm/internal/Intrinsics;->areEqual(Ljava/lang/Object;Ljava/lang/Object;)Z
-
-    move-result v7
-
-    if-nez v7, :cond_2
-
-    const/4 v8, 0x1
-
-    invoke-virtual {v9, v8, v2}, Landroid/graphics/drawable/GradientDrawable;->setStroke(II)V
-
-    :cond_2
-    invoke-virtual {v12, v9}, Landroid/view/View;->setBackground(Landroid/graphics/drawable/Drawable;)V
+    invoke-static {v12, v9}, Lwex/ui/core/feature/SettingsTheme;->option(Landroid/widget/TextView;Z)V
 
     new-instance v7, Landroid/widget/LinearLayout$LayoutParams;
 
@@ -3401,8 +3306,6 @@
 
     invoke-virtual {v0, p0}, Landroid/widget/TextView;->setTextSize(F)V
 
-    invoke-virtual {v0, p1}, Landroid/widget/TextView;->setTextColor(I)V
-
     const/16 p0, 0x11
 
     invoke-virtual {v0, p0}, Landroid/widget/TextView;->setGravity(I)V
@@ -3437,39 +3340,7 @@
 
     invoke-virtual {v0, p3, p1, p3, p0}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    new-instance p0, Landroid/graphics/drawable/GradientDrawable;
-
-    invoke-direct {p0}, Landroid/graphics/drawable/GradientDrawable;-><init>()V
-
-    const-string p1, "#33000000"
-
-    invoke-static {p1}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result p1
-
-    invoke-virtual {p0, p1}, Landroid/graphics/drawable/GradientDrawable;->setColor(I)V
-
-    const/high16 p1, 0x41400000    # 12.0f
-
-    invoke-static {p1}, Ljava/lang/Float;->valueOf(F)Ljava/lang/Float;
-
-    move-result-object p1
-
-    invoke-interface {p2, p1}, Lw3/c;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object p1
-
-    check-cast p1, Ljava/lang/Number;
-
-    invoke-virtual {p1}, Ljava/lang/Number;->intValue()I
-
-    move-result p1
-
-    int-to-float p1, p1
-
-    invoke-virtual {p0, p1}, Landroid/graphics/drawable/GradientDrawable;->setCornerRadius(F)V
-
-    invoke-virtual {v0, p0}, Landroid/view/View;->setBackground(Landroid/graphics/drawable/Drawable;)V
+    invoke-static {v0}, Lwex/ui/core/feature/SettingsTheme;->secondaryButton(Landroid/widget/TextView;)V
 
     new-instance p0, Landroid/widget/LinearLayout$LayoutParams;
 
@@ -3533,7 +3404,7 @@
 
     const-string v0, "1"
 
-    invoke-virtual {p9, p0, v0}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    invoke-static {p9, p0, v0}, Lwex/ui/core/feature/SettingsChanges;->getString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 
     move-result-object v0
 
@@ -3543,7 +3414,7 @@
 
     if-nez v0, :cond_1
 
-    invoke-virtual {p9, p0, p1}, Lwex/ui/core/WexStore;->putString(Ljava/lang/String;Ljava/lang/String;)V
+    invoke-static {p9, p0, p1}, Lwex/ui/core/feature/SettingsChanges;->putString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)V
 
     invoke-static {p5, p6, p7, p1}, Lwex/ui/core/xposed/SettingsPanelHelper;->calendarStyleGroup$refreshBtns(Ljava/util/List;ILw3/c;Ljava/lang/String;)V
 
@@ -3573,26 +3444,6 @@
     move-object v2, p3
 
     :goto_0
-    sget-object p0, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    new-instance p1, Ljava/lang/StringBuilder;
-
-    const-string p2, "\u5df2\u5207\u6362\u4e3a"
-
-    invoke-direct {p1, p2}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
-
-    invoke-virtual {p1, p4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    const-string p2, "\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p1, p2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-virtual {p1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-
-    move-result-object p1
-
-    invoke-virtual {p0, v2, p1}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
-
     :cond_1
     return-void
 .end method
@@ -3639,13 +3490,7 @@
 
     sget-object v0, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
 
-    invoke-virtual {v0, p0, p2}, Lwex/ui/core/WexStore;->putBool(Ljava/lang/String;Z)V
-
-    sget-object p0, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string p2, "\u5df2\u4fdd\u5b58\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p0, p1, p2}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
+    invoke-static {v0, p0, p2}, Lwex/ui/core/feature/SettingsChanges;->putBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)V
 
     sget-object p0, Lj3/x;->a:Lj3/x;
 
@@ -3678,7 +3523,7 @@
 
     const-string v2, "1"
 
-    invoke-virtual {v1, p1, v2}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    invoke-static {v1, p1, v2}, Lwex/ui/core/feature/SettingsChanges;->getString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 
     move-result-object p1
 
@@ -3732,39 +3577,7 @@
 
     invoke-virtual {p1, p5, p2, p5, p3}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    new-instance p2, Landroid/graphics/drawable/GradientDrawable;
-
-    invoke-direct {p2}, Landroid/graphics/drawable/GradientDrawable;-><init>()V
-
-    const-string p3, "#33000000"
-
-    invoke-static {p3}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result p3
-
-    invoke-virtual {p2, p3}, Landroid/graphics/drawable/GradientDrawable;->setColor(I)V
-
-    const/high16 p3, 0x41400000    # 12.0f
-
-    invoke-static {p3}, Ljava/lang/Float;->valueOf(F)Ljava/lang/Float;
-
-    move-result-object p3
-
-    invoke-interface {p4, p3}, Lw3/c;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object p3
-
-    check-cast p3, Ljava/lang/Number;
-
-    invoke-virtual {p3}, Ljava/lang/Number;->intValue()I
-
-    move-result p3
-
-    int-to-float p3, p3
-
-    invoke-virtual {p2, p3}, Landroid/graphics/drawable/GradientDrawable;->setCornerRadius(F)V
-
-    invoke-virtual {p1, p2}, Landroid/view/View;->setBackground(Landroid/graphics/drawable/Drawable;)V
+    invoke-static {p1}, Lwex/ui/core/feature/SettingsTheme;->secondarySurface(Landroid/view/View;)V
 
     new-instance p2, Landroid/widget/LinearLayout$LayoutParams;
 
@@ -3853,12 +3666,6 @@
 
     invoke-virtual {p1}, Lwex/ui/core/feature/CalendarCardFeature;->clearCache()V
 
-    sget-object p1, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string v0, "\u80cc\u666f\u5df2\u66f4\u65b0\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p1, p0, v0}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
-
     sget-object p0, Lj3/x;->a:Lj3/x;
 
     return-object p0
@@ -3911,62 +3718,7 @@
 
     move-result v1
 
-    if-eqz v1, :cond_0
-
-    const/4 v4, -0x1
-
-    goto :goto_1
-
-    :cond_0
-    move v4, p1
-
-    :goto_1
-    invoke-virtual {v2, v4}, Landroid/widget/TextView;->setTextColor(I)V
-
-    new-instance v4, Landroid/graphics/drawable/GradientDrawable;
-
-    invoke-direct {v4}, Landroid/graphics/drawable/GradientDrawable;-><init>()V
-
-    if-eqz v1, :cond_1
-
-    move v5, p1
-
-    goto :goto_2
-
-    :cond_1
-    move v5, v0
-
-    :goto_2
-    invoke-virtual {v4, v5}, Landroid/graphics/drawable/GradientDrawable;->setColor(I)V
-
-    const/high16 v5, 0x41400000    # 12.0f
-
-    invoke-static {v5}, Ljava/lang/Float;->valueOf(F)Ljava/lang/Float;
-
-    move-result-object v5
-
-    invoke-interface {p2, v5}, Lw3/c;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object v5
-
-    check-cast v5, Ljava/lang/Number;
-
-    invoke-virtual {v5}, Ljava/lang/Number;->intValue()I
-
-    move-result v5
-
-    int-to-float v5, v5
-
-    invoke-virtual {v4, v5}, Landroid/graphics/drawable/GradientDrawable;->setCornerRadius(F)V
-
-    if-nez v1, :cond_2
-
-    const/4 v1, 0x1
-
-    invoke-virtual {v4, v1, p1}, Landroid/graphics/drawable/GradientDrawable;->setStroke(II)V
-
-    :cond_2
-    invoke-virtual {v2, v4}, Landroid/view/View;->setBackground(Landroid/graphics/drawable/Drawable;)V
+    invoke-static {v2, v1}, Lwex/ui/core/feature/SettingsTheme;->option(Landroid/widget/TextView;Z)V
 
     move v1, v3
 
@@ -4331,7 +4083,7 @@
 
     const-string v2, "calendar,image,music"
 
-    invoke-virtual {v0, v1, v2}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    invoke-static {v0, v1, v2}, Lwex/ui/core/feature/SettingsChanges;->getString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 
     move-result-object v0
 
@@ -4508,39 +4260,7 @@
 
     invoke-virtual {v15, v5, v6, v12, v9}, Landroid/view/View;->setPadding(IIII)V
 
-    new-instance v5, Landroid/graphics/drawable/GradientDrawable;
-
-    invoke-direct {v5}, Landroid/graphics/drawable/GradientDrawable;-><init>()V
-
-    const-string v6, "#33000000"
-
-    invoke-static {v6}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v6
-
-    invoke-virtual {v5, v6}, Landroid/graphics/drawable/GradientDrawable;->setColor(I)V
-
-    const/high16 v6, 0x41400000    # 12.0f
-
-    invoke-static {v6}, Ljava/lang/Float;->valueOf(F)Ljava/lang/Float;
-
-    move-result-object v6
-
-    invoke-interface {v3, v6}, Lw3/c;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object v6
-
-    check-cast v6, Ljava/lang/Number;
-
-    invoke-virtual {v6}, Ljava/lang/Number;->intValue()I
-
-    move-result v6
-
-    int-to-float v6, v6
-
-    invoke-virtual {v5, v6}, Landroid/graphics/drawable/GradientDrawable;->setCornerRadius(F)V
-
-    invoke-virtual {v15, v5}, Landroid/view/View;->setBackground(Landroid/graphics/drawable/Drawable;)V
+    invoke-static {v15}, Lwex/ui/core/feature/SettingsTheme;->secondarySurface(Landroid/view/View;)V
 
     new-instance v5, Landroid/widget/LinearLayout$LayoutParams;
 
@@ -4769,7 +4489,7 @@
 
     const-string v1, "home_card_order"
 
-    invoke-virtual {p0, v1, v0}, Lwex/ui/core/WexStore;->putString(Ljava/lang/String;Ljava/lang/String;)V
+    invoke-static {p0, v1, v0}, Lwex/ui/core/feature/SettingsChanges;->putString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)V
 
     move-object v7, p2
 
@@ -4778,12 +4498,6 @@
     move-object p1, v7
 
     invoke-static/range {p1 .. p6}, Lwex/ui/core/xposed/SettingsPanelHelper;->cardOrderGroup$refreshRows(Landroid/widget/LinearLayout;Landroid/app/Activity;Lw3/c;Ljava/util/Map;II)V
-
-    sget-object p0, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string p1, "\u987a\u5e8f\u5df2\u8c03\u6574\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p0, p2, p1}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
 
     sget-object p0, Lj3/x;->a:Lj3/x;
 
@@ -4835,7 +4549,7 @@
 
     const-string v1, "home_card_order"
 
-    invoke-virtual {p0, v1, v0}, Lwex/ui/core/WexStore;->putString(Ljava/lang/String;Ljava/lang/String;)V
+    invoke-static {p0, v1, v0}, Lwex/ui/core/feature/SettingsChanges;->putString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)V
 
     move-object v7, p2
 
@@ -4844,12 +4558,6 @@
     move-object p1, v7
 
     invoke-static/range {p1 .. p6}, Lwex/ui/core/xposed/SettingsPanelHelper;->cardOrderGroup$refreshRows(Landroid/widget/LinearLayout;Landroid/app/Activity;Lw3/c;Ljava/util/Map;II)V
-
-    sget-object p0, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string p1, "\u987a\u5e8f\u5df2\u8c03\u6574\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p0, p2, p1}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
 
     sget-object p0, Lj3/x;->a:Lj3/x;
 
@@ -4898,20 +4606,6 @@
 
     invoke-virtual {v2, p0}, Landroid/widget/TextView;->setGravity(I)V
 
-    if-eqz p4, :cond_0
-
-    goto :goto_0
-
-    :cond_0
-    const-string p0, "#33000000"
-
-    invoke-static {p0}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result p1
-
-    :goto_0
-    invoke-virtual {v2, p1}, Landroid/widget/TextView;->setTextColor(I)V
-
     invoke-interface {p2, v1}, Lw3/c;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
 
     move-result-object p0
@@ -4954,39 +4648,25 @@
 
     invoke-virtual {v2, p0, p1, p3, v0}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    new-instance p0, Landroid/graphics/drawable/GradientDrawable;
+    invoke-static {v2}, Lwex/ui/core/feature/SettingsTheme;->secondaryButton(Landroid/widget/TextView;)V
 
-    invoke-direct {p0}, Landroid/graphics/drawable/GradientDrawable;-><init>()V
+    if-nez p4, :move_button_color_ready
 
-    const-string p1, "#22000000"
+    invoke-virtual {v2}, Landroid/view/View;->getContext()Landroid/content/Context;
 
-    invoke-static {p1}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
+    move-result-object p0
 
-    move-result p1
+    invoke-static {p0}, Lwex/ui/core/feature/SettingsTheme;->sub(Landroid/content/Context;)I
 
-    invoke-virtual {p0, p1}, Landroid/graphics/drawable/GradientDrawable;->setColor(I)V
+    move-result p0
 
-    const/high16 p1, 0x41000000    # 8.0f
+    invoke-virtual {v2, p0}, Landroid/widget/TextView;->setTextColor(I)V
 
-    invoke-static {p1}, Ljava/lang/Float;->valueOf(F)Ljava/lang/Float;
+    const v0, 0x3f19999a    # 0.6f
 
-    move-result-object p1
+    invoke-virtual {v2, v0}, Landroid/view/View;->setAlpha(F)V
 
-    invoke-interface {p2, p1}, Lw3/c;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object p1
-
-    check-cast p1, Ljava/lang/Number;
-
-    invoke-virtual {p1}, Ljava/lang/Number;->intValue()I
-
-    move-result p1
-
-    int-to-float p1, p1
-
-    invoke-virtual {p0, p1}, Landroid/graphics/drawable/GradientDrawable;->setCornerRadius(F)V
-
-    invoke-virtual {v2, p0}, Landroid/view/View;->setBackground(Landroid/graphics/drawable/Drawable;)V
+    :move_button_color_ready
 
     new-instance p0, Landroid/widget/LinearLayout$LayoutParams;
 
@@ -5409,7 +5089,7 @@
 
     sget-object v9, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
 
-    invoke-virtual {v9, v3, v11}, Lwex/ui/core/WexStore;->getBool(Ljava/lang/String;Z)Z
+    invoke-static {v9, v3, v11}, Lwex/ui/core/feature/SettingsChanges;->getBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)Z
 
     move-result v9
 
@@ -5592,7 +5272,7 @@
 
     const-string v8, "1"
 
-    invoke-virtual {v6, v4, v8}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    invoke-static {v6, v4, v8}, Lwex/ui/core/feature/SettingsChanges;->getString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 
     move-result-object v10
 
@@ -5600,72 +5280,7 @@
 
     move-result v10
 
-    if-eqz v10, :cond_0
-
-    const/4 v10, -0x1
-
-    goto :goto_1
-
-    :cond_0
-    move v10, v1
-
-    :goto_1
-    invoke-virtual {v7, v10}, Landroid/widget/TextView;->setTextColor(I)V
-
-    new-instance v10, Landroid/graphics/drawable/GradientDrawable;
-
-    invoke-direct {v10}, Landroid/graphics/drawable/GradientDrawable;-><init>()V
-
-    invoke-virtual {v6, v4, v8}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
-
-    move-result-object v11
-
-    invoke-static {v12, v11}, Lkotlin/jvm/internal/Intrinsics;->areEqual(Ljava/lang/Object;Ljava/lang/Object;)Z
-
-    move-result v11
-
-    if-eqz v11, :cond_1
-
-    move v11, v1
-
-    goto :goto_2
-
-    :cond_1
-    const/4 v11, 0x0
-
-    :goto_2
-    invoke-virtual {v10, v11}, Landroid/graphics/drawable/GradientDrawable;->setColor(I)V
-
-    invoke-interface {v2, v14}, Lw3/c;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object v11
-
-    check-cast v11, Ljava/lang/Number;
-
-    invoke-virtual {v11}, Ljava/lang/Number;->intValue()I
-
-    move-result v11
-
-    int-to-float v11, v11
-
-    invoke-virtual {v10, v11}, Landroid/graphics/drawable/GradientDrawable;->setCornerRadius(F)V
-
-    invoke-virtual {v6, v4, v8}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
-
-    move-result-object v6
-
-    invoke-static {v12, v6}, Lkotlin/jvm/internal/Intrinsics;->areEqual(Ljava/lang/Object;Ljava/lang/Object;)Z
-
-    move-result v6
-
-    if-nez v6, :cond_2
-
-    const/4 v6, 0x1
-
-    invoke-virtual {v10, v6, v1}, Landroid/graphics/drawable/GradientDrawable;->setStroke(II)V
-
-    :cond_2
-    invoke-virtual {v7, v10}, Landroid/view/View;->setBackground(Landroid/graphics/drawable/Drawable;)V
+    invoke-static {v7, v10}, Lwex/ui/core/feature/SettingsTheme;->option(Landroid/widget/TextView;Z)V
 
     new-instance v6, Landroid/widget/LinearLayout$LayoutParams;
 
@@ -5806,8 +5421,6 @@
 
     invoke-virtual {v0, p0}, Landroid/widget/TextView;->setTextSize(F)V
 
-    invoke-virtual {v0, p1}, Landroid/widget/TextView;->setTextColor(I)V
-
     const/16 p0, 0x11
 
     invoke-virtual {v0, p0}, Landroid/widget/TextView;->setGravity(I)V
@@ -5842,39 +5455,7 @@
 
     invoke-virtual {v0, p3, p1, p3, p0}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    new-instance p0, Landroid/graphics/drawable/GradientDrawable;
-
-    invoke-direct {p0}, Landroid/graphics/drawable/GradientDrawable;-><init>()V
-
-    const-string p1, "#33000000"
-
-    invoke-static {p1}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result p1
-
-    invoke-virtual {p0, p1}, Landroid/graphics/drawable/GradientDrawable;->setColor(I)V
-
-    const/high16 p1, 0x41400000    # 12.0f
-
-    invoke-static {p1}, Ljava/lang/Float;->valueOf(F)Ljava/lang/Float;
-
-    move-result-object p1
-
-    invoke-interface {p2, p1}, Lw3/c;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object p1
-
-    check-cast p1, Ljava/lang/Number;
-
-    invoke-virtual {p1}, Ljava/lang/Number;->intValue()I
-
-    move-result p1
-
-    int-to-float p1, p1
-
-    invoke-virtual {p0, p1}, Landroid/graphics/drawable/GradientDrawable;->setCornerRadius(F)V
-
-    invoke-virtual {v0, p0}, Landroid/view/View;->setBackground(Landroid/graphics/drawable/Drawable;)V
+    invoke-static {v0}, Lwex/ui/core/feature/SettingsTheme;->secondaryButton(Landroid/widget/TextView;)V
 
     new-instance p0, Landroid/widget/LinearLayout$LayoutParams;
 
@@ -5938,7 +5519,7 @@
 
     const-string v0, "1"
 
-    invoke-virtual {p8, p0, v0}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    invoke-static {p8, p0, v0}, Lwex/ui/core/feature/SettingsChanges;->getString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 
     move-result-object v0
 
@@ -5948,7 +5529,7 @@
 
     if-nez v0, :cond_1
 
-    invoke-virtual {p8, p0, p1}, Lwex/ui/core/WexStore;->putString(Ljava/lang/String;Ljava/lang/String;)V
+    invoke-static {p8, p0, p1}, Lwex/ui/core/feature/SettingsChanges;->putString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)V
 
     invoke-static {p5, p6, p7, p1}, Lwex/ui/core/xposed/SettingsPanelHelper;->imageStyleGroup$refreshBtns(Ljava/util/List;ILw3/c;Ljava/lang/String;)V
 
@@ -5961,26 +5542,6 @@
     invoke-static {p2, p0, p3, p6, p7}, Lwex/ui/core/xposed/SettingsPanelHelper;->imageStyleGroup$rebuildExpand(Landroid/widget/LinearLayout;Ljava/lang/String;Landroid/app/Activity;ILw3/c;)V
 
     :cond_0
-    sget-object p0, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    new-instance p1, Ljava/lang/StringBuilder;
-
-    const-string p2, "\u5df2\u5207\u6362\u4e3a"
-
-    invoke-direct {p1, p2}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
-
-    invoke-virtual {p1, p4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    const-string p2, "\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p1, p2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-virtual {p1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-
-    move-result-object p1
-
-    invoke-virtual {p0, p3, p1}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
-
     :cond_1
     return-void
 .end method
@@ -6015,13 +5576,7 @@
 
     sget-object v0, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
 
-    invoke-virtual {v0, p0, p2}, Lwex/ui/core/WexStore;->putBool(Ljava/lang/String;Z)V
-
-    sget-object p0, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string p2, "\u5df2\u4fdd\u5b58\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p0, p1, p2}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
+    invoke-static {v0, p0, p2}, Lwex/ui/core/feature/SettingsChanges;->putBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)V
 
     sget-object p0, Lj3/x;->a:Lj3/x;
 
@@ -6048,7 +5603,7 @@
 
     const-string v1, "1"
 
-    invoke-virtual {v0, p1, v1}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    invoke-static {v0, p1, v1}, Lwex/ui/core/feature/SettingsChanges;->getString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 
     move-result-object p1
 
@@ -6159,26 +5714,6 @@
 
     invoke-virtual {p2}, Lwex/ui/core/feature/ImageCardFeature;->clearCache()V
 
-    sget-object p2, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    new-instance v0, Ljava/lang/StringBuilder;
-
-    const-string v1, "\u62cd\u7acb\u5f97\u56fe\u7247"
-
-    invoke-direct {v0, v1}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
-
-    invoke-virtual {v0, p1}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-
-    const-string p1, "\u5df2\u66f4\u65b0\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {v0, p1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-
-    move-result-object p1
-
-    invoke-virtual {p2, p0, p1}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
-
     sget-object p0, Lj3/x;->a:Lj3/x;
 
     return-object p0
@@ -6216,12 +5751,6 @@
     sget-object p1, Lwex/ui/core/feature/ImageCardFeature;->INSTANCE:Lwex/ui/core/feature/ImageCardFeature;
 
     invoke-virtual {p1}, Lwex/ui/core/feature/ImageCardFeature;->clearCache()V
-
-    sget-object p1, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string v0, "\u80cc\u666f\u5df2\u66f4\u65b0\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p1, p0, v0}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
 
     sget-object p0, Lj3/x;->a:Lj3/x;
 
@@ -6275,62 +5804,7 @@
 
     move-result v1
 
-    if-eqz v1, :cond_0
-
-    const/4 v4, -0x1
-
-    goto :goto_1
-
-    :cond_0
-    move v4, p1
-
-    :goto_1
-    invoke-virtual {v2, v4}, Landroid/widget/TextView;->setTextColor(I)V
-
-    new-instance v4, Landroid/graphics/drawable/GradientDrawable;
-
-    invoke-direct {v4}, Landroid/graphics/drawable/GradientDrawable;-><init>()V
-
-    if-eqz v1, :cond_1
-
-    move v5, p1
-
-    goto :goto_2
-
-    :cond_1
-    move v5, v0
-
-    :goto_2
-    invoke-virtual {v4, v5}, Landroid/graphics/drawable/GradientDrawable;->setColor(I)V
-
-    const/high16 v5, 0x41400000    # 12.0f
-
-    invoke-static {v5}, Ljava/lang/Float;->valueOf(F)Ljava/lang/Float;
-
-    move-result-object v5
-
-    invoke-interface {p2, v5}, Lw3/c;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object v5
-
-    check-cast v5, Ljava/lang/Number;
-
-    invoke-virtual {v5}, Ljava/lang/Number;->intValue()I
-
-    move-result v5
-
-    int-to-float v5, v5
-
-    invoke-virtual {v4, v5}, Landroid/graphics/drawable/GradientDrawable;->setCornerRadius(F)V
-
-    if-nez v1, :cond_2
-
-    const/4 v1, 0x1
-
-    invoke-virtual {v4, v1, p1}, Landroid/graphics/drawable/GradientDrawable;->setStroke(II)V
-
-    :cond_2
-    invoke-virtual {v2, v4}, Landroid/view/View;->setBackground(Landroid/graphics/drawable/Drawable;)V
+    invoke-static {v2, v1}, Lwex/ui/core/feature/SettingsTheme;->option(Landroid/widget/TextView;Z)V
 
     move v1, v3
 
@@ -6654,7 +6128,7 @@
 
     const-string v7, "home_music_card"
 
-    invoke-virtual {v6, v7, v12}, Lwex/ui/core/WexStore;->getBool(Ljava/lang/String;Z)Z
+    invoke-static {v6, v7, v12}, Lwex/ui/core/feature/SettingsChanges;->getBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)Z
 
     move-result v7
 
@@ -6738,33 +6212,7 @@
 
     invoke-virtual {v10, v13}, Landroid/widget/LinearLayout;->setGravity(I)V
 
-    new-instance v13, Landroid/graphics/drawable/GradientDrawable;
-
-    invoke-direct {v13}, Landroid/graphics/drawable/GradientDrawable;-><init>()V
-
-    const-string v14, "#33000000"
-
-    invoke-static {v14}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v14
-
-    invoke-virtual {v13, v14}, Landroid/graphics/drawable/GradientDrawable;->setColor(I)V
-
-    invoke-interface {v3, v11}, Lw3/c;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object v14
-
-    check-cast v14, Ljava/lang/Number;
-
-    invoke-virtual {v14}, Ljava/lang/Number;->intValue()I
-
-    move-result v14
-
-    int-to-float v14, v14
-
-    invoke-virtual {v13, v14}, Landroid/graphics/drawable/GradientDrawable;->setCornerRadius(F)V
-
-    invoke-virtual {v10, v13}, Landroid/view/View;->setBackground(Landroid/graphics/drawable/Drawable;)V
+    invoke-static {v10}, Lwex/ui/core/feature/SettingsTheme;->secondarySurface(Landroid/view/View;)V
 
     new-instance v13, Landroid/widget/LinearLayout$LayoutParams;
 
@@ -6882,7 +6330,7 @@
 
     const-string v8, "60"
 
-    invoke-virtual {v6, v4, v8}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    invoke-static {v6, v4, v8}, Lwex/ui/core/feature/SettingsChanges;->getString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 
     move-result-object v4
 
@@ -6921,6 +6369,8 @@
     new-instance v6, Landroid/widget/SeekBar;
 
     invoke-direct {v6, v0}, Landroid/widget/SeekBar;-><init>(Landroid/content/Context;)V
+
+    invoke-static {v6}, Lwex/ui/core/feature/SettingsTheme;->styleSeekBar(Landroid/widget/SeekBar;)V
 
     const/16 v8, 0x64
 
@@ -7066,39 +6516,7 @@
 
     invoke-virtual {v0, p3, p1, p3, p0}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    new-instance p0, Landroid/graphics/drawable/GradientDrawable;
-
-    invoke-direct {p0}, Landroid/graphics/drawable/GradientDrawable;-><init>()V
-
-    const-string p1, "#33000000"
-
-    invoke-static {p1}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result p1
-
-    invoke-virtual {p0, p1}, Landroid/graphics/drawable/GradientDrawable;->setColor(I)V
-
-    const/high16 p1, 0x41400000    # 12.0f
-
-    invoke-static {p1}, Ljava/lang/Float;->valueOf(F)Ljava/lang/Float;
-
-    move-result-object p1
-
-    invoke-interface {p2, p1}, Lw3/c;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object p1
-
-    check-cast p1, Ljava/lang/Number;
-
-    invoke-virtual {p1}, Ljava/lang/Number;->intValue()I
-
-    move-result p1
-
-    int-to-float p1, p1
-
-    invoke-virtual {p0, p1}, Landroid/graphics/drawable/GradientDrawable;->setCornerRadius(F)V
-
-    invoke-virtual {v0, p0}, Landroid/view/View;->setBackground(Landroid/graphics/drawable/Drawable;)V
+    invoke-static {v0}, Lwex/ui/core/feature/SettingsTheme;->secondaryButton(Landroid/widget/TextView;)V
 
     new-instance p0, Landroid/widget/LinearLayout$LayoutParams;
 
@@ -7162,7 +6580,7 @@
 
     const-string v2, ""
 
-    invoke-virtual {v0, v1, v2}, Lwex/ui/core/WexStore;->putString(Ljava/lang/String;Ljava/lang/String;)V
+    invoke-static {v0, v1, v2}, Lwex/ui/core/feature/SettingsChanges;->putString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)V
 
     sget-object v0, Lx4/u0;->a:Lx4/u0;
 
@@ -7175,12 +6593,6 @@
     invoke-virtual {v1}, Ljava/util/HashMap;->clear()V
 
     sput-object v0, Lx4/u0;->w:Landroid/graphics/Bitmap;
-
-    sget-object v0, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string v1, "\u5df2\u6062\u590d\u9ed8\u8ba4\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {v0, p0, v1}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
 
     sget-object p0, Lj3/x;->a:Lj3/x;
 
@@ -7217,13 +6629,7 @@
 
     const-string v1, "home_music_card"
 
-    invoke-virtual {v0, v1, p1}, Lwex/ui/core/WexStore;->putBool(Ljava/lang/String;Z)V
-
-    sget-object p1, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string v0, "\u5df2\u4fdd\u5b58\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p1, p0, v0}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
+    invoke-static {v0, v1, p1}, Lwex/ui/core/feature/SettingsChanges;->putBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)V
 
     sget-object p0, Lj3/x;->a:Lj3/x;
 
@@ -7270,12 +6676,6 @@
     invoke-virtual {v0}, Ljava/util/HashMap;->clear()V
 
     sput-object p1, Lx4/u0;->w:Landroid/graphics/Bitmap;
-
-    sget-object p1, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string v0, "\u80cc\u666f\u5df2\u66f4\u65b0\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p1, p0, v0}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
 
     sget-object p0, Lj3/x;->a:Lj3/x;
 
@@ -7510,7 +6910,7 @@
 
     const-string v5, "mypage_enabled"
 
-    invoke-virtual {v4, v5, v10}, Lwex/ui/core/WexStore;->getBool(Ljava/lang/String;Z)Z
+    invoke-static {v4, v5, v10}, Lwex/ui/core/feature/SettingsChanges;->getBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)Z
 
     move-result v4
 
@@ -7803,13 +7203,7 @@
 
     const-string v1, "mypage_enabled"
 
-    invoke-virtual {v0, v1, p1}, Lwex/ui/core/WexStore;->putBool(Ljava/lang/String;Z)V
-
-    sget-object p1, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string v0, "\u5df2\u4fdd\u5b58\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p1, p0, v0}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
+    invoke-static {v0, v1, p1}, Lwex/ui/core/feature/SettingsChanges;->putBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)V
 
     sget-object p0, Lj3/x;->a:Lj3/x;
 
@@ -7844,12 +7238,6 @@
     .locals 1
 
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
-
-    sget-object p1, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string v0, "\u80cc\u666f\u5df2\u66f4\u65b0\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p1, p0, v0}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
 
     sget-object p0, Lj3/x;->a:Lj3/x;
 
@@ -8225,7 +7613,7 @@
 
     const-string v8, "top_scan_enabled"
 
-    invoke-virtual {v1, v8, v10}, Lwex/ui/core/WexStore;->getBool(Ljava/lang/String;Z)Z
+    invoke-static {v1, v8, v10}, Lwex/ui/core/feature/SettingsChanges;->getBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)Z
 
     move-result v1
 
@@ -8336,13 +7724,7 @@
 
     const-string v1, "top_scan_enabled"
 
-    invoke-virtual {v0, v1, p1}, Lwex/ui/core/WexStore;->putBool(Ljava/lang/String;Z)V
-
-    sget-object p1, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string v0, "\u5df2\u4fdd\u5b58\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p1, p0, v0}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
+    invoke-static {v0, v1, p1}, Lwex/ui/core/feature/SettingsChanges;->putBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)V
 
     sget-object p0, Lj3/x;->a:Lj3/x;
 
@@ -8444,39 +7826,7 @@
 
     invoke-virtual {v9, v15, v13, v15, v14}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    new-instance v13, Landroid/graphics/drawable/GradientDrawable;
-
-    invoke-direct {v13}, Landroid/graphics/drawable/GradientDrawable;-><init>()V
-
-    const-string v14, "#33000000"
-
-    invoke-static {v14}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v14
-
-    invoke-virtual {v13, v14}, Landroid/graphics/drawable/GradientDrawable;->setColor(I)V
-
-    const/high16 v14, 0x41400000    # 12.0f
-
-    invoke-static {v14}, Ljava/lang/Float;->valueOf(F)Ljava/lang/Float;
-
-    move-result-object v14
-
-    invoke-interface {v4, v14}, Lw3/c;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object v14
-
-    check-cast v14, Ljava/lang/Number;
-
-    invoke-virtual {v14}, Ljava/lang/Number;->intValue()I
-
-    move-result v14
-
-    int-to-float v14, v14
-
-    invoke-virtual {v13, v14}, Landroid/graphics/drawable/GradientDrawable;->setCornerRadius(F)V
-
-    invoke-virtual {v9, v13}, Landroid/view/View;->setBackground(Landroid/graphics/drawable/Drawable;)V
+    invoke-static {v9}, Lwex/ui/core/feature/SettingsTheme;->secondaryButton(Landroid/widget/TextView;)V
 
     new-instance v13, Landroid/widget/LinearLayout$LayoutParams;
 
@@ -8569,7 +7919,7 @@
 
     move-result v11
 
-    invoke-virtual {v10, v15, v11}, Lwex/ui/core/WexStore;->getBool(Ljava/lang/String;Z)Z
+    invoke-static {v10, v15, v11}, Lwex/ui/core/feature/SettingsChanges;->getBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)Z
 
     move-result v10
 
@@ -8837,7 +8187,7 @@
 
     move-result v2
 
-    invoke-virtual {v3, v4, v2}, Lwex/ui/core/WexStore;->getBool(Ljava/lang/String;Z)Z
+    invoke-static {v3, v4, v2}, Lwex/ui/core/feature/SettingsChanges;->getBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)Z
 
     move-result v2
 
@@ -8953,7 +8303,7 @@
 
     move-result-object p0
 
-    invoke-virtual {p0}, Landroid/app/AlertDialog$Builder;->show()Landroid/app/AlertDialog;
+    invoke-static {p0}, Lwex/ui/core/feature/SettingsTheme;->showDialog(Landroid/app/AlertDialog$Builder;)Landroid/app/AlertDialog;
 
     return-void
 .end method
@@ -8975,13 +8325,7 @@
 
     const/4 p8, 0x1
 
-    invoke-virtual {p7, p0, p8}, Lwex/ui/core/WexStore;->putBool(Ljava/lang/String;Z)V
-
-    sget-object p0, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string p7, "\u5df2\u6dfb\u52a0\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p0, p1, p7}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
+    invoke-static {p7, p0, p8}, Lwex/ui/core/feature/SettingsChanges;->putBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)V
 
     move-object v0, p2
 
@@ -9005,13 +8349,7 @@
 
     const/4 v0, 0x0
 
-    invoke-virtual {p7, p0, v0}, Lwex/ui/core/WexStore;->putBool(Ljava/lang/String;Z)V
-
-    sget-object p0, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string p7, "\u5df2\u5220\u9664\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p0, p1, p7}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
+    invoke-static {p7, p0, v0}, Lwex/ui/core/feature/SettingsChanges;->putBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)V
 
     move-object v1, p2
 
@@ -9208,8 +8546,6 @@
 
     invoke-virtual {p1}, Lwex/ui/core/feature/CalendarCardFeature;->clearCache()V
 
-    invoke-virtual {v0, p0}, Lwex/ui/core/feature/ImagePicker;->hotRestartWechat(Landroid/app/Activity;)V
-
     :cond_0
     sget-object p0, Lj3/x;->a:Lj3/x;
 
@@ -9233,15 +8569,15 @@
 
     const/4 v2, 0x0
 
-    invoke-virtual {v0, v1, v2}, Lwex/ui/core/WexStore;->putBool(Ljava/lang/String;Z)V
+    invoke-static {v0, v1, v2}, Lwex/ui/core/feature/SettingsChanges;->putBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)V
 
     const-string v1, "home_image_card"
 
-    invoke-virtual {v0, v1, v2}, Lwex/ui/core/WexStore;->putBool(Ljava/lang/String;Z)V
+    invoke-static {v0, v1, v2}, Lwex/ui/core/feature/SettingsChanges;->putBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)V
 
     const-string v1, "home_music_card"
 
-    invoke-virtual {v0, v1, v2}, Lwex/ui/core/WexStore;->putBool(Ljava/lang/String;Z)V
+    invoke-static {v0, v1, v2}, Lwex/ui/core/feature/SettingsChanges;->putBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)V
 
     sget-object v0, Lwex/ui/core/feature/ImageCardFeature;->INSTANCE:Lwex/ui/core/feature/ImageCardFeature;
 
@@ -9263,14 +8599,6 @@
 
     sput-object v0, Lx4/u0;->w:Landroid/graphics/Bitmap;
 
-    sget-object v0, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string v1, "\u5df2\u5168\u90e8\u5173\u95ed\uff0c\u6b63\u5728\u91cd\u542f\u5fae\u4fe1..."
-
-    invoke-virtual {v0, p0, v1}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
-
-    invoke-virtual {v0, p0}, Lwex/ui/core/feature/ImagePicker;->hotRestartWechat(Landroid/app/Activity;)V
-
     sget-object p0, Lj3/x;->a:Lj3/x;
 
     return-object p0
@@ -9279,13 +8607,7 @@
 .method private static final show$lambda$9(Landroid/app/Activity;)Lj3/x;
     .locals 2
 
-    sget-object v0, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string v1, "\u6b63\u5728\u91cd\u542f\u5fae\u4fe1..."
-
-    invoke-virtual {v0, p0, v1}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
-
-    invoke-virtual {v0, p0}, Lwex/ui/core/feature/ImagePicker;->hotRestartWechat(Landroid/app/Activity;)V
+    invoke-static {p0}, Lwex/ui/core/feature/SettingsShell;->confirmRestart(Landroid/app/Activity;)V
 
     sget-object p0, Lj3/x;->a:Lj3/x;
 
@@ -9322,13 +8644,15 @@
 
     const-string v5, ""
 
-    invoke-virtual {v4, v1, v5}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    invoke-static {v4, v1, v5}, Lwex/ui/core/feature/SettingsChanges;->getString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 
     move-result-object v4
 
     new-instance v5, Landroid/widget/EditText;
 
     invoke-direct {v5, v0}, Landroid/widget/EditText;-><init>(Landroid/content/Context;)V
+
+    invoke-static {v5}, Lwex/ui/core/feature/SettingsTheme;->styleInput(Landroid/widget/EditText;)V
 
     const-string v6, "\u5982 #07C160"
 
@@ -9594,7 +8918,7 @@
 
     move-result-object v0
 
-    invoke-virtual {v0}, Landroid/app/AlertDialog$Builder;->show()Landroid/app/AlertDialog;
+    invoke-static {v0}, Lwex/ui/core/feature/SettingsTheme;->showDialog(Landroid/app/AlertDialog$Builder;)Landroid/app/AlertDialog;
 
     return-void
 .end method
@@ -9628,13 +8952,7 @@
 
     sget-object p4, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
 
-    invoke-virtual {p4, p1, p0}, Lwex/ui/core/WexStore;->putString(Ljava/lang/String;Ljava/lang/String;)V
-
-    sget-object p1, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string p4, "\u5df2\u4fdd\u5b58\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p1, p2, p4}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
+    invoke-static {p4, p1, p0}, Lwex/ui/core/feature/SettingsChanges;->putString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)V
 
     invoke-virtual {p0}, Ljava/lang/String;->length()I
 
@@ -9683,13 +9001,11 @@
 
     move-result-object v5
 
-    const-string v6, "#FFFFFF"
+    invoke-static {v0}, Lwex/ui/core/feature/SettingsTheme;->popupBackground(Landroid/content/Context;)Landroid/graphics/drawable/Drawable;
 
-    invoke-static {v6}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
+    move-result-object v7
 
-    move-result v7
-
-    invoke-virtual {v5, v7}, Landroid/view/View;->setBackgroundColor(I)V
+    invoke-virtual {v5, v7}, Landroid/view/View;->setBackground(Landroid/graphics/drawable/Drawable;)V
 
     const/high16 v7, 0x41c00000    # 24.0f
 
@@ -9747,9 +9063,7 @@
 
     invoke-virtual {v5, v4}, Landroid/view/View;->setClipToOutline(Z)V
 
-    new-instance v7, Lz4/y;
-
-    invoke-direct {v7, v3}, Lz4/y;-><init>(Lr/i0;)V
+    sget-object v7, Landroid/view/ViewOutlineProvider;->BACKGROUND:Landroid/view/ViewOutlineProvider;
 
     invoke-virtual {v5, v7}, Landroid/view/View;->setOutlineProvider(Landroid/view/ViewOutlineProvider;)V
 
@@ -9765,9 +9079,7 @@
 
     invoke-virtual {v7, v8}, Landroid/widget/TextView;->setTextSize(F)V
 
-    const-string v8, "#333333"
-
-    invoke-static {v8}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
+    invoke-static {v0}, Lwex/ui/core/feature/SettingsTheme;->ink(Landroid/content/Context;)I
 
     move-result v9
 
@@ -9805,25 +9117,11 @@
 
     invoke-virtual {v7, v9}, Landroid/widget/TextView;->setTextSize(F)V
 
-    invoke-static {v8}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v8
-
-    invoke-virtual {v7, v8}, Landroid/widget/TextView;->setTextColor(I)V
-
-    const-string v8, "#AAAAAA"
-
-    invoke-static {v8}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v8
-
-    invoke-virtual {v7, v8}, Landroid/widget/TextView;->setHintTextColor(I)V
-
     sget-object v8, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
 
     const-string v11, ""
 
-    invoke-virtual {v8, v1, v11}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    invoke-static {v8, v1, v11}, Lwex/ui/core/feature/SettingsChanges;->getString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 
     move-result-object v8
 
@@ -9879,53 +9177,7 @@
 
     invoke-virtual {v7, v8, v13, v14, v15}, Landroid/view/View;->setPadding(IIII)V
 
-    new-instance v8, Landroid/graphics/drawable/GradientDrawable;
-
-    invoke-direct {v8}, Landroid/graphics/drawable/GradientDrawable;-><init>()V
-
-    const-string v13, "#F7F7F7"
-
-    invoke-static {v13}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v13
-
-    invoke-virtual {v8, v13}, Landroid/graphics/drawable/GradientDrawable;->setColor(I)V
-
-    const/high16 v13, 0x41600000    # 14.0f
-
-    invoke-static {v13}, Ljava/lang/Float;->valueOf(F)Ljava/lang/Float;
-
-    move-result-object v13
-
-    invoke-virtual {v3, v13}, Lr/i0;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object v14
-
-    check-cast v14, Ljava/lang/Number;
-
-    invoke-virtual {v14}, Ljava/lang/Number;->intValue()I
-
-    move-result v14
-
-    int-to-float v14, v14
-
-    invoke-virtual {v8, v14}, Landroid/graphics/drawable/GradientDrawable;->setCornerRadius(F)V
-
-    const/high16 v14, 0x3fc00000    # 1.5f
-
-    mul-float/2addr v2, v14
-
-    float-to-int v2, v2
-
-    const-string v14, "#1A73E8"
-
-    invoke-static {v14}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v15
-
-    invoke-virtual {v8, v2, v15}, Landroid/graphics/drawable/GradientDrawable;->setStroke(II)V
-
-    invoke-virtual {v7, v8}, Landroid/view/View;->setBackground(Landroid/graphics/drawable/Drawable;)V
+    invoke-static {v7}, Lwex/ui/core/feature/SettingsTheme;->styleInput(Landroid/widget/EditText;)V
 
     new-instance v2, Landroid/widget/LinearLayout$LayoutParams;
 
@@ -9985,14 +9237,6 @@
 
     invoke-virtual {v8, v9}, Landroid/widget/TextView;->setTextSize(F)V
 
-    const-string v10, "#666666"
-
-    invoke-static {v10}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v10
-
-    invoke-virtual {v8, v10}, Landroid/widget/TextView;->setTextColor(I)V
-
     const/16 v10, 0x11
 
     invoke-virtual {v8, v10}, Landroid/widget/TextView;->setGravity(I)V
@@ -10021,33 +9265,7 @@
 
     invoke-virtual {v8, v9, v12, v9, v10}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    new-instance v9, Landroid/graphics/drawable/GradientDrawable;
-
-    invoke-direct {v9}, Landroid/graphics/drawable/GradientDrawable;-><init>()V
-
-    const-string v10, "#F5F5F5"
-
-    invoke-static {v10}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v10
-
-    invoke-virtual {v9, v10}, Landroid/graphics/drawable/GradientDrawable;->setColor(I)V
-
-    invoke-virtual {v3, v13}, Lr/i0;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object v10
-
-    check-cast v10, Ljava/lang/Number;
-
-    invoke-virtual {v10}, Ljava/lang/Number;->intValue()I
-
-    move-result v10
-
-    int-to-float v10, v10
-
-    invoke-virtual {v9, v10}, Landroid/graphics/drawable/GradientDrawable;->setCornerRadius(F)V
-
-    invoke-virtual {v8, v9}, Landroid/view/View;->setBackground(Landroid/graphics/drawable/Drawable;)V
+    invoke-static {v8}, Lwex/ui/core/feature/SettingsTheme;->secondaryButton(Landroid/widget/TextView;)V
 
     new-instance v9, Landroid/widget/LinearLayout$LayoutParams;
 
@@ -10107,12 +9325,6 @@
 
     invoke-virtual {v8, v9}, Landroid/widget/TextView;->setTextSize(F)V
 
-    invoke-static {v6}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v6
-
-    invoke-virtual {v8, v6}, Landroid/widget/TextView;->setTextColor(I)V
-
     const/16 v6, 0x11
 
     invoke-virtual {v8, v6}, Landroid/widget/TextView;->setGravity(I)V
@@ -10141,31 +9353,7 @@
 
     invoke-virtual {v8, v10, v6, v10, v9}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    new-instance v6, Landroid/graphics/drawable/GradientDrawable;
-
-    invoke-direct {v6}, Landroid/graphics/drawable/GradientDrawable;-><init>()V
-
-    invoke-static {v14}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v9
-
-    invoke-virtual {v6, v9}, Landroid/graphics/drawable/GradientDrawable;->setColor(I)V
-
-    invoke-virtual {v3, v13}, Lr/i0;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object v9
-
-    check-cast v9, Ljava/lang/Number;
-
-    invoke-virtual {v9}, Ljava/lang/Number;->intValue()I
-
-    move-result v9
-
-    int-to-float v9, v9
-
-    invoke-virtual {v6, v9}, Landroid/graphics/drawable/GradientDrawable;->setCornerRadius(F)V
-
-    invoke-virtual {v8, v6}, Landroid/view/View;->setBackground(Landroid/graphics/drawable/Drawable;)V
+    invoke-static {v8}, Lwex/ui/core/feature/SettingsTheme;->primaryButton(Landroid/widget/TextView;)V
 
     new-instance v6, Landroid/widget/LinearLayout$LayoutParams;
 
@@ -10290,7 +9478,7 @@
 
     const-string p4, ""
 
-    invoke-virtual {p0, p3, p4}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    invoke-static {p0, p3, p4}, Lwex/ui/core/feature/SettingsChanges;->getString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 
     move-result-object p0
 
@@ -10298,6 +9486,8 @@
     new-instance p4, Landroid/widget/EditText;
 
     invoke-direct {p4, p1}, Landroid/widget/EditText;-><init>(Landroid/content/Context;)V
+
+    invoke-static {p4}, Lwex/ui/core/feature/SettingsTheme;->styleInput(Landroid/widget/EditText;)V
 
     .line 664
     const-string v0, "\u7559\u7a7a=\u4f7f\u7528\u9ed8\u8ba4"
@@ -10363,7 +9553,7 @@
     move-result-object p0
 
     .line 671
-    invoke-virtual {p0}, Landroid/app/AlertDialog$Builder;->show()Landroid/app/AlertDialog;
+    invoke-static {p0}, Lwex/ui/core/feature/SettingsTheme;->showDialog(Landroid/app/AlertDialog$Builder;)Landroid/app/AlertDialog;
 
     return-void
 .end method
@@ -10425,13 +9615,7 @@
 
     sget-object p4, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
 
-    invoke-virtual {p4, p1, p0}, Lwex/ui/core/WexStore;->putString(Ljava/lang/String;Ljava/lang/String;)V
-
-    sget-object p1, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string p4, "\u5df2\u4fdd\u5b58\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p1, p2, p4}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
+    invoke-static {p4, p1, p0}, Lwex/ui/core/feature/SettingsChanges;->putString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)V
 
     invoke-interface {p3, p0}, Lw3/c;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
 
@@ -10477,27 +9661,23 @@
 
     move-result-object p1
 
-    invoke-virtual {p5, p0, p1}, Lwex/ui/core/WexStore;->putString(Ljava/lang/String;Ljava/lang/String;)V
+    invoke-static {p5, p0, p1}, Lwex/ui/core/feature/SettingsChanges;->putString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)V
 
     invoke-virtual {p2}, Landroid/widget/PopupWindow;->dismiss()V
 
-    sget-object p0, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
+    const-string p1, "top_"
 
-    if-eqz p3, :cond_0
+    invoke-virtual {p0, p1}, Ljava/lang/String;->startsWith(Ljava/lang/String;)Z
 
-    const-string p1, "\u5df2\u4fdd\u5b58\uff0c\u6b63\u5728\u91cd\u542f\u5fae\u4fe1..."
+    move-result p1
 
-    invoke-virtual {p0, p4, p1}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
+    if-eqz p1, :other_setting
 
-    invoke-virtual {p0, p4}, Lwex/ui/core/feature/ImagePicker;->hotRestartWechat(Landroid/app/Activity;)V
+    sget-object p0, Lwex/ui/core/feature/TopBarFeature;->INSTANCE:Lwex/ui/core/feature/TopBarFeature;
 
-    return-void
+    invoke-static {p0, p4}, Lwex/ui/core/feature/TopBarFeature;->access$applyTopBar(Lwex/ui/core/feature/TopBarFeature;Landroid/app/Activity;)V
 
-    :cond_0
-    const-string p1, "\u5df2\u4fdd\u5b58\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p0, p4, p1}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
-
+    :other_setting
     return-void
 .end method
 
@@ -10725,7 +9905,7 @@
 
     move/from16 p3, p11
 
-    invoke-virtual {p2, v1, p3}, Lwex/ui/core/WexStore;->getBool(Ljava/lang/String;Z)Z
+    invoke-static {p2, v1, p3}, Lwex/ui/core/feature/SettingsChanges;->getBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)Z
 
     move-result p2
 
@@ -10816,15 +9996,7 @@
 
     sget-object v0, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
 
-    invoke-virtual {v0, p0, p2}, Lwex/ui/core/WexStore;->putBool(Ljava/lang/String;Z)V
-
-    sget-object p0, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string p2, "\u8bbe\u7f6e\u5df2\u4fdd\u5b58\uff0c\u6b63\u5728\u91cd\u542f\u5fae\u4fe1..."
-
-    invoke-virtual {p0, p1, p2}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
-
-    invoke-virtual {p0, p1}, Lwex/ui/core/feature/ImagePicker;->hotRestartWechat(Landroid/app/Activity;)V
+    invoke-static {v0, p0, p2}, Lwex/ui/core/feature/SettingsChanges;->putBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)V
 
     sget-object p0, Lj3/x;->a:Lj3/x;
 
@@ -11076,7 +10248,7 @@
 
     const-string v5, "tab_bg_enabled"
 
-    invoke-virtual {v4, v5, v10}, Lwex/ui/core/WexStore;->getBool(Ljava/lang/String;Z)Z
+    invoke-static {v4, v5, v10}, Lwex/ui/core/feature/SettingsChanges;->getBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)Z
 
     move-result v4
 
@@ -11384,13 +10556,7 @@
 
     const-string v1, "tab_bg_enabled"
 
-    invoke-virtual {v0, v1, p1}, Lwex/ui/core/WexStore;->putBool(Ljava/lang/String;Z)V
-
-    sget-object p1, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string v0, "\u5df2\u4fdd\u5b58\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p1, p0, v0}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
+    invoke-static {v0, v1, p1}, Lwex/ui/core/feature/SettingsChanges;->putBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)V
 
     sget-object p0, Lj3/x;->a:Lj3/x;
 
@@ -11429,12 +10595,6 @@
     .locals 1
 
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
-
-    sget-object p1, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string v0, "\u80cc\u666f\u5df2\u66f4\u65b0\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p1, p0, v0}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
 
     sget-object p0, Lj3/x;->a:Lj3/x;
 
@@ -11702,7 +10862,7 @@
 
     sget-object v4, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
 
-    invoke-virtual {v4, v2, v13}, Lwex/ui/core/WexStore;->getBool(Ljava/lang/String;Z)Z
+    invoke-static {v4, v2, v13}, Lwex/ui/core/feature/SettingsChanges;->getBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)Z
 
     move-result v4
 
@@ -11768,119 +10928,10 @@
 
     invoke-static/range {v0 .. v6}, Lwex/ui/core/xposed/SettingsPanelHelper;->topBarGroup$subSwitch(Landroid/app/Activity;ILandroid/widget/LinearLayout;Lw3/c;ILjava/lang/String;Ljava/lang/String;)V
 
-    new-instance v4, Lz4/h;
-
-    invoke-direct {v4, v13}, Lz4/h;-><init>(I)V
-
-    iput-object v0, v4, Lz4/h;->d:Landroid/app/Activity;
-
-    iput-object v7, v4, Lz4/h;->e:Landroid/view/View;
-
-    invoke-static {}, Ljava/lang/invoke/VarHandle;->storeStoreFence()V
-
-    const-string v5, "\u8bbe\u7f6e\u6807\u9898\u6587\u5b57"
-
-    invoke-static {v0, v1, v3, v5, v4}, Lwex/ui/core/xposed/SettingsPanelHelper;->topBarGroup$expandBtn(Landroid/app/Activity;ILw3/c;Ljava/lang/String;Lw3/a;)Landroid/view/View;
-
-    move-result-object v4
-
-    invoke-virtual {v2, v4}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    new-instance v4, Lz4/h;
-
-    invoke-direct {v4, v8}, Lz4/h;-><init>(I)V
-
-    iput-object v0, v4, Lz4/h;->d:Landroid/app/Activity;
-
-    iput-object v7, v4, Lz4/h;->e:Landroid/view/View;
-
-    invoke-static {}, Ljava/lang/invoke/VarHandle;->storeStoreFence()V
-
-    const-string v5, "\u8bbe\u7f6e\u6635\u79f0"
-
-    invoke-static {v0, v1, v3, v5, v4}, Lwex/ui/core/xposed/SettingsPanelHelper;->topBarGroup$expandBtn(Landroid/app/Activity;ILw3/c;Ljava/lang/String;Lw3/a;)Landroid/view/View;
-
-    move-result-object v4
-
-    invoke-virtual {v2, v4}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    new-instance v4, Lz4/h;
-
-    const/4 v5, 0x2
-
-    invoke-direct {v4, v5}, Lz4/h;-><init>(I)V
-
-    iput-object v0, v4, Lz4/h;->d:Landroid/app/Activity;
-
-    iput-object v7, v4, Lz4/h;->e:Landroid/view/View;
-
-    invoke-static {}, Ljava/lang/invoke/VarHandle;->storeStoreFence()V
-
-    const-string v5, "\u8bbe\u7f6e\u72b6\u6001\u6587\u5b57"
-
-    invoke-static {v0, v1, v3, v5, v4}, Lwex/ui/core/xposed/SettingsPanelHelper;->topBarGroup$expandBtn(Landroid/app/Activity;ILw3/c;Ljava/lang/String;Lw3/a;)Landroid/view/View;
-
-    move-result-object v4
-
-    invoke-virtual {v2, v4}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    new-instance v4, Lx4/a;
-
-    const/4 v5, 0x6
-
-    invoke-direct {v4, v5}, Lx4/a;-><init>(I)V
-
-    iput-object v0, v4, Lx4/a;->d:Landroid/app/Activity;
-
-    invoke-static {}, Ljava/lang/invoke/VarHandle;->storeStoreFence()V
-
-    const-string v6, "\u5207\u6362\u5706\u70b9\u989c\u8272\uff08\u7eff/\u7ea2\uff09"
-
-    invoke-static {v0, v1, v3, v6, v4}, Lwex/ui/core/xposed/SettingsPanelHelper;->topBarGroup$expandBtn(Landroid/app/Activity;ILw3/c;Ljava/lang/String;Lw3/a;)Landroid/view/View;
-
-    move-result-object v4
-
-    invoke-virtual {v2, v4}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    new-instance v4, Lx4/a;
-
-    const/16 v6, 0xa
-
-    invoke-direct {v4, v6}, Lx4/a;-><init>(I)V
-
-    iput-object v0, v4, Lx4/a;->d:Landroid/app/Activity;
-
-    invoke-static {}, Ljava/lang/invoke/VarHandle;->storeStoreFence()V
-
-    const-string v6, "\u66f4\u6362\u9876\u680f\u5934\u50cf"
-
-    invoke-static {v0, v1, v3, v6, v4}, Lwex/ui/core/xposed/SettingsPanelHelper;->topBarGroup$expandBtn(Landroid/app/Activity;ILw3/c;Ljava/lang/String;Lw3/a;)Landroid/view/View;
-
-    move-result-object v4
-
-    invoke-virtual {v2, v4}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    new-instance v4, Lz4/h;
-
-    const/4 v6, 0x4
-
-    invoke-direct {v4, v6}, Lz4/h;-><init>(I)V
-
-    iput-object v0, v4, Lz4/h;->d:Landroid/app/Activity;
-
-    iput-object v7, v4, Lz4/h;->e:Landroid/view/View;
-
-    invoke-static {}, Ljava/lang/invoke/VarHandle;->storeStoreFence()V
-
-    const-string v6, "\u8bbe\u7f6e\u641c\u7d22\u6846\u63d0\u793a\u6587\u5b57"
-
-    invoke-static {v0, v1, v3, v6, v4}, Lwex/ui/core/xposed/SettingsPanelHelper;->topBarGroup$expandBtn(Landroid/app/Activity;ILw3/c;Ljava/lang/String;Lw3/a;)Landroid/view/View;
-
-    move-result-object v0
-
-    invoke-virtual {v2, v0}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
     invoke-virtual {v9, v2}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
+
+    # x4.p 的 0..5 已占用；顶栏展开监听器走 default 分支 q0，固定使用 6。
+    const/4 v5, 0x6
 
     new-instance v0, Lx4/p;
 
@@ -11956,39 +11007,7 @@
 
     invoke-virtual {v0, p3, p1, p3, p0}, Landroid/widget/TextView;->setPadding(IIII)V
 
-    new-instance p0, Landroid/graphics/drawable/GradientDrawable;
-
-    invoke-direct {p0}, Landroid/graphics/drawable/GradientDrawable;-><init>()V
-
-    const-string p1, "#33000000"
-
-    invoke-static {p1}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result p1
-
-    invoke-virtual {p0, p1}, Landroid/graphics/drawable/GradientDrawable;->setColor(I)V
-
-    const/high16 p1, 0x41400000    # 12.0f
-
-    invoke-static {p1}, Ljava/lang/Float;->valueOf(F)Ljava/lang/Float;
-
-    move-result-object p1
-
-    invoke-interface {p2, p1}, Lw3/c;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object p1
-
-    check-cast p1, Ljava/lang/Number;
-
-    invoke-virtual {p1}, Ljava/lang/Number;->intValue()I
-
-    move-result p1
-
-    int-to-float p1, p1
-
-    invoke-virtual {p0, p1}, Landroid/graphics/drawable/GradientDrawable;->setCornerRadius(F)V
-
-    invoke-virtual {v0, p0}, Landroid/view/View;->setBackground(Landroid/graphics/drawable/Drawable;)V
+    invoke-static {v0}, Lwex/ui/core/feature/SettingsTheme;->secondaryButton(Landroid/widget/TextView;)V
 
     new-instance p0, Landroid/widget/LinearLayout$LayoutParams;
 
@@ -12126,7 +11145,7 @@
 
     const-string v2, "green"
 
-    invoke-virtual {v0, v1, v2}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    invoke-static {v0, v1, v2}, Lwex/ui/core/feature/SettingsChanges;->getString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 
     move-result-object v3
 
@@ -12144,41 +11163,11 @@
     move-object v2, v4
 
     :goto_0
-    invoke-virtual {v0, v1, v2}, Lwex/ui/core/WexStore;->putString(Ljava/lang/String;Ljava/lang/String;)V
+    invoke-static {v0, v1, v2}, Lwex/ui/core/feature/SettingsChanges;->putString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)V
 
-    sget-object v0, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
+    sget-object v0, Lwex/ui/core/feature/TopBarFeature;->INSTANCE:Lwex/ui/core/feature/TopBarFeature;
 
-    invoke-static {v2, v4}, Lkotlin/jvm/internal/Intrinsics;->areEqual(Ljava/lang/Object;Ljava/lang/Object;)Z
-
-    move-result v1
-
-    if-eqz v1, :cond_1
-
-    const-string v1, "\u7ea2\u8272"
-
-    goto :goto_1
-
-    :cond_1
-    const-string v1, "\u7eff\u8272"
-
-    :goto_1
-    new-instance v2, Ljava/lang/StringBuilder;
-
-    const-string v3, "\u5706\u70b9\u5df2\u8bbe\u4e3a"
-
-    invoke-direct {v2, v3}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
-
-    invoke-virtual {v2, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    const-string v1, "\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {v2, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v2}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-
-    move-result-object v1
-
-    invoke-virtual {v0, p0, v1}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
+    invoke-static {v0, p0}, Lwex/ui/core/feature/TopBarFeature;->access$applyTopBar(Lwex/ui/core/feature/TopBarFeature;Landroid/app/Activity;)V
 
     sget-object p0, Lj3/x;->a:Lj3/x;
 
@@ -12214,11 +11203,9 @@
 
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
-    sget-object p1, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
+    sget-object p1, Lwex/ui/core/feature/TopBarFeature;->INSTANCE:Lwex/ui/core/feature/TopBarFeature;
 
-    const-string v0, "\u5934\u50cf\u5df2\u66f4\u65b0\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p1, p0, v0}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
+    invoke-static {p1, p0}, Lwex/ui/core/feature/TopBarFeature;->access$applyTopBar(Lwex/ui/core/feature/TopBarFeature;Landroid/app/Activity;)V
 
     sget-object p0, Lj3/x;->a:Lj3/x;
 
@@ -12277,13 +11264,11 @@
 
     sget-object v0, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
 
-    invoke-virtual {v0, p0, p2}, Lwex/ui/core/WexStore;->putBool(Ljava/lang/String;Z)V
+    invoke-static {v0, p0, p2}, Lwex/ui/core/feature/SettingsChanges;->putBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)V
 
-    sget-object p0, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
+    sget-object v0, Lwex/ui/core/feature/TopBarFeature;->INSTANCE:Lwex/ui/core/feature/TopBarFeature;
 
-    const-string p2, "\u5df2\u4fdd\u5b58\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p0, p1, p2}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
+    invoke-static {v0, p1}, Lwex/ui/core/feature/TopBarFeature;->access$applyTopBar(Lwex/ui/core/feature/TopBarFeature;Landroid/app/Activity;)V
 
     sget-object p0, Lj3/x;->a:Lj3/x;
 
@@ -12368,39 +11353,7 @@
 
     invoke-virtual {v0, v3, v5, v2, v4}, Landroid/view/View;->setPadding(IIII)V
 
-    new-instance v2, Landroid/graphics/drawable/GradientDrawable;
-
-    invoke-direct {v2}, Landroid/graphics/drawable/GradientDrawable;-><init>()V
-
-    const-string v3, "#33000000"
-
-    invoke-static {v3}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v3
-
-    invoke-virtual {v2, v3}, Landroid/graphics/drawable/GradientDrawable;->setColor(I)V
-
-    const/high16 v3, 0x41400000    # 12.0f
-
-    invoke-static {v3}, Ljava/lang/Float;->valueOf(F)Ljava/lang/Float;
-
-    move-result-object v3
-
-    invoke-interface {p3, v3}, Lw3/c;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object v3
-
-    check-cast v3, Ljava/lang/Number;
-
-    invoke-virtual {v3}, Ljava/lang/Number;->intValue()I
-
-    move-result v3
-
-    int-to-float v3, v3
-
-    invoke-virtual {v2, v3}, Landroid/graphics/drawable/GradientDrawable;->setCornerRadius(F)V
-
-    invoke-virtual {v0, v2}, Landroid/view/View;->setBackground(Landroid/graphics/drawable/Drawable;)V
+    invoke-static {v0}, Lwex/ui/core/feature/SettingsTheme;->secondarySurface(Landroid/view/View;)V
 
     new-instance v2, Landroid/widget/LinearLayout$LayoutParams;
 
@@ -12456,7 +11409,7 @@
 
     sget-object p4, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
 
-    invoke-virtual {p4, p6, v1}, Lwex/ui/core/WexStore;->getBool(Ljava/lang/String;Z)Z
+    invoke-static {p4, p6, v1}, Lwex/ui/core/feature/SettingsChanges;->getBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)Z
 
     move-result p4
 
@@ -12488,13 +11441,11 @@
 
     sget-object v0, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
 
-    invoke-virtual {v0, p0, p2}, Lwex/ui/core/WexStore;->putBool(Ljava/lang/String;Z)V
+    invoke-static {v0, p0, p2}, Lwex/ui/core/feature/SettingsChanges;->putBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)V
 
-    sget-object p0, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
+    sget-object v0, Lwex/ui/core/feature/TopBarFeature;->INSTANCE:Lwex/ui/core/feature/TopBarFeature;
 
-    const-string p2, "\u5df2\u4fdd\u5b58\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p0, p1, p2}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
+    invoke-static {v0, p1}, Lwex/ui/core/feature/TopBarFeature;->access$applyTopBar(Lwex/ui/core/feature/TopBarFeature;Landroid/app/Activity;)V
 
     sget-object p0, Lj3/x;->a:Lj3/x;
 
@@ -12748,7 +11699,7 @@
 
     const-string v7, "chat_top_transparent"
 
-    invoke-virtual {v5, v7, v13}, Lwex/ui/core/WexStore;->getBool(Ljava/lang/String;Z)Z
+    invoke-static {v5, v7, v13}, Lwex/ui/core/feature/SettingsChanges;->getBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)Z
 
     move-result v5
 
@@ -12998,13 +11949,7 @@
 
     const-string v1, "chat_top_transparent"
 
-    invoke-virtual {v0, v1, p1}, Lwex/ui/core/WexStore;->putBool(Ljava/lang/String;Z)V
-
-    sget-object p1, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    const-string v0, "\u5df2\u4fdd\u5b58\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p1, p0, v0}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
+    invoke-static {v0, v1, p1}, Lwex/ui/core/feature/SettingsChanges;->putBool(Lwex/ui/core/WexStore;Ljava/lang/String;Z)V
 
     sget-object p0, Lj3/x;->a:Lj3/x;
 
@@ -13020,7 +11965,7 @@
 
     const-string v1, "chat_top_style"
 
-    invoke-virtual {p7, v1, v0}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    invoke-static {p7, v1, v0}, Lwex/ui/core/feature/SettingsChanges;->getString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 
     move-result-object v0
 
@@ -13030,29 +11975,9 @@
 
     if-nez v0, :cond_0
 
-    invoke-virtual {p7, v1, p0}, Lwex/ui/core/WexStore;->putString(Ljava/lang/String;Ljava/lang/String;)V
+    invoke-static {p7, v1, p0}, Lwex/ui/core/feature/SettingsChanges;->putString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)V
 
     invoke-static {p3, p4, p5, p6}, Lwex/ui/core/xposed/SettingsPanelHelper;->topbarStyleGroup$refreshBtns(Ljava/util/List;[Lj3/f;ILw3/c;)V
-
-    sget-object p0, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    new-instance p3, Ljava/lang/StringBuilder;
-
-    const-string p4, "\u5df2\u5207\u6362"
-
-    invoke-direct {p3, p4}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
-
-    invoke-virtual {p3, p2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    const-string p2, "\uff0c\u8bf7\u786e\u8ba4\u9876\u680f\u5f00\u5173\u5df2\u5f00\u542f\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {p3, p2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-virtual {p3}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-
-    move-result-object p2
-
-    invoke-virtual {p0, p1, p2}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
 
     :cond_0
     return-void
@@ -13079,7 +12004,7 @@
 
     const-string v2, "1"
 
-    invoke-virtual {v0, v1, v2}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    invoke-static {v0, v1, v2}, Lwex/ui/core/feature/SettingsChanges;->getString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 
     move-result-object v0
 
@@ -13116,62 +12041,7 @@
 
     move-result v2
 
-    if-eqz v2, :cond_0
-
-    const/4 v5, -0x1
-
-    goto :goto_1
-
-    :cond_0
-    move v5, p2
-
-    :goto_1
-    invoke-virtual {v3, v5}, Landroid/widget/TextView;->setTextColor(I)V
-
-    new-instance v5, Landroid/graphics/drawable/GradientDrawable;
-
-    invoke-direct {v5}, Landroid/graphics/drawable/GradientDrawable;-><init>()V
-
-    if-eqz v2, :cond_1
-
-    move v6, p2
-
-    goto :goto_2
-
-    :cond_1
-    move v6, v1
-
-    :goto_2
-    invoke-virtual {v5, v6}, Landroid/graphics/drawable/GradientDrawable;->setColor(I)V
-
-    const/high16 v6, 0x41400000    # 12.0f
-
-    invoke-static {v6}, Ljava/lang/Float;->valueOf(F)Ljava/lang/Float;
-
-    move-result-object v6
-
-    invoke-interface {p3, v6}, Lw3/c;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object v6
-
-    check-cast v6, Ljava/lang/Number;
-
-    invoke-virtual {v6}, Ljava/lang/Number;->intValue()I
-
-    move-result v6
-
-    int-to-float v6, v6
-
-    invoke-virtual {v5, v6}, Landroid/graphics/drawable/GradientDrawable;->setCornerRadius(F)V
-
-    if-nez v2, :cond_2
-
-    const/4 v2, 0x1
-
-    invoke-virtual {v5, v2, p2}, Landroid/graphics/drawable/GradientDrawable;->setStroke(II)V
-
-    :cond_2
-    invoke-virtual {v3, v5}, Landroid/view/View;->setBackground(Landroid/graphics/drawable/Drawable;)V
+    invoke-static {v3, v2}, Lwex/ui/core/feature/SettingsTheme;->option(Landroid/widget/TextView;Z)V
 
     move v2, v4
 
@@ -13293,887 +12163,71 @@
 
 # virtual methods
 .method public final show(Landroid/app/Activity;Lw3/a;)V
-    .locals 22
-    .annotation system Ldalvik/annotation/Signature;
-        value = {
-            "(",
-            "Landroid/app/Activity;",
-            "Lw3/a;",
-            ")V"
-        }
-    .end annotation
-
+    .locals 10
     move-object/from16 v0, p0
-
     move-object/from16 v1, p1
-
-    const/high16 v2, 0x41800000    # 16.0f
-
-    invoke-static {v2}, Ljava/lang/Float;->valueOf(F)Ljava/lang/Float;
-
-    move-result-object v2
-
-    const/high16 v3, 0x41a00000    # 20.0f
-
-    invoke-static {v3}, Ljava/lang/Float;->valueOf(F)Ljava/lang/Float;
-
-    move-result-object v3
-
-    invoke-virtual {v1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
-
-    invoke-virtual/range {p2 .. p2}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
-
+    # ---- 1) 创建 Dialog（半透明无标题，状态栏可见）----
+    new-instance v2, Landroid/app/Dialog;
+    const v3, 0x1030010
+    invoke-direct {v2, v1, v3}, Landroid/app/Dialog;-><init>(Landroid/content/Context;I)V
+    # ---- 2) 判断深色模式 ----
     invoke-virtual {v1}, Landroid/content/Context;->getResources()Landroid/content/res/Resources;
-
-    move-result-object v4
-
-    invoke-virtual {v4}, Landroid/content/res/Resources;->getDisplayMetrics()Landroid/util/DisplayMetrics;
-
-    move-result-object v4
-
-    iget v4, v4, Landroid/util/DisplayMetrics;->density:F
-
-    new-instance v6, Lr/i0;
-
-    const/4 v14, 0x3
-
-    invoke-direct {v6, v14}, Lr/i0;-><init>(I)V
-
-    iput v4, v6, Lr/i0;->d:F
-
-    invoke-static {}, Ljava/lang/invoke/VarHandle;->storeStoreFence()V
-
-    invoke-virtual {v1}, Landroid/content/Context;->getResources()Landroid/content/res/Resources;
-
-    move-result-object v4
-
-    invoke-virtual {v4}, Landroid/content/res/Resources;->getConfiguration()Landroid/content/res/Configuration;
-
-    move-result-object v4
-
-    iget v4, v4, Landroid/content/res/Configuration;->uiMode:I
-
-    and-int/lit8 v4, v4, 0x30
-
-    const/16 v5, 0x20
-
-    if-ne v4, v5, :cond_0
-
-    const/16 v16, 0x1
-
-    goto :goto_0
-
-    :cond_0
-    const/16 v16, 0x0
-
-    :goto_0
-    if-eqz v16, :cond_1
-
-    const-string v4, "#121212"
-
-    :goto_1
-    invoke-static {v4}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v4
-
-    move v8, v4
-
-    goto :goto_2
-
-    :cond_1
-    const-string v4, "#FFFFFF"
-
-    goto :goto_1
-
-    :goto_2
-    if-eqz v16, :cond_2
-
-    const-string v4, "#1E1E1E"
-
-    :goto_3
-    invoke-static {v4}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v4
-
-    goto :goto_4
-
-    :cond_2
-    const-string v4, "#F5F5F5"
-
-    goto :goto_3
-
-    :goto_4
-    const-string v5, "#212121"
-
-    const-string v9, "#E0E0E0"
-
-    if-eqz v16, :cond_3
-
-    invoke-static {v9}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v10
-
-    goto :goto_5
-
-    :cond_3
-    invoke-static {v5}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v10
-
-    :goto_5
-    const-string v11, "#1976D2"
-
-    const-string v12, "#64B5F6"
-
-    if-eqz v16, :cond_4
-
-    invoke-static {v12}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v13
-
-    goto :goto_6
-
-    :cond_4
-    invoke-static {v11}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v13
-
-    :goto_6
-    if-eqz v16, :cond_5
-
-    invoke-static {v9}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v5
-
-    goto :goto_7
-
-    :cond_5
-    invoke-static {v5}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v5
-
-    :goto_7
-    if-eqz v16, :cond_6
-
-    const-string v9, "#888888"
-
-    :goto_8
-    invoke-static {v9}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v9
-
-    goto :goto_9
-
-    :cond_6
-    const-string v9, "#757575"
-
-    goto :goto_8
-
-    :goto_9
-    if-eqz v16, :cond_7
-
-    invoke-static {v12}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v11
-
-    goto :goto_a
-
-    :cond_7
-    invoke-static {v11}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v11
-
-    :goto_a
-    new-instance v12, Landroid/app/Dialog;
-
-    # 0x1030010 = Theme.Translucent.NoTitleBar（非全屏，状态栏可见）
-    const v14, 0x1030010
-
-    invoke-direct {v12, v1, v14}, Landroid/app/Dialog;-><init>(Landroid/content/Context;I)V
-
-    invoke-virtual {v1}, Landroid/content/Context;->getResources()Landroid/content/res/Resources;
-
-    move-result-object v14
-
-    const-string v7, "dimen"
-
-    const-string v15, "android"
-
-    move/from16 v18, v4
-
-    const-string v4, "status_bar_height"
-
-    invoke-virtual {v14, v4, v7, v15}, Landroid/content/res/Resources;->getIdentifier(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I
-
-    move-result v4
-
-    if-lez v4, :cond_8
-
-    invoke-virtual {v1}, Landroid/content/Context;->getResources()Landroid/content/res/Resources;
-
-    move-result-object v7
-
-    invoke-virtual {v7, v4}, Landroid/content/res/Resources;->getDimensionPixelSize(I)I
-
-    move-result v4
-
-    goto :goto_b
-
-    :cond_8
-    const/high16 v4, 0x41c00000    # 24.0f
-
-    invoke-static {v4}, Ljava/lang/Float;->valueOf(F)Ljava/lang/Float;
-
-    move-result-object v4
-
-    invoke-virtual {v6, v4}, Lr/i0;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object v4
-
-    check-cast v4, Ljava/lang/Number;
-
-    invoke-virtual {v4}, Ljava/lang/Number;->intValue()I
-
-    move-result v4
-
-    :goto_b
-    new-instance v14, Landroid/widget/LinearLayout;
-
-    invoke-direct {v14, v1}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
-
-    const/4 v7, 0x1
-
-    invoke-virtual {v14, v7}, Landroid/widget/LinearLayout;->setOrientation(I)V
-
-    invoke-virtual {v14, v8}, Landroid/view/View;->setBackgroundColor(I)V
-
-    new-instance v15, Landroid/view/ViewGroup$LayoutParams;
-
-    move/from16 v19, v11
-
-    const/4 v11, -0x1
-
-    invoke-direct {v15, v11, v11}, Landroid/view/ViewGroup$LayoutParams;-><init>(II)V
-
-    invoke-virtual {v14, v15}, Landroid/view/View;->setLayoutParams(Landroid/view/ViewGroup$LayoutParams;)V
-
-    new-instance v15, Landroid/widget/LinearLayout;
-
-    invoke-direct {v15, v1}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
-
-    invoke-virtual {v15, v7}, Landroid/widget/LinearLayout;->setOrientation(I)V
-
-    invoke-virtual {v6, v3}, Lr/i0;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object v7
-
-    check-cast v7, Ljava/lang/Number;
-
-    invoke-virtual {v7}, Ljava/lang/Number;->intValue()I
-
-    move-result v7
-
-    invoke-virtual {v6, v2}, Lr/i0;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object v20
-
-    check-cast v20, Ljava/lang/Number;
-
-    invoke-virtual/range {v20 .. v20}, Ljava/lang/Number;->intValue()I
-
-    move-result v20
-
-    add-int v4, v20, v4
-
-    invoke-virtual {v6, v2}, Lr/i0;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object v2
-
-    check-cast v2, Ljava/lang/Number;
-
-    invoke-virtual {v2}, Ljava/lang/Number;->intValue()I
-
-    move-result v2
-
-    const/high16 v20, 0x41400000    # 12.0f
-
-    invoke-static/range {v20 .. v20}, Ljava/lang/Float;->valueOf(F)Ljava/lang/Float;
-
-    move-result-object v11
-
-    invoke-virtual {v6, v11}, Lr/i0;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object v11
-
-    check-cast v11, Ljava/lang/Number;
-
-    invoke-virtual {v11}, Ljava/lang/Number;->intValue()I
-
-    move-result v11
-
-    invoke-virtual {v15, v7, v4, v2, v11}, Landroid/view/View;->setPadding(IIII)V
-
-    new-instance v2, Landroid/widget/TextView;
-
-    invoke-direct {v2, v1}, Landroid/widget/TextView;-><init>(Landroid/content/Context;)V
-
-    const-string v4, "\u529f\u80fd\u8bbe\u7f6e"
-
-    invoke-virtual {v2, v4}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
-
-    const/high16 v4, 0x41d00000    # 26.0f
-
-    invoke-virtual {v2, v4}, Landroid/widget/TextView;->setTextSize(F)V
-
-    invoke-virtual {v2, v10}, Landroid/widget/TextView;->setTextColor(I)V
-
-    invoke-virtual {v2}, Landroid/widget/TextView;->getTypeface()Landroid/graphics/Typeface;
-
-    move-result-object v4
-
-    const/4 v7, 0x1
-
-    invoke-virtual {v2, v4, v7}, Landroid/widget/TextView;->setTypeface(Landroid/graphics/Typeface;I)V
-
-    invoke-virtual {v15, v2}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    new-instance v2, Landroid/widget/TextView;
-
-    invoke-direct {v2, v1}, Landroid/widget/TextView;-><init>(Landroid/content/Context;)V
-
-    const-string v4, "WeChat Entertainment Module"
-
-    invoke-virtual {v2, v4}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
-
-    const/high16 v4, 0x41500000    # 13.0f
-
-    invoke-virtual {v2, v4}, Landroid/widget/TextView;->setTextSize(F)V
-
-    invoke-virtual {v2, v13}, Landroid/widget/TextView;->setTextColor(I)V
-
-    const/high16 v4, 0x40000000    # 2.0f
-
-    invoke-static {v4}, Ljava/lang/Float;->valueOf(F)Ljava/lang/Float;
-
-    move-result-object v4
-
-    invoke-virtual {v6, v4}, Lr/i0;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object v4
-
-    check-cast v4, Ljava/lang/Number;
-
-    invoke-virtual {v4}, Ljava/lang/Number;->intValue()I
-
-    move-result v4
-
-    const/4 v7, 0x0
-
-    invoke-virtual {v2, v7, v4, v7, v7}, Landroid/widget/TextView;->setPadding(IIII)V
-
-    invoke-virtual {v15, v2}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    invoke-virtual {v14, v15}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    new-instance v15, Landroid/widget/ScrollView;
-
-    invoke-direct {v15, v1}, Landroid/widget/ScrollView;-><init>(Landroid/content/Context;)V
-
-    const/4 v2, 0x1
-
-    invoke-virtual {v15, v2}, Landroid/widget/ScrollView;->setFillViewport(Z)V
-
-    new-instance v4, Landroid/widget/LinearLayout$LayoutParams;
-
-    const/high16 v10, 0x3f800000    # 1.0f
-
-    const/4 v11, -0x1
-
-    invoke-direct {v4, v11, v7, v10}, Landroid/widget/LinearLayout$LayoutParams;-><init>(IIF)V
-
-    invoke-virtual {v15, v4}, Landroid/view/View;->setLayoutParams(Landroid/view/ViewGroup$LayoutParams;)V
-
-    invoke-static {v1, v2}, Landroidx/activity/b;->h(Landroid/app/Activity;I)Landroid/widget/LinearLayout;
-
-    move-result-object v10
-
-    invoke-virtual {v6, v3}, Lr/i0;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object v2
-
-    check-cast v2, Ljava/lang/Number;
-
-    invoke-virtual {v2}, Ljava/lang/Number;->intValue()I
-
-    move-result v2
-
-    const/high16 v4, 0x41000000    # 8.0f
-
-    invoke-static {v4}, Ljava/lang/Float;->valueOf(F)Ljava/lang/Float;
-
-    move-result-object v4
-
-    invoke-virtual {v6, v4}, Lr/i0;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object v4
-
-    check-cast v4, Ljava/lang/Number;
-
-    invoke-virtual {v4}, Ljava/lang/Number;->intValue()I
-
-    move-result v4
-
-    invoke-virtual {v6, v3}, Lr/i0;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object v17
-
-    check-cast v17, Ljava/lang/Number;
-
-    invoke-virtual/range {v17 .. v17}, Ljava/lang/Number;->intValue()I
-
-    move-result v7
-
-    invoke-virtual {v6, v3}, Lr/i0;->invoke(Ljava/lang/Object;)Ljava/lang/Object;
-
     move-result-object v3
-
-    check-cast v3, Ljava/lang/Number;
-
-    invoke-virtual {v3}, Ljava/lang/Number;->intValue()I
-
-    move-result v3
-
-    invoke-virtual {v10, v2, v4, v7, v3}, Landroid/view/View;->setPadding(IIII)V
-
-    const-string v2, "\u804a\u5929"
-
-    invoke-direct {v0, v1, v2, v13, v6}, Lwex/ui/core/xposed/SettingsPanelHelper;->sectionTitle(Landroid/app/Activity;Ljava/lang/String;ILw3/c;)Landroid/widget/TextView;
-
-    move-result-object v2
-
-    invoke-virtual {v10, v2}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    move v3, v5
-
-    move v4, v9
-
-    move/from16 v2, v18
-
-    move/from16 v5, v19
-
-    move-object v0, v12
-
-    const/16 v12, 0x600
-
-    move v1, v13
-
-    const/4 v13, 0x0
-
-    move v9, v8
-
-    move/from16 v17, v9
-
-    move-object/from16 v18, v10
-
-    const/4 v10, 0x0
-
-    move/from16 v21, v11
-
-    const/4 v11, 0x0
-
-    move-object/from16 v19, v18
-
-    move-object/from16 v18, v15
-
-    move-object/from16 v15, v19
-
-    move-object/from16 v20, v0
-
-    move-object/from16 v19, v14
-
-    move-object/from16 v0, p0
-
-    move v14, v1
-
-    move-object/from16 v1, p1
-
-        # 旧「自定义气泡」开关已删：由 BubbleStyleCard 卡片（含三模式与开关）取代。
-
-
-    invoke-direct/range {v0 .. v6}, Lwex/ui/core/xposed/SettingsPanelHelper;->topbarStyleGroup(Landroid/app/Activity;IIIILw3/c;)Landroid/view/View;
-
-    move-result-object v7
-
-    invoke-virtual {v15, v7}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    invoke-direct/range {v0 .. v6}, Lwex/ui/core/xposed/SettingsPanelHelper;->quickToolsGroup(Landroid/app/Activity;IIIILw3/c;)Landroid/view/View;
-
-    move-result-object v7
-
-    invoke-virtual {v15, v7}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    const-string v7, "\u804a\u5929\u5e95\u680f\u900f\u660e"
-
-    const-string v8, "\u804a\u5929\u9875\u8f93\u5165\u5de5\u5177\u680f\u80cc\u666f\u900f\u660e\uff0c\u914d\u9ad8\u5bf9\u6bd4\u5ea6\u804a\u5929\u80cc\u666f\u6548\u679c\u6700\u4f73"
-
-    const-string v9, "chat_footer_transparent"
-
-    invoke-static/range {v0 .. v13}, Lwex/ui/core/xposed/SettingsPanelHelper;->switchItem$default(Lwex/ui/core/xposed/SettingsPanelHelper;Landroid/app/Activity;IIIILw3/c;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;FZILjava/lang/Object;)Landroid/view/View;
-
-    move-result-object v7
-
-    invoke-virtual {v15, v7}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    const/16 v12, 0x200
-
-    const-string v7, "\u4f1a\u8bdd\u7b5b\u9009\u680f"
-
-    const-string v8, "\u9996\u9875\u804a\u5929\u5217\u8868\u9876\u90e8\u663e\u793a\u597d\u53cb/\u7fa4\u804a/\u516c\u4f17\u53f7\u7b5b\u9009Tab"
-
-    const-string v9, "conversation_filter_enabled"
-
-    invoke-static/range {v0 .. v13}, Lwex/ui/core/xposed/SettingsPanelHelper;->switchItem$default(Lwex/ui/core/xposed/SettingsPanelHelper;Landroid/app/Activity;IIIILw3/c;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;FZILjava/lang/Object;)Landroid/view/View;
-
-    move-result-object v7
-
-    invoke-virtual {v15, v7}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    # 保存 v3（int，后续 imageStyleGroup {v0..v10} range 需要）到 v21，卡片插完恢复
-    move/from16 v21, v3
-
-    invoke-static {v1}, Lwex/ui/core/feature/ChatToolbarSettingCard;->build(Landroid/app/Activity;)Landroid/view/View;
-
+    invoke-virtual {v3}, Landroid/content/res/Resources;->getConfiguration()Landroid/content/res/Configuration;
     move-result-object v3
-
-    invoke-virtual {v15, v3}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    # 自定义气泡卡片（毛玻璃/自定义图片/透明 三模式）
-    invoke-static {v1}, Lwex/ui/core/feature/BubbleStyleCard;->build(Landroid/app/Activity;)Landroid/view/View;
-
-    move-result-object v3
-
-    invoke-virtual {v15, v3}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-
-    # 恢复 v3 为 int
-    move/from16 v3, v21
-
-    const-string v7, "\u9996\u9875\u5361\u7247"
-
-    invoke-direct {v0, v1, v7, v14, v6}, Lwex/ui/core/xposed/SettingsPanelHelper;->sectionTitle(Landroid/app/Activity;Ljava/lang/String;ILw3/c;)Landroid/widget/TextView;
-
-    move-result-object v7
-
-    invoke-virtual {v15, v7}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    const-string v9, "home_image_card"
-
-    const-string v10, "image_card_style"
-
-    const-string v7, "\u56fe\u7247\u5361\u7247"
-
-    const-string v8, "\u804a\u5929\u5217\u8868\u9876\u90e8\u663e\u793a\u56fe\u7247\u5361\uff08\u6837\u5f0f\u4e00=\u5355\u56fe\u80cc\u666f\uff0c\u6837\u5f0f\u4e8c=\u56db\u62cd\u7acb\u5f97\uff09"
-
-    invoke-direct/range {v0 .. v10}, Lwex/ui/core/xposed/SettingsPanelHelper;->imageStyleGroup(Landroid/app/Activity;IIIILw3/c;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Landroid/view/View;
-
-    move-result-object v7
-
-    invoke-virtual {v15, v7}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    const-string v9, "home_calendar_card"
-
-    const-string v10, "calendar_style"
-
-    const-string v7, "\u65e5\u5386\u5361\u7247"
-
-    const-string v8, "\u804a\u5929\u5217\u8868\u9876\u90e8\u663e\u793a\u65e5\u5386\u5361\uff08\u9ec4\u5386/\u5929\u6c14/\u4e00\u8a00\uff09"
-
-    invoke-direct/range {v0 .. v10}, Lwex/ui/core/xposed/SettingsPanelHelper;->calendarStyleGroup(Landroid/app/Activity;IIIILw3/c;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Landroid/view/View;
-
-    move-result-object v7
-
-    invoke-virtual {v15, v7}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    invoke-direct/range {v0 .. v6}, Lwex/ui/core/xposed/SettingsPanelHelper;->musicGroup(Landroid/app/Activity;IIIILw3/c;)Landroid/view/View;
-
-    move-result-object v7
-
-    invoke-virtual {v15, v7}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    invoke-direct/range {v0 .. v6}, Lwex/ui/core/xposed/SettingsPanelHelper;->cardOrderGroup(Landroid/app/Activity;IIIILw3/c;)Landroid/view/View;
-
-    move-result-object v7
-
-    move v8, v3
-
-    move v9, v4
-
-    move v11, v5
-
-    invoke-virtual {v15, v7}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    invoke-static {v1}, Lwex/ui/core/feature/ConversationCardSettingCard;->build(Landroid/app/Activity;)Landroid/view/View;
-
-    move-result-object v3
-
-    invoke-virtual {v15, v3}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    invoke-static {v1}, Lwex/ui/core/feature/QuickActionCard;->build(Landroid/app/Activity;)Landroid/view/View;
-
-    move-result-object v3
-
-    invoke-virtual {v15, v3}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    const-string v0, "#FF4444"
-
-    invoke-static {v0}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v3
-
-    move-object v4, v6
-
-    new-instance v6, Lx4/a;
-
-    const/16 v0, 0xb
-
-    invoke-direct {v6, v0}, Lx4/a;-><init>(I)V
-
-    iput-object v1, v6, Lx4/a;->d:Landroid/app/Activity;
-
-    invoke-static {}, Ljava/lang/invoke/VarHandle;->storeStoreFence()V
-
-    const-string v5, "\u5168\u90e8\u5173\u95ed"
-
-    move-object/from16 v0, p0
-
-    invoke-direct/range {v0 .. v6}, Lwex/ui/core/xposed/SettingsPanelHelper;->actionButton(Landroid/app/Activity;IILw3/c;Ljava/lang/String;Lw3/a;)Landroid/view/View;
-
-    move-result-object v3
-
-    move-object v6, v4
-
-    invoke-virtual {v15, v3}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    new-instance v6, Lx4/a;
-
-    const/4 v0, 0x2
-
-    invoke-direct {v6, v0}, Lx4/a;-><init>(I)V
-
-    iput-object v1, v6, Lx4/a;->d:Landroid/app/Activity;
-
-    invoke-static {}, Ljava/lang/invoke/VarHandle;->storeStoreFence()V
-
-    const-string v5, "\u4e00\u952e\u91cd\u542f"
-
-    move-object/from16 v0, p0
-
-    move v3, v11
-
-    invoke-direct/range {v0 .. v6}, Lwex/ui/core/xposed/SettingsPanelHelper;->actionButton(Landroid/app/Activity;IILw3/c;Ljava/lang/String;Lw3/a;)Landroid/view/View;
-
+    iget v3, v3, Landroid/content/res/Configuration;->uiMode:I
+    and-int/lit8 v3, v3, 0x30
+    const/16 v4, 0x20
+    if-ne v3, v4, :cond_light
+    const/4 v3, 0x1
+    goto :goto_dark
+    :cond_light
+    const/4 v3, 0x0
+    :goto_dark
+    # v3 = isDark(0/1)
+    # ---- 3) 窗口配置 ----
+    invoke-virtual {v2}, Landroid/app/Dialog;->getWindow()Landroid/view/Window;
+    move-result-object v4
+    if-eqz v4, :cond_show
+    # 窗口背景：与面板底色一致，避免 resize 时露白
+    new-instance v5, Landroid/graphics/drawable/ColorDrawable;
+    invoke-static {v3}, Lwex/ui/core/feature/SettingsShell;->windowBackground(Z)I
+    move-result v6
+    invoke-direct {v5, v6}, Landroid/graphics/drawable/ColorDrawable;-><init>(I)V
+    invoke-virtual {v4, v5}, Landroid/view/Window;->setBackgroundDrawable(Landroid/graphics/drawable/Drawable;)V
+    const/4 v5, -0x1
+    invoke-virtual {v4, v5, v5}, Landroid/view/Window;->setLayout(II)V
+    # 延伸到系统栏下方
+    invoke-static {v4}, Ly3/a;->h0(Landroid/view/Window;)V
+    # FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS + FLAG_LAYOUT_NO_LIMITS
+    const/16 v5, 0x200
+    invoke-virtual {v4, v5}, Landroid/view/Window;->addFlags(I)V
+    const/high16 v5, -0x80000000
+    invoke-virtual {v4, v5}, Landroid/view/Window;->addFlags(I)V
+    # 状态栏/导航栏透明
+    const/high16 v5, -0x1000000
+    invoke-virtual {v4, v5}, Landroid/view/Window;->setStatusBarColor(I)V
+    invoke-virtual {v4, v5}, Landroid/view/Window;->setNavigationBarColor(I)V
+    # 刘海区延伸
+    invoke-virtual {v4}, Landroid/view/Window;->getAttributes()Landroid/view/WindowManager$LayoutParams;
     move-result-object v5
-
-    move-object v6, v4
-
-    invoke-virtual {v15, v5}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    const-string v4, "\u9876\u680f"
-
-    invoke-direct {v0, v1, v4, v14, v6}, Lwex/ui/core/xposed/SettingsPanelHelper;->sectionTitle(Landroid/app/Activity;Ljava/lang/String;ILw3/c;)Landroid/widget/TextView;
-
-    move-result-object v4
-
-    invoke-virtual {v15, v4}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    new-instance v11, La0/a;
-
-    const/16 v4, 0x14
-
-    invoke-direct {v11, v4}, La0/a;-><init>(I)V
-
-    move-object/from16 v12, v20
-
-    iput-object v12, v11, La0/a;->d:Ljava/lang/Object;
-
+    const/4 v6, 0x1
+    iput v6, v5, Landroid/view/WindowManager$LayoutParams;->layoutInDisplayCutoutMode:I
+    invoke-virtual {v4, v5}, Landroid/view/Window;->setAttributes(Landroid/view/WindowManager$LayoutParams;)V
+    # 状态栏/导航栏图标明暗
+    invoke-static {v4, v3}, Lwex/ui/core/feature/SettingsShell;->applyBarAppearance(Landroid/view/Window;Z)V
+    # ---- 4) dismiss 回调 ----
+    new-instance v5, Lx4/z0;
+    invoke-direct {v5, v6}, Lx4/z0;-><init>(I)V
+    move-object/from16 v7, p2
+    iput-object v7, v5, Lx4/z0;->b:Ljava/lang/Object;
     invoke-static {}, Ljava/lang/invoke/VarHandle;->storeStoreFence()V
-
-    const-string v7, "\u9876\u680f"
-
-    move v5, v3
-
-    move v3, v8
-
-    const-string v8, "\u5728\u5fae\u4fe1\u6807\u9898\u680f\u5de6\u4fa7\u663e\u793a\u5934\u50cf/\u6635\u79f0/\u72b6\u6001"
-
-    move v4, v9
-
-    const-string v9, "top_profile_enabled"
-
-    move-object/from16 v10, v19
-
-    invoke-direct/range {v0 .. v11}, Lwex/ui/core/xposed/SettingsPanelHelper;->topBarGroup(Landroid/app/Activity;IIIILw3/c;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Landroid/view/View;Lw3/a;)Landroid/view/View;
-
-    move-result-object v7
-
-    invoke-virtual {v15, v7}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    # 「更换背景」标题已删：背景卡片归入下方「背景」分组，避免顶部空标题。
-
-    move-object/from16 v7, v19
-
-    # mypageGroup 已由 MyPageAlphaCard 取代（开关+换图+透明度合并成一张卡片），
-    # 不再调用 mypageGroup，避免设置面板出现两张「卡片背景」。
-
-    # ===== 聊天 =====
-        # 原「聊天」标题已并入上方聊天组
-
-
-    # ===== 首页 =====
-    # 「首页」标题已删：java 首页卡并入上方「首页卡片」组
-
-    # ===== 背景 =====
-    const-string v3, "\u80cc\u666f"
-
-    invoke-direct {v0, v1, v3, v14, v6}, Lwex/ui/core/xposed/SettingsPanelHelper;->sectionTitle(Landroid/app/Activity;Ljava/lang/String;ILw3/c;)Landroid/widget/TextView;
-
-    move-result-object v3
-
-    invoke-virtual {v15, v3}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-    invoke-static {v1}, Lwex/ui/core/feature/MyPageAlphaCard;->build(Landroid/app/Activity;)Landroid/view/View;
-
-    move-result-object v3
-
-    invoke-virtual {v15, v3}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    invoke-static {v1}, Lwex/ui/core/feature/TabBgSettingsCard;->build(Landroid/app/Activity;)Landroid/view/View;
-
-    move-result-object v3
-
-    invoke-virtual {v15, v3}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-
-    const-string v3, "\u5176\u4ed6"
-
-    invoke-direct {v0, v1, v3, v14, v6}, Lwex/ui/core/xposed/SettingsPanelHelper;->sectionTitle(Landroid/app/Activity;Ljava/lang/String;ILw3/c;)Landroid/widget/TextView;
-
-    move-result-object v3
-
-    invoke-virtual {v15, v3}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    move-object v4, v6
-
-    new-instance v6, Lx4/a;
-
-    const/4 v3, 0x3
-
-    invoke-direct {v6, v3}, Lx4/a;-><init>(I)V
-
-    iput-object v1, v6, Lx4/a;->d:Landroid/app/Activity;
-
-    invoke-static {}, Ljava/lang/invoke/VarHandle;->storeStoreFence()V
-
-    move v3, v5
-
-    const-string v5, "\u66f4\u65b0\u5b9a\u4f4d"
-
-    invoke-direct/range {v0 .. v6}, Lwex/ui/core/xposed/SettingsPanelHelper;->actionButton(Landroid/app/Activity;IILw3/c;Ljava/lang/String;Lw3/a;)Landroid/view/View;
-
+    invoke-virtual {v2, v5}, Landroid/app/Dialog;->setOnDismissListener(Landroid/content/DialogInterface$OnDismissListener;)V
+    :cond_show
+    # ---- 5) 新面板 ----
+    invoke-static {v1, v2}, Lwex/ui/core/feature/SettingsShell;->build(Landroid/app/Activity;Landroid/app/Dialog;)Landroid/view/View;
     move-result-object v0
-
-    invoke-virtual {v15, v0}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    move-object/from16 v0, v18
-
-    invoke-virtual {v0, v15}, Landroid/widget/ScrollView;->addView(Landroid/view/View;)V
-
-    invoke-virtual {v7, v0}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    invoke-virtual {v12, v7}, Landroid/app/Dialog;->setContentView(Landroid/view/View;)V
-
-    invoke-virtual {v12}, Landroid/app/Dialog;->getWindow()Landroid/view/Window;
-
-    move-result-object v0
-
-    if-eqz v0, :cond_a
-
-    new-instance v1, Landroid/graphics/drawable/ColorDrawable;
-
-    move/from16 v9, v17
-
-    invoke-direct {v1, v9}, Landroid/graphics/drawable/ColorDrawable;-><init>(I)V
-
-    invoke-virtual {v0, v1}, Landroid/view/Window;->setBackgroundDrawable(Landroid/graphics/drawable/Drawable;)V
-
-    const/4 v11, -0x1
-
-    invoke-virtual {v0, v11, v11}, Landroid/view/Window;->setLayout(II)V
-
-    :try_start_0
-    invoke-static {v0}, Ly3/a;->h0(Landroid/view/Window;)V
-
-    const/16 v1, 0x200
-
-    invoke-virtual {v0, v1}, Landroid/view/Window;->addFlags(I)V
-
-    const/high16 v1, -0x80000000
-
-    invoke-virtual {v0, v1}, Landroid/view/Window;->addFlags(I)V
-
-    const/4 v7, 0x0
-
-    invoke-virtual {v0, v7}, Landroid/view/Window;->setStatusBarColor(I)V
-
-    invoke-virtual {v0, v7}, Landroid/view/Window;->setNavigationBarColor(I)V
-
-    invoke-virtual {v0}, Landroid/view/Window;->getAttributes()Landroid/view/WindowManager$LayoutParams;
-
-    move-result-object v1
-
-    const/4 v7, 0x1
-
-    iput v7, v1, Landroid/view/WindowManager$LayoutParams;->layoutInDisplayCutoutMode:I
-
-    invoke-virtual {v0, v1}, Landroid/view/Window;->setAttributes(Landroid/view/WindowManager$LayoutParams;)V
-
-    if-nez v16, :cond_9
-
-    invoke-virtual {v0}, Landroid/view/Window;->getDecorView()Landroid/view/View;
-
-    move-result-object v1
-
-    invoke-virtual {v0}, Landroid/view/Window;->getDecorView()Landroid/view/View;
-
-    move-result-object v0
-
-    invoke-virtual {v0}, Landroid/view/View;->getSystemUiVisibility()I
-
-    move-result v0
-
-    or-int/lit16 v0, v0, 0x2000
-
-    invoke-virtual {v1, v0}, Landroid/view/View;->setSystemUiVisibility(I)V
-    :try_end_0
-    .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_0} :catch_0
-
-    :catch_0
-    :cond_9
-    new-instance v0, Lx4/z0;
-
-    const/4 v7, 0x1
-
-    invoke-direct {v0, v7}, Lx4/z0;-><init>(I)V
-
-    move-object/from16 v1, p2
-
-    iput-object v1, v0, Lx4/z0;->b:Ljava/lang/Object;
-
-    invoke-static {}, Ljava/lang/invoke/VarHandle;->storeStoreFence()V
-
-    invoke-virtual {v12, v0}, Landroid/app/Dialog;->setOnDismissListener(Landroid/content/DialogInterface$OnDismissListener;)V
-
-    :cond_a
-    invoke-virtual {v12}, Landroid/app/Dialog;->show()V
-
+    invoke-virtual {v2, v0}, Landroid/app/Dialog;->setContentView(Landroid/view/View;)V
+    invoke-virtual {v2}, Landroid/app/Dialog;->show()V
     return-void
 .end method

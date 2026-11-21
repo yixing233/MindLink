@@ -5,3 +5,13 @@ META-INF/
 *.apk
 *.idsig
 build/
+
+# 本机工具/构建中间产物
+.gradle/
+.kotlin/
+.oil-ui/
+.zcode/
+__pycache__/
+*.pyc
+ui-compose/local.properties
+ui-compose/generated-res/

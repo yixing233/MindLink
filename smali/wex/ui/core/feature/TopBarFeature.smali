@@ -76,7 +76,21 @@
 
 .field private static modulePath:Ljava/lang/String;
 
-.field private static searchBtn:Landroid/view/View;
+.field private static searchBtn:Ljava/lang/ref/WeakReference;
+
+.field private static searchHeader:Ljava/lang/ref/WeakReference;
+
+.field private static searchList:Ljava/lang/ref/WeakReference;
+
+.field private static searchVisibility:I
+
+.field private static resumeHookRegistered:Z
+
+.field private static titleHookRegistered:Z
+
+.field private static updatingTitle:Z
+
+.field private static emptyProfileReported:Z
 
 
 # direct methods
@@ -130,41 +144,70 @@
     return p0
 .end method
 
+.method public static isHomeActivity(Landroid/app/Activity;)Z
+    .locals 2
+
+    if-eqz p0, :not_home
+
+    invoke-virtual {p0}, Landroid/app/Activity;->isFinishing()Z
+
+    move-result v0
+
+    if-nez v0, :not_home
+
+    invoke-virtual {p0}, Landroid/app/Activity;->isDestroyed()Z
+
+    move-result v0
+
+    if-nez v0, :not_home
+
+    invoke-virtual {p0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
+
+    move-result-object v0
+
+    invoke-virtual {v0}, Ljava/lang/Class;->getName()Ljava/lang/String;
+
+    move-result-object v0
+
+    const-string v1, "com.tencent.mm.ui.LauncherUI"
+
+    invoke-virtual {v1, v0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+
+    move-result v0
+
+    return v0
+
+    :not_home
+    const/4 v0, 0x0
+
+    return v0
+.end method
+
 .method private final applyTopBar(Landroid/app/Activity;)V
     .locals 2
 
+    invoke-static {p1}, Lwex/ui/core/feature/TopBarFeature;->isHomeActivity(Landroid/app/Activity;)Z
+
+    move-result v0
+
+    if-eqz v0, :done
+
     invoke-virtual {p1}, Landroid/app/Activity;->getWindow()Landroid/view/Window;
 
-    move-result-object p0
+    move-result-object v0
 
-    const/4 v0, 0x0
+    if-eqz v0, :done
 
-    if-eqz p0, :cond_0
+    invoke-virtual {v0}, Landroid/view/Window;->getDecorView()Landroid/view/View;
 
-    invoke-virtual {p0}, Landroid/view/Window;->getDecorView()Landroid/view/View;
+    move-result-object v0
 
-    move-result-object p0
+    instance-of v1, v0, Landroid/view/ViewGroup;
 
-    goto :goto_0
-
-    :cond_0
-    move-object p0, v0
-
-    :goto_0
-    instance-of v1, p0, Landroid/view/ViewGroup;
-
-    if-eqz v1, :cond_1
-
-    move-object v0, p0
+    if-eqz v1, :done
 
     check-cast v0, Landroid/view/ViewGroup;
 
-    :cond_1
-    if-nez v0, :cond_2
-
-    return-void
-
-    :cond_2
     new-instance p0, Lx4/g0;
 
     const/4 v1, 0x1
@@ -179,205 +222,736 @@
 
     invoke-virtual {v0, p0}, Landroid/view/View;->post(Ljava/lang/Runnable;)Z
 
+    :done
     return-void
 .end method
 
 .method private static final applyTopBar$lambda$0(Landroid/view/ViewGroup;Landroid/app/Activity;)V
-    .locals 11
+    .locals 4
 
-    const-string v1, "\u9876\u680f\uff1a\u63d2\u5165\u5934\u50cf\u6635\u79f0\u5931\u8d25 "
+    :try_start_gate
+    invoke-static {p1}, Lwex/ui/core/feature/TopBarFeature;->isHomeActivity(Landroid/app/Activity;)Z
 
-    :try_start_0
+    move-result v0
+
+    if-eqz v0, :done
+
+    invoke-virtual {p0}, Landroid/view/View;->isAttachedToWindow()Z
+
+    move-result v0
+
+    if-eqz v0, :done
+
     sget-object v0, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
 
-    const-string v2, "top_search_bar"
+    const-string v1, "top_profile_enabled"
 
-    const/4 v3, 0x0
+    const/4 v2, 0x0
 
-    invoke-virtual {v0, v2, v3}, Lwex/ui/core/WexStore;->getBool(Ljava/lang/String;Z)Z
+    invoke-virtual {v0, v1, v2}, Lwex/ui/core/WexStore;->getBool(Ljava/lang/String;Z)Z
 
     move-result v2
+    :try_end_gate
+    .catchall {:try_start_gate .. :try_end_gate} :catch_gate
 
-    if-eqz v2, :cond_2
+    :try_start_title
+    sget-object v3, Lwex/ui/core/feature/TopBarFeature;->INSTANCE:Lwex/ui/core/feature/TopBarFeature;
 
-    sget-object v4, Lwex/ui/core/core/ViewFinder;->INSTANCE:Lwex/ui/core/core/ViewFinder;
+    invoke-direct {v3, p0, v2}, Lwex/ui/core/feature/TopBarFeature;->updateTitle(Landroid/view/ViewGroup;Z)V
+    :try_end_title
+    .catchall {:try_start_title .. :try_end_title} :catch_title
 
-    const-string v6, "\u641c\u7d22"
+    goto :apply_profile
 
-    const/4 v8, 0x4
+    :catch_title
+    move-exception v0
 
-    const/4 v9, 0x0
+    const-string v0, "WEX: TopBar title refresh failed"
 
-    const/4 v7, 0x0
+    invoke-static {v0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
-    move-object v5, p0
+    :apply_profile
+    :try_start_profile
+    sget-object v3, Lwex/ui/core/feature/TopBarFeature;->INSTANCE:Lwex/ui/core/feature/TopBarFeature;
 
-    invoke-static/range {v4 .. v9}, Lwex/ui/core/core/ViewFinder;->findViewByDesc$default(Lwex/ui/core/core/ViewFinder;Landroid/view/View;Ljava/lang/String;Ljava/lang/Class;ILjava/lang/Object;)Landroid/view/View;
+    if-eqz v2, :remove_profile
 
-    move-result-object p0
+    invoke-direct {v3, p1, p0}, Lwex/ui/core/feature/TopBarFeature;->insertProfile(Landroid/app/Activity;Landroid/view/ViewGroup;)V
 
-    if-eqz p0, :cond_0
+    goto :profile_done
 
-    sput-object p0, Lwex/ui/core/feature/TopBarFeature;->searchBtn:Landroid/view/View;
+    :remove_profile
+    const/4 v0, 0x0
 
-    const/16 v2, 0x8
+    sput-boolean v0, Lwex/ui/core/feature/TopBarFeature;->emptyProfileReported:Z
 
-    invoke-virtual {p0, v2}, Landroid/view/View;->setVisibility(I)V
+    const-string v0, "w\u0435\u0445_top_profile"
 
-    sget-object p0, Lwex/ui/core/feature/TopBarFeature;->INSTANCE:Lwex/ui/core/feature/TopBarFeature;
+    invoke-virtual {p0, v0}, Landroid/view/View;->findViewWithTag(Ljava/lang/Object;)Landroid/view/View;
 
-    const-string v2, "\u9876\u680f\uff1a\u539f\u641c\u7d22\u6309\u94ae\u5df2\u9690\u85cf"
+    move-result-object v0
 
-    invoke-direct {p0, v2}, Lwex/ui/core/feature/TopBarFeature;->log(Ljava/lang/String;)V
+    invoke-static {v0}, Lwex/ui/core/feature/TopBarFeature;->removeOwnedView(Landroid/view/View;)V
 
-    goto :goto_0
+    :profile_done
+    :try_end_profile
+    .catchall {:try_start_profile .. :try_end_profile} :catch_profile
 
-    :cond_0
-    sget-object p0, Lwex/ui/core/feature/TopBarFeature;->INSTANCE:Lwex/ui/core/feature/TopBarFeature;
+    goto :apply_search
 
-    const-string v2, "\u9876\u680f\uff1a\u672a\u627e\u5230\u641c\u7d22\u6309\u94ae(contentDescription=\u641c\u7d22)"
+    :catch_profile
+    move-exception v0
 
-    invoke-direct {p0, v2}, Lwex/ui/core/feature/TopBarFeature;->log(Ljava/lang/String;)V
+    const-string v0, "WEX: TopBar profile refresh failed"
 
-    :goto_0
-    const-string p0, "w\u0435\u0445_top_search"
+    invoke-static {v0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
-    invoke-virtual {v5, p0}, Landroid/view/View;->findViewWithTag(Ljava/lang/Object;)Landroid/view/View;
+    :apply_search
+    :try_start_search
+    sget-object v3, Lwex/ui/core/feature/TopBarFeature;->INSTANCE:Lwex/ui/core/feature/TopBarFeature;
 
-    move-result-object p0
+    invoke-direct {v3, p0, p1, v2}, Lwex/ui/core/feature/TopBarFeature;->updateSearch(Landroid/view/ViewGroup;Landroid/app/Activity;Z)V
+    :try_end_search
+    .catchall {:try_start_search .. :try_end_search} :catch_search
 
-    if-nez p0, :cond_3
+    goto :apply_sidebar
 
-    invoke-virtual {v4, v5}, Lwex/ui/core/core/ViewFinder;->findListView(Landroid/view/View;)Landroid/view/View;
+    :catch_search
+    move-exception v0
 
-    move-result-object p0
+    const-string v0, "WEX: TopBar search refresh failed"
 
-    if-eqz p0, :cond_1
+    invoke-static {v0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
-    sget-object v2, Lwex/ui/core/feature/TopBarFeature;->INSTANCE:Lwex/ui/core/feature/TopBarFeature;
+    :apply_sidebar
+    # 旧 HomeSidebar Dialog 已由 HomeSidePanelFeature 的 LauncherUI 内抽屉浮层替换。
+    goto :done
 
-    invoke-direct {v2, p1}, Lwex/ui/core/feature/TopBarFeature;->buildSearchBar(Landroid/app/Activity;)Landroid/view/View;
+    :done
+    return-void
 
-    move-result-object v4
-
-    invoke-virtual {p0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
-
-    move-result-object v6
-
-    const-string v7, "addHeaderView"
-
-    const-class v8, Landroid/view/View;
-
-    const-class v9, Ljava/lang/Object;
-
-    sget-object v10, Ljava/lang/Boolean;->TYPE:Ljava/lang/Class;
-
-    filled-new-array {v8, v9, v10}, [Ljava/lang/Class;
-
-    move-result-object v8
-
-    invoke-virtual {v6, v7, v8}, Ljava/lang/Class;->getMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;
-
-    move-result-object v6
-
-    sget-object v7, Ljava/lang/Boolean;->FALSE:Ljava/lang/Boolean;
-
-    const/4 v8, 0x0
-
-    filled-new-array {v4, v8, v7}, [Ljava/lang/Object;
-
-    move-result-object v4
-
-    invoke-virtual {v6, p0, v4}, Ljava/lang/reflect/Method;->invoke(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;
-
-    const-string p0, "\u9876\u680f\uff1a\u81ea\u5b9a\u4e49\u641c\u7d22\u6846\u5df2\u63d2\u5165\uff08\u5217\u8868\u9876\u90e8\uff09"
-
-    invoke-direct {v2, p0}, Lwex/ui/core/feature/TopBarFeature;->log(Ljava/lang/String;)V
-
-    goto :goto_1
-
-    :cond_1
-    sget-object p0, Lwex/ui/core/feature/TopBarFeature;->INSTANCE:Lwex/ui/core/feature/TopBarFeature;
-
-    const-string v2, "\u9876\u680f\uff1a\u672a\u627e\u5230\u804a\u5929\u5217\u8868"
-
-    invoke-direct {p0, v2}, Lwex/ui/core/feature/TopBarFeature;->log(Ljava/lang/String;)V
-
-    goto :goto_1
-
-    :cond_2
-    move-object v5, p0
-
-    :cond_3
-    :goto_1
-    const-string p0, "top_profile_enabled"
-
-    invoke-virtual {v0, p0, v3}, Lwex/ui/core/WexStore;->getBool(Ljava/lang/String;Z)Z
-
-    move-result p0
-    :try_end_0
-    .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_0} :catch_1
-
-    if-eqz p0, :cond_4
-
-    :try_start_1
-    sget-object p0, Lwex/ui/core/feature/TopBarFeature;->INSTANCE:Lwex/ui/core/feature/TopBarFeature;
-
-    invoke-direct {p0, p1, v5}, Lwex/ui/core/feature/TopBarFeature;->insertProfile(Landroid/app/Activity;Landroid/view/ViewGroup;)V
-    :try_end_1
-    .catch Ljava/lang/Exception; {:try_start_1 .. :try_end_1} :catch_0
+    :catch_sidebar
+    move-exception v0
 
     return-void
 
-    :catch_0
+    :catch_gate
     move-exception v0
 
-    move-object p0, v0
+    const-string v0, "WEX: TopBar configuration unavailable"
 
-    :try_start_2
-    sget-object p1, Lwex/ui/core/feature/TopBarFeature;->INSTANCE:Lwex/ui/core/feature/TopBarFeature;
+    invoke-static {v0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
-    invoke-virtual {p0}, Ljava/lang/Throwable;->getMessage()Ljava/lang/String;
+    return-void
+.end method
 
-    move-result-object p0
+.method private static isHomeTitle(Landroid/widget/TextView;)Z
+    .locals 4
 
-    new-instance v0, Ljava/lang/StringBuilder;
+    invoke-virtual {p0}, Landroid/view/View;->getContext()Landroid/content/Context;
 
-    invoke-direct {v0, v1}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
+    move-result-object v0
 
-    invoke-virtual {v0, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    :unwrap
+    instance-of v1, v0, Landroid/app/Activity;
 
-    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    if-nez v1, :activity
 
-    move-result-object p0
+    instance-of v1, v0, Landroid/content/ContextWrapper;
 
-    invoke-direct {p1, p0}, Lwex/ui/core/feature/TopBarFeature;->log(Ljava/lang/String;)V
-    :try_end_2
-    .catch Ljava/lang/Exception; {:try_start_2 .. :try_end_2} :catch_1
+    if-eqz v1, :no
 
-    goto :goto_2
+    check-cast v0, Landroid/content/ContextWrapper;
 
-    :catch_1
+    invoke-virtual {v0}, Landroid/content/ContextWrapper;->getBaseContext()Landroid/content/Context;
+
+    move-result-object v1
+
+    if-eq v0, v1, :no
+
+    move-object v0, v1
+
+    goto :unwrap
+
+    :activity
+    check-cast v0, Landroid/app/Activity;
+
+    invoke-static {v0}, Lwex/ui/core/feature/TopBarFeature;->isHomeActivity(Landroid/app/Activity;)Z
+
+    move-result v0
+
+    if-eqz v0, :no
+
+    move-object v0, p0
+
+    :parent
+    invoke-virtual {v0}, Landroid/view/View;->getTag()Ljava/lang/Object;
+
+    move-result-object v1
+
+    const-string v2, "w\u0435\u0445_top_profile"
+
+    invoke-virtual {v2, v1}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+
+    move-result v1
+
+    if-nez v1, :no
+
+    invoke-virtual {v0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
+
+    move-result-object v1
+
+    invoke-virtual {v1}, Ljava/lang/Class;->getName()Ljava/lang/String;
+
+    move-result-object v1
+
+    const-string v2, "Toolbar"
+
+    invoke-virtual {v1, v2}, Ljava/lang/String;->contains(Ljava/lang/CharSequence;)Z
+
+    move-result v1
+
+    if-nez v1, :yes
+
+    invoke-virtual {v0}, Landroid/view/View;->getParent()Landroid/view/ViewParent;
+
+    move-result-object v1
+
+    instance-of v2, v1, Landroid/view/View;
+
+    if-eqz v2, :no
+
+    move-object v0, v1
+
+    check-cast v0, Landroid/view/View;
+
+    goto :parent
+
+    :yes
+    const/4 v0, 0x1
+
+    return v0
+
+    :no
+    const/4 v0, 0x0
+
+    return v0
+.end method
+
+.method public static onTitleText(Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;)V
+    .locals 7
+
+    :try_start
+    sget-boolean v0, Lwex/ui/core/feature/TopBarFeature;->updatingTitle:Z
+
+    if-nez v0, :done
+
+    iget-object v0, p0, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
+
+    instance-of v1, v0, Landroid/widget/TextView;
+
+    if-eqz v1, :done
+
+    check-cast v0, Landroid/widget/TextView;
+
+    invoke-static {v0}, Lwex/ui/core/feature/TopBarFeature;->isHomeTitle(Landroid/widget/TextView;)Z
+
+    move-result v1
+
+    if-eqz v1, :done
+
+    iget-object v1, p0, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
+
+    array-length v2, v1
+
+    if-eqz v2, :done
+
+    const/4 v2, 0x0
+
+    aget-object v3, v1, v2
+
+    instance-of v4, v3, Ljava/lang/CharSequence;
+
+    if-eqz v4, :done
+
+    const-string v4, "wex.top.originalTitle"
+
+    invoke-static {v0, v4}, Lde/robv/android/xposed/XposedHelpers;->getAdditionalInstanceField(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
+
+    move-result-object v5
+
+    if-nez v5, :known_title
+
+    invoke-virtual {v3}, Ljava/lang/Object;->toString()Ljava/lang/String;
+
+    move-result-object v5
+
+    const-string v6, "\u5fae\u4fe1"
+
+    invoke-virtual {v6, v5}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+
+    move-result v5
+
+    if-eqz v5, :done
+
+    :known_title
+    invoke-static {v0, v4, v3}, Lde/robv/android/xposed/XposedHelpers;->setAdditionalInstanceField(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;
+
+    sget-object v3, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
+
+    const-string v4, "top_profile_enabled"
+
+    invoke-virtual {v3, v4, v2}, Lwex/ui/core/WexStore;->getBool(Ljava/lang/String;Z)Z
+
+    move-result v4
+
+    if-eqz v4, :done
+
+    const-string v4, "top_title"
+
+    const-string v5, ""
+
+    invoke-virtual {v3, v4, v5}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object v3
+
+    invoke-virtual {v3}, Ljava/lang/String;->length()I
+
+    move-result v4
+
+    if-eqz v4, :done
+
+    aput-object v3, v1, v2
+    :try_end
+    .catchall {:try_start .. :try_end} :catch_title
+
+    :done
+    return-void
+
+    :catch_title
     move-exception v0
 
-    move-object p0, v0
+    const-string v0, "WEX: TopBar title hook skipped"
 
-    sget-object p1, Lwex/ui/core/feature/TopBarFeature;->INSTANCE:Lwex/ui/core/feature/TopBarFeature;
+    invoke-static {v0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
-    invoke-virtual {p0}, Ljava/lang/Throwable;->getMessage()Ljava/lang/String;
+    return-void
+.end method
 
-    move-result-object p0
+.method private final updateTitle(Landroid/view/ViewGroup;Z)V
+    .locals 2
 
-    const-string v0, "\u9876\u680f\u6539\u9020\u5931\u8d25: "
+    sget-object v0, Lwex/ui/core/core/ViewFinder;->INSTANCE:Lwex/ui/core/core/ViewFinder;
 
-    invoke-static {v0, p0}, Landroidx/activity/b;->m(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    const-string v1, "Toolbar"
 
-    move-result-object p0
+    invoke-virtual {v0, p1, v1}, Lwex/ui/core/core/ViewFinder;->findViewByClassName(Landroid/view/View;Ljava/lang/String;)Landroid/view/View;
 
-    invoke-direct {p1, p0}, Lwex/ui/core/feature/TopBarFeature;->log(Ljava/lang/String;)V
+    move-result-object v0
 
-    :cond_4
-    :goto_2
+    if-eqz v0, :done
+
+    invoke-static {v0, p2}, Lwex/ui/core/feature/TopBarFeature;->updateTitleTree(Landroid/view/View;Z)V
+
+    :done
+    return-void
+.end method
+
+.method private static updateTitleTree(Landroid/view/View;Z)V
+    .locals 6
+
+    invoke-virtual {p0}, Landroid/view/View;->getTag()Ljava/lang/Object;
+
+    move-result-object v0
+
+    const-string v1, "w\u0435\u0445_top_profile"
+
+    invoke-virtual {v1, v0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+
+    move-result v0
+
+    if-nez v0, :done
+
+    instance-of v0, p0, Landroid/widget/TextView;
+
+    if-eqz v0, :children
+
+    move-object v0, p0
+
+    check-cast v0, Landroid/widget/TextView;
+
+    invoke-static {v0}, Lwex/ui/core/feature/TopBarFeature;->isHomeTitle(Landroid/widget/TextView;)Z
+
+    move-result v1
+
+    if-eqz v1, :done
+
+    const-string v1, "wex.top.originalTitle"
+
+    invoke-static {v0, v1}, Lde/robv/android/xposed/XposedHelpers;->getAdditionalInstanceField(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
+
+    move-result-object v2
+
+    if-nez v2, :have_original
+
+    if-eqz p1, :done
+
+    invoke-virtual {v0}, Landroid/widget/TextView;->getText()Ljava/lang/CharSequence;
+
+    move-result-object v2
+
+    if-eqz v2, :done
+
+    invoke-interface {v2}, Ljava/lang/CharSequence;->toString()Ljava/lang/String;
+
+    move-result-object v3
+
+    const-string v4, "\u5fae\u4fe1"
+
+    invoke-virtual {v4, v3}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+
+    move-result v3
+
+    if-eqz v3, :done
+
+    invoke-static {v0, v1, v2}, Lde/robv/android/xposed/XposedHelpers;->setAdditionalInstanceField(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;
+
+    :have_original
+    check-cast v2, Ljava/lang/CharSequence;
+
+    if-eqz p1, :set_title
+
+    sget-object v3, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
+
+    const-string v4, "top_title"
+
+    const-string v5, ""
+
+    invoke-virtual {v3, v4, v5}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object v3
+
+    invoke-virtual {v3}, Ljava/lang/String;->length()I
+
+    move-result v4
+
+    if-eqz v4, :set_title
+
+    move-object v2, v3
+
+    :set_title
+    const/4 v3, 0x1
+
+    sput-boolean v3, Lwex/ui/core/feature/TopBarFeature;->updatingTitle:Z
+
+    :try_start_set
+    invoke-virtual {v0, v2}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
+    :try_end_set
+    .catchall {:try_start_set .. :try_end_set} :catch_set
+
+    const/4 v3, 0x0
+
+    sput-boolean v3, Lwex/ui/core/feature/TopBarFeature;->updatingTitle:Z
+
+    return-void
+
+    :catch_set
+    move-exception v0
+
+    const/4 v3, 0x0
+
+    sput-boolean v3, Lwex/ui/core/feature/TopBarFeature;->updatingTitle:Z
+
+    throw v0
+
+    :children
+    instance-of v0, p0, Landroid/view/ViewGroup;
+
+    if-eqz v0, :done
+
+    check-cast p0, Landroid/view/ViewGroup;
+
+    invoke-virtual {p0}, Landroid/view/ViewGroup;->getChildCount()I
+
+    move-result v0
+
+    const/4 v1, 0x0
+
+    :next
+    if-ge v1, v0, :done
+
+    invoke-virtual {p0, v1}, Landroid/view/ViewGroup;->getChildAt(I)Landroid/view/View;
+
+    move-result-object v2
+
+    invoke-static {v2, p1}, Lwex/ui/core/feature/TopBarFeature;->updateTitleTree(Landroid/view/View;Z)V
+
+    add-int/lit8 v1, v1, 0x1
+
+    goto :next
+
+    :done
+    return-void
+.end method
+
+.method private static removeOwnedView(Landroid/view/View;)V
+    .locals 2
+
+    if-eqz p0, :done
+
+    invoke-virtual {p0}, Landroid/view/View;->getParent()Landroid/view/ViewParent;
+
+    move-result-object v0
+
+    instance-of v1, v0, Landroid/view/ViewGroup;
+
+    if-eqz v1, :done
+
+    check-cast v0, Landroid/view/ViewGroup;
+
+    invoke-virtual {v0, p0}, Landroid/view/ViewGroup;->removeView(Landroid/view/View;)V
+
+    :done
+    return-void
+.end method
+
+.method private static restoreSearchButton()V
+    .locals 2
+
+    sget-object v0, Lwex/ui/core/feature/TopBarFeature;->searchBtn:Ljava/lang/ref/WeakReference;
+
+    if-eqz v0, :done
+
+    invoke-virtual {v0}, Ljava/lang/ref/Reference;->get()Ljava/lang/Object;
+
+    move-result-object v0
+
+    check-cast v0, Landroid/view/View;
+
+    if-eqz v0, :clear
+
+    sget v1, Lwex/ui/core/feature/TopBarFeature;->searchVisibility:I
+
+    invoke-virtual {v0, v1}, Landroid/view/View;->setVisibility(I)V
+
+    :clear
+    const/4 v0, 0x0
+
+    sput-object v0, Lwex/ui/core/feature/TopBarFeature;->searchBtn:Ljava/lang/ref/WeakReference;
+
+    :done
+    return-void
+.end method
+
+.method private final updateSearch(Landroid/view/ViewGroup;Landroid/app/Activity;Z)V
+    .locals 10
+
+    const/4 v0, 0x0
+
+    sget-object v1, Lwex/ui/core/feature/TopBarFeature;->searchHeader:Ljava/lang/ref/WeakReference;
+
+    if-eqz v1, :header_loaded
+
+    invoke-virtual {v1}, Ljava/lang/ref/Reference;->get()Ljava/lang/Object;
+
+    move-result-object v0
+
+    check-cast v0, Landroid/view/View;
+
+    :header_loaded
+    const/4 v1, 0x0
+
+    sget-object v2, Lwex/ui/core/feature/TopBarFeature;->searchList:Ljava/lang/ref/WeakReference;
+
+    if-eqz v2, :list_loaded
+
+    invoke-virtual {v2}, Ljava/lang/ref/Reference;->get()Ljava/lang/Object;
+
+    move-result-object v1
+
+    check-cast v1, Landroid/widget/ListView;
+
+    :list_loaded
+    if-eqz p3, :disabled
+
+    sget-object v2, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
+
+    const-string v3, "top_search_bar"
+
+    const/4 v4, 0x0
+
+    invoke-virtual {v2, v3, v4}, Lwex/ui/core/WexStore;->getBool(Ljava/lang/String;Z)Z
+
+    move-result v2
+
+    if-eqz v2, :disabled
+
+    sget-object v2, Lwex/ui/core/core/ViewFinder;->INSTANCE:Lwex/ui/core/core/ViewFinder;
+
+    invoke-virtual {v2, p1}, Lwex/ui/core/core/ViewFinder;->findListView(Landroid/view/View;)Landroid/view/View;
+
+    move-result-object v3
+
+    instance-of v4, v3, Landroid/widget/ListView;
+
+    if-eqz v4, :missing_list
+
+    check-cast v3, Landroid/widget/ListView;
+
+    if-eq v1, v3, :same_list
+
+    if-eqz v0, :old_removed
+
+    if-eqz v1, :old_removed
+
+    invoke-virtual {v1, v0}, Landroid/widget/ListView;->removeHeaderView(Landroid/view/View;)Z
+
+    :old_removed
+    invoke-static {}, Lwex/ui/core/feature/TopBarFeature;->restoreSearchButton()V
+
+    const/4 v0, 0x0
+
+    :same_list
+    move-object v1, v3
+
+    if-nez v0, :have_header
+
+    const-string v3, "w\u0435\u0445_top_search"
+
+    invoke-virtual {p1, v3}, Landroid/view/View;->findViewWithTag(Ljava/lang/Object;)Landroid/view/View;
+
+    move-result-object v0
+
+    :have_header
+    const-string v3, "\u641c\u7d22"
+
+    const/4 v4, 0x0
+
+    invoke-virtual {v2, p1, v3, v4}, Lwex/ui/core/core/ViewFinder;->findViewByDesc(Landroid/view/View;Ljava/lang/String;Ljava/lang/Class;)Landroid/view/View;
+
+    move-result-object v2
+
+    if-eqz v2, :missing_button
+
+    if-nez v0, :refresh_hint
+
+    invoke-direct {p0, p2}, Lwex/ui/core/feature/TopBarFeature;->buildSearchBar(Landroid/app/Activity;)Landroid/view/View;
+
+    move-result-object v0
+
+    const/4 v3, 0x0
+
+    invoke-virtual {v1, v0, v3, v3}, Landroid/widget/ListView;->addHeaderView(Landroid/view/View;Ljava/lang/Object;Z)V
+
+    :refresh_hint
+    new-instance v3, Ljava/lang/ref/WeakReference;
+
+    invoke-direct {v3, v0}, Ljava/lang/ref/WeakReference;-><init>(Ljava/lang/Object;)V
+
+    sput-object v3, Lwex/ui/core/feature/TopBarFeature;->searchHeader:Ljava/lang/ref/WeakReference;
+
+    new-instance v3, Ljava/lang/ref/WeakReference;
+
+    invoke-direct {v3, v1}, Ljava/lang/ref/WeakReference;-><init>(Ljava/lang/Object;)V
+
+    sput-object v3, Lwex/ui/core/feature/TopBarFeature;->searchList:Ljava/lang/ref/WeakReference;
+
+    const-string v3, "wex_top_search_hint"
+
+    invoke-virtual {v0, v3}, Landroid/view/View;->findViewWithTag(Ljava/lang/Object;)Landroid/view/View;
+
+    move-result-object v3
+
+    instance-of v4, v3, Landroid/widget/TextView;
+
+    if-eqz v4, :hide_button
+
+    check-cast v3, Landroid/widget/TextView;
+
+    sget-object v4, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
+
+    const-string v5, "top_search_hint"
+
+    const-string v6, ""
+
+    invoke-virtual {v4, v5, v6}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object v4
+
+    invoke-virtual {v4}, Ljava/lang/String;->length()I
+
+    move-result v5
+
+    if-nez v5, :set_hint
+
+    const-string v4, "\u641c\u7d22"
+
+    :set_hint
+    invoke-virtual {v3, v4}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
+
+    :hide_button
+    const/4 v3, 0x0
+
+    sget-object v4, Lwex/ui/core/feature/TopBarFeature;->searchBtn:Ljava/lang/ref/WeakReference;
+
+    if-eqz v4, :compare_button
+
+    invoke-virtual {v4}, Ljava/lang/ref/Reference;->get()Ljava/lang/Object;
+
+    move-result-object v3
+
+    :compare_button
+    if-eq v3, v2, :hide_current
+
+    invoke-static {}, Lwex/ui/core/feature/TopBarFeature;->restoreSearchButton()V
+
+    invoke-virtual {v2}, Landroid/view/View;->getVisibility()I
+
+    move-result v3
+
+    sput v3, Lwex/ui/core/feature/TopBarFeature;->searchVisibility:I
+
+    new-instance v3, Ljava/lang/ref/WeakReference;
+
+    invoke-direct {v3, v2}, Ljava/lang/ref/WeakReference;-><init>(Ljava/lang/Object;)V
+
+    sput-object v3, Lwex/ui/core/feature/TopBarFeature;->searchBtn:Ljava/lang/ref/WeakReference;
+
+    :hide_current
+    const/16 v3, 0x8
+
+    invoke-virtual {v2, v3}, Landroid/view/View;->setVisibility(I)V
+
+    return-void
+
+    :missing_list
+    const-string v2, "TopBar: home ListView unavailable; native search retained"
+
+    invoke-direct {p0, v2}, Lwex/ui/core/feature/TopBarFeature;->log(Ljava/lang/String;)V
+
+    goto :disabled
+
+    :missing_button
+    const-string v2, "TopBar: native search button unavailable"
+
+    invoke-direct {p0, v2}, Lwex/ui/core/feature/TopBarFeature;->log(Ljava/lang/String;)V
+
+    :disabled
+    invoke-static {}, Lwex/ui/core/feature/TopBarFeature;->restoreSearchButton()V
+
+    if-eqz v0, :clear
+
+    if-eqz v1, :clear
+
+    invoke-virtual {v1, v0}, Landroid/widget/ListView;->removeHeaderView(Landroid/view/View;)Z
+
+    :clear
+    const/4 v0, 0x0
+
+    sput-object v0, Lwex/ui/core/feature/TopBarFeature;->searchHeader:Ljava/lang/ref/WeakReference;
+
+    sput-object v0, Lwex/ui/core/feature/TopBarFeature;->searchList:Ljava/lang/ref/WeakReference;
+
     return-void
 .end method
 
@@ -390,302 +964,15 @@
 .end method
 
 .method private final buildProfile(Landroid/app/Activity;)Landroid/view/View;
-    .locals 12
+    .locals 1
 
-    invoke-virtual {p1}, Landroid/content/Context;->getResources()Landroid/content/res/Resources;
-
-    move-result-object v0
-
-    invoke-virtual {v0}, Landroid/content/res/Resources;->getDisplayMetrics()Landroid/util/DisplayMetrics;
-
-    move-result-object v0
-
-    iget v0, v0, Landroid/util/DisplayMetrics;->density:F
-
-    sget-object v1, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
-
-    const-string v2, "top_nickname"
-
-    const-string v3, ""
-
-    invoke-virtual {v1, v2, v3}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
-
-    move-result-object v2
-
-    const-string v4, "top_status"
-
-    invoke-virtual {v1, v4, v3}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
-
-    move-result-object v3
-
-    const-string v4, "top_dot_color"
-
-    const-string v5, "green"
-
-    invoke-virtual {v1, v4, v5}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
-
-    move-result-object v1
-
-    const-string v4, "red"
-
-    invoke-static {v1, v4}, Lkotlin/jvm/internal/Intrinsics;->areEqual(Ljava/lang/Object;Ljava/lang/Object;)Z
-
-    move-result v1
-
-    invoke-direct {p0}, Lwex/ui/core/feature/TopBarFeature;->loadAvatar()Landroid/graphics/Bitmap;
+    # 统一交给 ProfileView：圆形头像 / 首字占位 / 昵称 / 状态圆点，
+    # 版式参照 WeKit 的 HomeSidePanelHome.kt（GPL-3.0）。
+    invoke-static {p1}, Lwex/ui/core/feature/ProfileView;->buildBar(Landroid/app/Activity;)Landroid/view/View;
 
     move-result-object p0
-
-    if-nez p0, :cond_0
-
-    invoke-virtual {v2}, Ljava/lang/String;->length()I
-
-    move-result v4
-
-    if-nez v4, :cond_0
-
-    invoke-virtual {v3}, Ljava/lang/String;->length()I
-
-    move-result v4
-
-    if-nez v4, :cond_0
-
-    const/4 p0, 0x0
 
     return-object p0
-
-    :cond_0
-    new-instance v4, Landroid/widget/LinearLayout;
-
-    invoke-direct {v4, p1}, Landroid/widget/LinearLayout;-><init>(Landroid/content/Context;)V
-
-    const/4 v5, 0x0
-
-    invoke-virtual {v4, v5}, Landroid/widget/LinearLayout;->setOrientation(I)V
-
-    const/16 v6, 0x10
-
-    invoke-virtual {v4, v6}, Landroid/widget/LinearLayout;->setGravity(I)V
-
-    const-string v7, "w\u0435\u0445_top_profile"
-
-    invoke-virtual {v4, v7}, Landroid/view/View;->setTag(Ljava/lang/Object;)V
-
-    const/high16 v7, 0x41400000    # 12.0f
-
-    invoke-static {v0, v7}, Lwex/ui/core/feature/TopBarFeature;->buildProfile$dp(FF)I
-
-    move-result v7
-
-    invoke-virtual {v4, v7, v5, v5, v5}, Landroid/view/View;->setPadding(IIII)V
-
-    new-instance v7, Landroid/widget/RelativeLayout$LayoutParams;
-
-    const/4 v8, -0x2
-
-    const/4 v9, -0x1
-
-    invoke-direct {v7, v8, v9}, Landroid/widget/RelativeLayout$LayoutParams;-><init>(II)V
-
-    const/16 v8, 0x9
-
-    invoke-virtual {v7, v8}, Landroid/widget/RelativeLayout$LayoutParams;->addRule(I)V
-
-    const/16 v8, 0xf
-
-    invoke-virtual {v7, v8}, Landroid/widget/RelativeLayout$LayoutParams;->addRule(I)V
-
-    invoke-virtual {v4, v7}, Landroid/view/View;->setLayoutParams(Landroid/view/ViewGroup$LayoutParams;)V
-
-    const/4 v7, 0x1
-
-    if-eqz p0, :cond_1
-
-    const/high16 v8, 0x42300000    # 44.0f
-
-    invoke-static {v0, v8}, Lwex/ui/core/feature/TopBarFeature;->buildProfile$dp(FF)I
-
-    move-result v8
-
-    new-instance v9, Landroid/widget/ImageView;
-
-    invoke-direct {v9, p1}, Landroid/widget/ImageView;-><init>(Landroid/content/Context;)V
-
-    sget-object v10, Landroid/widget/ImageView$ScaleType;->CENTER_CROP:Landroid/widget/ImageView$ScaleType;
-
-    invoke-virtual {v9, v10}, Landroid/widget/ImageView;->setScaleType(Landroid/widget/ImageView$ScaleType;)V
-
-    invoke-virtual {v9, v7}, Landroid/view/View;->setClipToOutline(Z)V
-
-    new-instance v10, Lx4/s;
-
-    const/16 v11, 0xd
-
-    invoke-direct {v10, v0, v11}, Lx4/s;-><init>(FI)V
-
-    invoke-virtual {v9, v10}, Landroid/view/View;->setOutlineProvider(Landroid/view/ViewOutlineProvider;)V
-
-    new-instance v10, Landroid/widget/LinearLayout$LayoutParams;
-
-    invoke-direct {v10, v8, v8}, Landroid/widget/LinearLayout$LayoutParams;-><init>(II)V
-
-    invoke-virtual {v9, v10}, Landroid/view/View;->setLayoutParams(Landroid/view/ViewGroup$LayoutParams;)V
-
-    invoke-virtual {v9, p0}, Landroid/widget/ImageView;->setImageBitmap(Landroid/graphics/Bitmap;)V
-
-    invoke-virtual {v4, v9}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    :cond_1
-    invoke-virtual {v2}, Ljava/lang/String;->length()I
-
-    move-result p0
-
-    if-lez p0, :cond_2
-
-    goto :goto_0
-
-    :cond_2
-    invoke-virtual {v3}, Ljava/lang/String;->length()I
-
-    move-result p0
-
-    if-lez p0, :cond_6
-
-    :goto_0
-    invoke-static {p1, v7, v6}, Landroidx/activity/b;->i(Landroid/app/Activity;II)Landroid/widget/LinearLayout;
-
-    move-result-object p0
-
-    const/high16 v8, 0x40c00000    # 6.0f
-
-    invoke-static {v0, v8}, Lwex/ui/core/feature/TopBarFeature;->buildProfile$dp(FF)I
-
-    move-result v9
-
-    invoke-virtual {p0, v9, v5, v5, v5}, Landroid/view/View;->setPadding(IIII)V
-
-    invoke-virtual {v2}, Ljava/lang/String;->length()I
-
-    move-result v9
-
-    if-lez v9, :cond_3
-
-    new-instance v9, Landroid/widget/TextView;
-
-    invoke-direct {v9, p1}, Landroid/widget/TextView;-><init>(Landroid/content/Context;)V
-
-    invoke-virtual {v9, v2}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
-
-    const/high16 v2, 0x41500000    # 13.0f
-
-    invoke-virtual {v9, v2}, Landroid/widget/TextView;->setTextSize(F)V
-
-    const-string v2, "#1A1A1A"
-
-    invoke-static {v2}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v2
-
-    invoke-virtual {v9, v2}, Landroid/widget/TextView;->setTextColor(I)V
-
-    sget-object v2, Landroid/graphics/Typeface;->DEFAULT_BOLD:Landroid/graphics/Typeface;
-
-    invoke-virtual {v9, v2}, Landroid/widget/TextView;->setTypeface(Landroid/graphics/Typeface;)V
-
-    invoke-virtual {v9, v7}, Landroid/widget/TextView;->setSingleLine(Z)V
-
-    invoke-virtual {p0, v9}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    :cond_3
-    invoke-virtual {v3}, Ljava/lang/String;->length()I
-
-    move-result v2
-
-    if-lez v2, :cond_5
-
-    invoke-static {p1, v5, v6}, Landroidx/activity/b;->i(Landroid/app/Activity;II)Landroid/widget/LinearLayout;
-
-    move-result-object v2
-
-    new-instance v6, Landroid/view/View;
-
-    invoke-direct {v6, p1}, Landroid/view/View;-><init>(Landroid/content/Context;)V
-
-    new-instance v9, Landroid/graphics/drawable/GradientDrawable;
-
-    invoke-direct {v9}, Landroid/graphics/drawable/GradientDrawable;-><init>()V
-
-    invoke-virtual {v9, v7}, Landroid/graphics/drawable/GradientDrawable;->setShape(I)V
-
-    if-eqz v1, :cond_4
-
-    const-string v1, "#F44336"
-
-    goto :goto_1
-
-    :cond_4
-    const-string v1, "#4CAF50"
-
-    :goto_1
-    invoke-static {v1}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result v1
-
-    invoke-virtual {v9, v1}, Landroid/graphics/drawable/GradientDrawable;->setColor(I)V
-
-    invoke-virtual {v6, v9}, Landroid/view/View;->setBackground(Landroid/graphics/drawable/Drawable;)V
-
-    new-instance v1, Landroid/widget/LinearLayout$LayoutParams;
-
-    invoke-static {v0, v8}, Lwex/ui/core/feature/TopBarFeature;->buildProfile$dp(FF)I
-
-    move-result v7
-
-    invoke-static {v0, v8}, Lwex/ui/core/feature/TopBarFeature;->buildProfile$dp(FF)I
-
-    move-result v8
-
-    invoke-direct {v1, v7, v8}, Landroid/widget/LinearLayout$LayoutParams;-><init>(II)V
-
-    invoke-virtual {v6, v1}, Landroid/view/View;->setLayoutParams(Landroid/view/ViewGroup$LayoutParams;)V
-
-    invoke-virtual {v2, v6}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    new-instance v1, Landroid/widget/TextView;
-
-    invoke-direct {v1, p1}, Landroid/widget/TextView;-><init>(Landroid/content/Context;)V
-
-    invoke-virtual {v1, v3}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
-
-    const/high16 p1, 0x41200000    # 10.0f
-
-    invoke-virtual {v1, p1}, Landroid/widget/TextView;->setTextSize(F)V
-
-    const-string p1, "#999999"
-
-    invoke-static {p1}, Landroid/graphics/Color;->parseColor(Ljava/lang/String;)I
-
-    move-result p1
-
-    invoke-virtual {v1, p1}, Landroid/widget/TextView;->setTextColor(I)V
-
-    const/high16 p1, 0x40400000    # 3.0f
-
-    invoke-static {v0, p1}, Lwex/ui/core/feature/TopBarFeature;->buildProfile$dp(FF)I
-
-    move-result p1
-
-    invoke-virtual {v1, p1, v5, v5, v5}, Landroid/widget/TextView;->setPadding(IIII)V
-
-    invoke-virtual {v2, v1}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    invoke-virtual {p0, v2}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    :cond_5
-    invoke-virtual {v4, p0}, Landroid/view/ViewGroup;->addView(Landroid/view/View;)V
-
-    :cond_6
-    return-object v4
 .end method
 
 .method private static final buildProfile$dp(FF)I
@@ -864,6 +1151,10 @@
 
     sget-object p1, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
 
+    const-string v6, "wex_top_search_hint"
+
+    invoke-virtual {p0, v6}, Landroid/view/View;->setTag(Ljava/lang/Object;)V
+
     const-string v6, "top_search_hint"
 
     const-string v7, ""
@@ -932,7 +1223,15 @@
     .locals 2
 
     :try_start_0
-    sget-object p0, Lwex/ui/core/feature/TopBarFeature;->searchBtn:Landroid/view/View;
+    sget-object p0, Lwex/ui/core/feature/TopBarFeature;->searchBtn:Ljava/lang/ref/WeakReference;
+
+    if-eqz p0, :cond_0
+
+    invoke-virtual {p0}, Ljava/lang/ref/Reference;->get()Ljava/lang/Object;
+
+    move-result-object p0
+
+    check-cast p0, Landroid/view/View;
 
     if-eqz p0, :cond_0
 
@@ -1001,9 +1300,43 @@
 
     move-result-object v0
 
+    # Build first, then replace the owned tag in its existing parent.
+    invoke-direct {p0, p1}, Lwex/ui/core/feature/TopBarFeature;->buildProfile(Landroid/app/Activity;)Landroid/view/View;
+
+    move-result-object p1
+
+    if-nez p1, :profile_ready
+
+    invoke-static {v0}, Lwex/ui/core/feature/TopBarFeature;->removeOwnedView(Landroid/view/View;)V
+
+    return-void
+
+    :profile_ready
     if-eqz v0, :cond_2
 
-    goto :goto_3
+    invoke-virtual {v0}, Landroid/view/View;->getParent()Landroid/view/ViewParent;
+
+    move-result-object v1
+
+    instance-of v2, v1, Landroid/view/ViewGroup;
+
+    if-eqz v2, :cond_2
+
+    check-cast v1, Landroid/view/ViewGroup;
+
+    invoke-virtual {v0}, Landroid/view/View;->getLayoutParams()Landroid/view/ViewGroup$LayoutParams;
+
+    move-result-object v2
+
+    invoke-virtual {v1, v0}, Landroid/view/ViewGroup;->indexOfChild(Landroid/view/View;)I
+
+    move-result v3
+
+    invoke-virtual {v1, v0}, Landroid/view/ViewGroup;->removeView(Landroid/view/View;)V
+
+    invoke-virtual {v1, p1, v3, v2}, Landroid/view/ViewGroup;->addView(Landroid/view/View;ILandroid/view/ViewGroup$LayoutParams;)V
+
+    return-void
 
     :cond_2
     invoke-virtual {p2}, Landroid/view/ViewGroup;->getChildCount()I
@@ -1036,16 +1369,6 @@
 
     :cond_4
     :goto_2
-    invoke-direct {p0, p1}, Lwex/ui/core/feature/TopBarFeature;->buildProfile(Landroid/app/Activity;)Landroid/view/View;
-
-    move-result-object p1
-
-    if-nez p1, :cond_5
-
-    :goto_3
-    return-void
-
-    :cond_5
     instance-of v0, p2, Landroid/widget/RelativeLayout;
 
     const/4 v1, -0x1
@@ -1148,6 +1471,43 @@
 
 .method private final loadSearchIcon()Landroid/graphics/Bitmap;
     .locals 6
+
+    # --- Tabler 矢量图标：命中即用 ---
+    sget-object v0, Lwex/ui/core/feature/TopBarFeature;->cachedIcon:Landroid/graphics/Bitmap;
+
+    if-eqz v0, :cond_tabler_render
+
+    return-object v0
+
+    :cond_tabler_render
+    const/high16 v1, 0x41900000    # 18.0f
+
+    invoke-static {v1}, Lwex/ui/core/feature/TablerIcons;->toPx(F)I
+
+    move-result v1
+
+    const-string v2, "topbar_search.png"
+
+    invoke-static {v2}, Lwex/ui/core/feature/TablerIcons;->colorOf(Ljava/lang/String;)I
+
+    move-result v3
+
+    invoke-static {v2, v1, v3}, Lwex/ui/core/feature/TablerIcons;->bitmap(Ljava/lang/String;II)Landroid/graphics/Bitmap;
+
+    move-result-object v1
+
+    if-eqz v1, :cond_tabler_null
+
+    sput-object v1, Lwex/ui/core/feature/TopBarFeature;->cachedIcon:Landroid/graphics/Bitmap;
+
+    return-object v1
+
+    :cond_tabler_null
+    const/4 v1, 0x0
+
+    return-object v1
+    # --- Tabler 分支结束 ---
+
 
     const-class v0, Landroid/content/res/AssetManager;
 
@@ -1290,28 +1650,17 @@
 
 
 # virtual methods
-.method public final init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V
+.method public final declared-synchronized init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V
     .locals 6
 
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
     sput-object p2, Lwex/ui/core/feature/TopBarFeature;->modulePath:Ljava/lang/String;
 
-    sget-object p1, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
+    sget-boolean v0, Lwex/ui/core/feature/TopBarFeature;->resumeHookRegistered:Z
 
-    const-string p2, "top_profile_enabled"
+    if-nez v0, :goto_0
 
-    const/4 v0, 0x0
-
-    invoke-virtual {p1, p2, v0}, Lwex/ui/core/WexStore;->getBool(Ljava/lang/String;Z)Z
-
-    move-result p1
-
-    if-nez p1, :cond_0
-
-    goto :goto_1
-
-    :cond_0
     :try_start_0
     const-class p1, Landroid/app/Activity;
 
@@ -1326,6 +1675,10 @@
     move-result-object v0
 
     invoke-static {p1, p2, v0}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+
+    const/4 v0, 0x1
+
+    sput-boolean v0, Lwex/ui/core/feature/TopBarFeature;->resumeHookRegistered:Z
     :try_end_0
     .catchall {:try_start_0 .. :try_end_0} :catchall_0
 
@@ -1347,6 +1700,10 @@
     invoke-direct {p0, p1}, Lwex/ui/core/feature/TopBarFeature;->log(Ljava/lang/String;)V
 
     :goto_0
+    sget-boolean v0, Lwex/ui/core/feature/TopBarFeature;->titleHookRegistered:Z
+
+    if-nez v0, :goto_1
+
     :try_start_1
     const-class p1, Landroid/widget/TextView;
 
@@ -1360,17 +1717,19 @@
 
     sget-object v3, Ljava/lang/Integer;->TYPE:Ljava/lang/Class;
 
-    new-instance v4, Lx4/f0;
+    new-instance v4, Lwex/ui/core/feature/TopBarHomeHook;
 
-    const/16 v5, 0xf
-
-    invoke-direct {v4, v5}, Lx4/f0;-><init>(I)V
+    invoke-direct {v4}, Lwex/ui/core/feature/TopBarHomeHook;-><init>()V
 
     filled-new-array {v0, v1, v2, v3, v4}, [Ljava/lang/Object;
 
     move-result-object v0
 
     invoke-static {p1, p2, v0}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+
+    const/4 v0, 0x1
+
+    sput-boolean v0, Lwex/ui/core/feature/TopBarFeature;->titleHookRegistered:Z
     :try_end_1
     .catchall {:try_start_1 .. :try_end_1} :catchall_1
 

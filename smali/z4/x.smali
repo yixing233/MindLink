@@ -63,7 +63,7 @@
 
     move-result-object v2
 
-    invoke-virtual {v0, v1, v2}, Lwex/ui/core/WexStore;->putString(Ljava/lang/String;Ljava/lang/String;)V
+    invoke-static {v0, v1, v2}, Lwex/ui/core/feature/SettingsChanges;->putString(Lwex/ui/core/WexStore;Ljava/lang/String;Ljava/lang/String;)V
 
     sget-object v0, Lx4/u0;->a:Lx4/u0;
 
@@ -76,28 +76,6 @@
     invoke-virtual {v1}, Ljava/util/HashMap;->clear()V
 
     sput-object v0, Lx4/u0;->w:Landroid/graphics/Bitmap;
-
-    sget-object v0, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
-
-    iget-object p0, p0, Lz4/x;->b:Landroid/app/Activity;
-
-    new-instance v1, Ljava/lang/StringBuilder;
-
-    const-string v2, "\u4e0d\u900f\u660e\u5ea6\u5df2\u8bbe\u4e3a"
-
-    invoke-direct {v1, v2}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
-
-    invoke-virtual {v1, p1}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-
-    const-string p1, "%\uff0c\u70b9\u51fb\u4e0b\u65b9\u4e00\u952e\u91cd\u542f\u751f\u6548"
-
-    invoke-virtual {v1, p1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-
-    move-result-object p1
-
-    invoke-virtual {v0, p0, p1}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
 
     :cond_0
     return-void

@@ -51,6 +51,12 @@
 
     sput v0, Lx4/u0;->o:I
 
+    invoke-static {}, Lx4/u0;->isUiVisible()Z
+
+    move-result v0
+
+    if-eqz v0, :cond_0
+
     sget-object v0, Lx4/u0;->u:Landroid/os/Handler;
 
     new-instance v3, Lh1/m;
@@ -65,6 +71,12 @@
 
     :catch_0
     :cond_0
+    invoke-static {}, Lx4/u0;->isUiVisible()Z
+
+    move-result v0
+
+    if-eqz v0, :goto_0
+
     sget-object v0, Lx4/u0;->a:Lx4/u0;
 
     sget-object v0, Lx4/u0;->q:Landroid/view/View;
@@ -105,21 +117,7 @@
     const-string v3, "\u6682\u65e0\u6b4c\u8bcd"
 
     :cond_4
-    sget-object v4, Lx4/u0;->u:Landroid/os/Handler;
-
-    new-instance v5, Lh1/e3;
-
-    const/16 v6, 0x8
-
-    invoke-direct {v5, v6}, Lh1/e3;-><init>(I)V
-
-    iput-object v0, v5, Lh1/e3;->d:Ljava/lang/Object;
-
-    iput-object v3, v5, Lh1/e3;->e:Ljava/lang/Object;
-
-    invoke-static {}, Ljava/lang/invoke/VarHandle;->storeStoreFence()V
-
-    invoke-virtual {v4, v5}, Landroid/os/Handler;->post(Ljava/lang/Runnable;)Z
+    invoke-virtual {v0, v3}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
 
     :goto_0
     sget-object v0, Lx4/u0;->u:Landroid/os/Handler;

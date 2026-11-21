@@ -2,6 +2,9 @@
 .super Lde/robv/android/xposed/XC_MethodHook;
 .source "TabBgDrawHook.java"
 
+# 来源：DecorView 全屏 ImageView 蒙层的方案参照 WeKit 的
+# features/items/beautify/ApplyGlobalBackground.kt（GPL-3.0）。
+
 
 # static fields
 .field private static final TAG_BG:Ljava/lang/String; = "wex_tab_bg_overlay"

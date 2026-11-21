@@ -634,6 +634,9 @@
 
     iput v4, v3, Landroid/widget/FrameLayout$LayoutParams;->bottomMargin:I
 
+    # 悬浮增强：真悬浮 / 滚动自动隐藏 / 胶囊表面，不改变胶囊自身的测量与点击逻辑。
+    invoke-static {v0, v5}, Lwex/ui/core/feature/FloatingTabBar;->attach(Landroid/view/ViewGroup;Landroid/view/View;)V
+
     invoke-virtual {v0, v5, v3}, Landroid/view/ViewGroup;->addView(Landroid/view/View;Landroid/view/ViewGroup$LayoutParams;)V
 
     const-string v3, "\u60ac\u6d6e\u5e95\u680f: \u6b65\u9aa4\u2463\u6ce8\u5165\u5b8c\u6210"

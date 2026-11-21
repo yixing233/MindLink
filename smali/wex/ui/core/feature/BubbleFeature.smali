@@ -208,6 +208,10 @@
     invoke-direct {v0, v1}, Lx4/f;-><init>(I)V
 
     invoke-static {p1, v0}, Lde/robv/android/xposed/XposedBridge;->hookMethod(Ljava/lang/reflect/Member;Lde/robv/android/xposed/XC_MethodHook;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+
+    const/4 v0, 0x1
+
+    sput-boolean v0, Lwex/ui/core/feature/BubbleFeature;->registered:Z
     :try_end_0
     .catchall {:try_start_0 .. :try_end_0} :catchall_0
 
@@ -331,41 +335,19 @@
 
 
 # virtual methods
-.method public final init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
-    .locals 3
+.method public final declared-synchronized init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+    .locals 1
 
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
     invoke-direct {p0}, Lwex/ui/core/feature/BubbleFeature;->migrateOldSetting()V
 
-    sget-object v0, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
-
-    const-string v1, "bubble_enabled"
-
-    const/4 v2, 0x0
-
-    invoke-virtual {v0, v1, v2}, Lwex/ui/core/WexStore;->getBool(Ljava/lang/String;Z)Z
-
-    move-result v0
-
-    if-nez v0, :cond_0
-
-    goto :goto_0
-
-    :cond_0
     sget-boolean v0, Lwex/ui/core/feature/BubbleFeature;->registered:Z
 
-    if-eqz v0, :cond_1
-
-    :goto_0
-    return-void
-
-    :cond_1
-    const/4 v0, 0x1
-
-    sput-boolean v0, Lwex/ui/core/feature/BubbleFeature;->registered:Z
+    if-nez v0, :done
 
     invoke-direct {p0, p1}, Lwex/ui/core/feature/BubbleFeature;->hookBubble(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
 
+    :done
     return-void
 .end method

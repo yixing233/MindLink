@@ -214,6 +214,17 @@
 .method private final httpGet(Ljava/lang/String;)Ljava/lang/String;
     .locals 1
 
+    invoke-static {}, Lwex/ui/core/feature/LocationPrivacy;->isEnabled()Z
+
+    move-result v0
+
+    if-nez v0, :location_http_allowed
+
+    const-string v0, ""
+
+    return-object v0
+
+    :location_http_allowed
     new-instance p0, Ljava/net/URL;
 
     invoke-direct {p0, p1}, Ljava/net/URL;-><init>(Ljava/lang/String;)V
@@ -285,47 +296,6 @@
     invoke-static {p0, p1}, Ln4/a;->m(Ljava/io/Closeable;Ljava/lang/Throwable;)V
 
     throw v0
-.end method
-
-.method private final ipLocate()Lorg/json/JSONObject;
-    .locals 3
-
-    const/4 v0, 0x0
-
-    :try_start_0
-    const-string v1, "http://ip-api.com/json/?lang=zh-CN&fields=country,regionName,city,lat,lon"
-
-    new-instance v2, Lorg/json/JSONObject;
-
-    invoke-direct {p0, v1}, Lwex/ui/core/feature/LocationHelper;->httpGet(Ljava/lang/String;)Ljava/lang/String;
-
-    move-result-object p0
-
-    invoke-direct {v2, p0}, Lorg/json/JSONObject;-><init>(Ljava/lang/String;)V
-
-    const-string p0, "city"
-
-    const-string v1, ""
-
-    invoke-virtual {v2, p0, v1}, Lorg/json/JSONObject;->optString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
-
-    move-result-object p0
-
-    invoke-virtual {p0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
-
-    invoke-interface {p0}, Ljava/lang/CharSequence;->length()I
-
-    move-result p0
-    :try_end_0
-    .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_0} :catch_0
-
-    if-lez p0, :cond_0
-
-    return-object v2
-
-    :catch_0
-    :cond_0
-    return-object v0
 .end method
 
 .method private final log(Ljava/lang/String;)V
@@ -473,12 +443,25 @@
 
     invoke-direct {v4}, Ljava/lang/Object;-><init>()V
 
-    const-string v5, "\u5b9a\u4f4d\u5931\u8d25"
+    const-string v5, "定位失败"
 
     iput-object v5, v4, Lkotlin/jvm/internal/t;->c:Ljava/lang/Object;
 
     const/4 v5, 0x1
 
+    invoke-static {}, Lwex/ui/core/feature/LocationPrivacy;->isEnabled()Z
+
+    move-result v6
+
+    if-nez v6, :location_update_allowed
+
+    const-string v6, "联网天气与定位已关闭"
+
+    iput-object v6, v4, Lkotlin/jvm/internal/t;->c:Ljava/lang/Object;
+
+    goto/16 :goto_3
+
+    :location_update_allowed
     :try_start_0
     sget-object v6, Lwex/ui/core/feature/LocationHelper;->INSTANCE:Lwex/ui/core/feature/LocationHelper;
 
@@ -532,6 +515,8 @@
     invoke-direct {v6, v2}, Lwex/ui/core/feature/LocationHelper;->log(Ljava/lang/String;)V
 
     move-wide/from16 v16, v10
+    :try_end_1
+    .catch Ljava/lang/Exception; {:try_start_1 .. :try_end_1} :catch_0
 
     goto :goto_0
 
@@ -541,72 +526,13 @@
     goto/16 :goto_2
 
     :cond_0
-    invoke-direct {v6}, Lwex/ui/core/feature/LocationHelper;->ipLocate()Lorg/json/JSONObject;
+    const-string v7, "没有可用位置，请开启微信定位权限和系统定位后重试"
 
-    move-result-object v2
-    :try_end_1
-    .catch Ljava/lang/Exception; {:try_start_1 .. :try_end_1} :catch_0
+    iput-object v7, v4, Lkotlin/jvm/internal/t;->c:Ljava/lang/Object;
 
-    const-string v7, ""
-
-    if-eqz v2, :cond_1
+    goto/16 :goto_3
 
     :try_start_2
-    const-string v12, "lat"
-
-    invoke-virtual {v2, v12, v10, v11}, Lorg/json/JSONObject;->optDouble(Ljava/lang/String;D)D
-
-    move-result-wide v12
-
-    const-string v14, "lon"
-
-    invoke-virtual {v2, v14, v10, v11}, Lorg/json/JSONObject;->optDouble(Ljava/lang/String;D)D
-
-    move-result-wide v14
-
-    move-wide/from16 v16, v10
-
-    const-string v10, "city"
-
-    invoke-virtual {v2, v10, v7}, Lorg/json/JSONObject;->optString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
-
-    move-result-object v2
-
-    invoke-virtual {v2}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
-
-    new-instance v7, Ljava/lang/StringBuilder;
-
-    invoke-direct {v7, v1}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
-
-    invoke-virtual {v7, v12, v13}, Ljava/lang/StringBuilder;->append(D)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v7, v9}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v7, v14, v15}, Ljava/lang/StringBuilder;->append(D)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v7, v8}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v7, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v7}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-
-    move-result-object v1
-
-    invoke-direct {v6, v1}, Lwex/ui/core/feature/LocationHelper;->log(Ljava/lang/String;)V
-
-    move-object v1, v2
-
-    goto :goto_0
-
-    :cond_1
-    move-wide/from16 v16, v10
-
-    move-object v1, v7
-
-    move-wide/from16 v12, v16
-
-    move-wide v14, v12
-
     :goto_0
     cmpg-double v2, v12, v16
 
@@ -622,6 +548,19 @@
     goto :goto_3
 
     :cond_3
+    invoke-static {}, Lwex/ui/core/feature/LocationPrivacy;->isEnabled()Z
+
+    move-result v2
+
+    if-nez v2, :location_save_allowed
+
+    const-string v2, "联网天气与定位已关闭"
+
+    iput-object v2, v4, Lkotlin/jvm/internal/t;->c:Ljava/lang/Object;
+
+    goto/16 :goto_3
+
+    :location_save_allowed
     sget-object v2, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
 
     const-string v6, "wp_lat"
@@ -785,39 +724,46 @@
 
     invoke-virtual {p2}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
-    const-string p0, "android.permission.ACCESS_FINE_LOCATION"
-
-    invoke-virtual {p1, p0}, Landroid/content/Context;->checkSelfPermission(Ljava/lang/String;)I
+    invoke-static {}, Lwex/ui/core/feature/LocationPrivacy;->isEnabled()Z
 
     move-result v0
 
-    if-eqz v0, :cond_1
+    if-nez v0, :location_permission_check
+
+    sget-object v0, Ljava/lang/Boolean;->FALSE:Ljava/lang/Boolean;
+
+    const-string v1, "联网天气与定位已关闭"
+
+    invoke-interface {p2, v0, v1}, Lw3/e;->invoke(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+
+    return-void
+
+    :location_permission_check
+    const-string v0, "android.permission.ACCESS_FINE_LOCATION"
+
+    invoke-virtual {p1, v0}, Landroid/content/Context;->checkSelfPermission(Ljava/lang/String;)I
+
+    move-result v0
+
+    if-eqz v0, :location_permission_allowed
 
     const-string v0, "android.permission.ACCESS_COARSE_LOCATION"
 
     invoke-virtual {p1, v0}, Landroid/content/Context;->checkSelfPermission(Ljava/lang/String;)I
 
-    move-result v1
+    move-result v0
 
-    if-nez v1, :cond_0
+    if-eqz v0, :location_permission_allowed
 
-    goto :goto_0
+    sget-object v0, Ljava/lang/Boolean;->FALSE:Ljava/lang/Boolean;
 
-    :cond_0
-    :try_start_0
-    filled-new-array {p0, v0}, [Ljava/lang/String;
+    const-string v1, "请先在系统设置中授予微信定位权限，再更新定位"
 
-    move-result-object p0
+    invoke-interface {p2, v0, v1}, Lw3/e;->invoke(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
 
-    const/16 v0, 0x7e02
+    return-void
 
-    invoke-virtual {p1, p0, v0}, Landroid/app/Activity;->requestPermissions([Ljava/lang/String;I)V
-    :try_end_0
-    .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_0} :catch_0
-
-    :catch_0
-    :cond_1
-    :goto_0
+    :location_permission_allowed
     new-instance p0, Ljava/lang/Thread;
 
     new-instance v0, Lh1/e3;

@@ -468,6 +468,9 @@
 
     invoke-static {p0, v5}, Lwex/ui/core/feature/MyPageBackground;->apply(Landroid/view/View;Landroid/view/View;)V
 
+    # 从「我」页个人卡片被动捕获本人昵称/头像/状态，供首页顶栏与侧栏展示。
+    invoke-static {v5}, Lwex/ui/core/feature/SelfProfile;->captureFrom(Landroid/view/View;)V
+
     :goto_7
     return-void
 

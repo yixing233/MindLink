@@ -52,6 +52,8 @@
 
 .field public static x:Landroid/app/Activity;
 
+.field private static uiVisible:Z
+
 
 # direct methods
 .method static constructor <clinit>()V
@@ -844,6 +846,13 @@
 
     move-object/from16 v0, p0
 
+    sget-object v1, Lx4/u0;->x:Landroid/app/Activity;
+
+    if-eq v1, v0, :ui_owner_ready
+
+    invoke-static {v1}, Lx4/u0;->releaseUi(Landroid/app/Activity;)V
+
+    :ui_owner_ready
     sput-object v0, Lx4/u0;->x:Landroid/app/Activity;
 
     const-string v1, "#999999"
@@ -1070,15 +1079,9 @@
 
     iget v3, v3, Landroid/util/DisplayMetrics;->density:F
 
-    invoke-virtual {v0}, Landroid/content/Context;->getResources()Landroid/content/res/Resources;
+    invoke-static {v0}, Lwex/ui/core/feature/HomeSidebarCards;->width(Landroid/content/Context;)I
 
-    move-result-object v6
-
-    invoke-virtual {v6}, Landroid/content/res/Resources;->getDisplayMetrics()Landroid/util/DisplayMetrics;
-
-    move-result-object v6
-
-    iget v6, v6, Landroid/util/DisplayMetrics;->widthPixels:I
+    move-result v6
 
     const/16 v7, 0x172
 
@@ -1778,6 +1781,10 @@
     sput-object v14, Lx4/u0;->f:Landroid/widget/LinearLayout;
 
     sput-object v14, Lx4/u0;->q:Landroid/view/View;
+
+    const/4 v0, 0x0
+
+    sput-boolean v0, Lx4/u0;->uiVisible:Z
 
     sget-object v0, Lx4/u0;->m:Landroid/media/MediaPlayer;
 
@@ -2525,6 +2532,48 @@
 
 .method public static n(Ljava/lang/String;)Landroid/graphics/Bitmap;
     .locals 8
+
+    # --- Tabler 矢量图标：命中即用，未命中回退旧 assets 逻辑 ---
+    # 音乐卡按钮最大约 80px（0.08 × 卡宽），这里固定按 96px 渲染，
+    # ImageView 用 FIT_CENTER 缩放，取到的始终是矢量级清晰度。
+    invoke-static {p0}, Lwex/ui/core/feature/TablerIcons;->has(Ljava/lang/String;)Z
+
+    move-result v0
+
+    if-eqz v0, :cond_tabler_miss
+
+    sget-object v0, Lx4/u0;->g:Ljava/util/HashMap;
+
+    invoke-virtual {v0, p0}, Ljava/util/HashMap;->get(Ljava/lang/Object;)Ljava/lang/Object;
+
+    move-result-object v1
+
+    check-cast v1, Landroid/graphics/Bitmap;
+
+    if-eqz v1, :cond_tabler_render
+
+    return-object v1
+
+    :cond_tabler_render
+    invoke-static {p0}, Lwex/ui/core/feature/TablerIcons;->colorOf(Ljava/lang/String;)I
+
+    move-result v2
+
+    const/16 v1, 0x60
+
+    invoke-static {p0, v1, v2}, Lwex/ui/core/feature/TablerIcons;->bitmap(Ljava/lang/String;II)Landroid/graphics/Bitmap;
+
+    move-result-object v1
+
+    if-eqz v1, :cond_tabler_miss
+
+    invoke-virtual {v0, p0, v1}, Ljava/util/HashMap;->put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+
+    return-object v1
+
+    :cond_tabler_miss
+    # --- Tabler 分支结束 ---
+
 
     const-string v0, "music_icon/"
 
@@ -3374,6 +3423,170 @@
 
     invoke-virtual {v1, v0}, Landroid/os/Handler;->post(Ljava/lang/Runnable;)Z
 
+    return-void
+.end method
+
+.method public static isUiVisible()Z
+    .locals 4
+
+    const/4 v0, 0x0
+
+    sget-boolean v1, Lx4/u0;->uiVisible:Z
+
+    if-eqz v1, :ui_hidden
+
+    sget-object v1, Lx4/u0;->x:Landroid/app/Activity;
+
+    if-eqz v1, :ui_hidden
+
+    invoke-virtual {v1}, Landroid/app/Activity;->isFinishing()Z
+
+    move-result v2
+
+    if-nez v2, :ui_hidden
+
+    invoke-virtual {v1}, Landroid/app/Activity;->isDestroyed()Z
+
+    move-result v2
+
+    if-nez v2, :ui_hidden
+
+    sget-object v2, Lx4/u0;->q:Landroid/view/View;
+
+    if-eqz v2, :ui_hidden
+
+    sget-object v3, Lx4/u0;->f:Landroid/widget/LinearLayout;
+
+    if-ne v2, v3, :ui_hidden
+
+    invoke-virtual {v2}, Landroid/view/View;->getContext()Landroid/content/Context;
+
+    move-result-object v3
+
+    if-ne v1, v3, :ui_hidden
+
+    invoke-virtual {v2}, Landroid/view/View;->isAttachedToWindow()Z
+
+    move-result v1
+
+    if-eqz v1, :ui_hidden
+
+    invoke-virtual {v2}, Landroid/view/View;->getWindowVisibility()I
+
+    move-result v1
+
+    if-nez v1, :ui_hidden
+
+    invoke-virtual {v2}, Landroid/view/View;->isShown()Z
+
+    move-result v0
+
+    :ui_hidden
+    return v0
+.end method
+
+.method public static setUiVisible(Landroid/app/Activity;Z)V
+    .locals 3
+
+    sget-object v0, Lx4/u0;->x:Landroid/app/Activity;
+
+    if-ne p0, v0, :ui_visibility_done
+
+    if-eqz p0, :ui_visibility_done
+
+    sget-boolean v0, Lx4/u0;->uiVisible:Z
+
+    if-eq v0, p1, :ui_visibility_done
+
+    sput-boolean p1, Lx4/u0;->uiVisible:Z
+
+    sget-object v0, Lx4/u0;->q:Landroid/view/View;
+
+    if-eqz v0, :ui_visibility_done
+
+    if-eqz p1, :ui_visibility_done
+
+    invoke-static {}, Lx4/u0;->isUiVisible()Z
+
+    move-result v1
+
+    if-eqz v1, :ui_visibility_done
+
+    sget-object v0, Lx4/u0;->p:Lwex/ui/core/feature/MusicCardFeature$MusicItem;
+
+    if-eqz v0, :ui_sync_controls
+
+    invoke-static {v0}, Lx4/u0;->w(Lwex/ui/core/feature/MusicCardFeature$MusicItem;)V
+
+    :ui_sync_controls
+    new-instance v0, Lh1/m;
+
+    const/4 v1, 0x5
+
+    invoke-direct {v0, v1}, Lh1/m;-><init>(I)V
+
+    invoke-virtual {v0}, Lh1/m;->run()V
+
+    new-instance v0, Lh1/m;
+
+    const/4 v1, 0x4
+
+    invoke-direct {v0, v1}, Lh1/m;-><init>(I)V
+
+    invoke-virtual {v0}, Lh1/m;->run()V
+
+    new-instance v0, Lh1/m;
+
+    const/4 v1, 0x3
+
+    invoke-direct {v0, v1}, Lh1/m;-><init>(I)V
+
+    invoke-virtual {v0}, Lh1/m;->run()V
+
+    :ui_visibility_done
+    return-void
+.end method
+
+.method public static releaseUi(Landroid/app/Activity;)V
+    .locals 3
+
+    sget-object v0, Lx4/u0;->x:Landroid/app/Activity;
+
+    if-ne v0, p0, :ui_release_done
+
+    const/4 v0, 0x0
+
+    sput-boolean v0, Lx4/u0;->uiVisible:Z
+
+    sget-object v1, Lx4/u0;->q:Landroid/view/View;
+
+    sput-object v0, Lx4/u0;->f:Landroid/widget/LinearLayout;
+
+    sput-object v0, Lx4/u0;->q:Landroid/view/View;
+
+    sput-object v0, Lx4/u0;->x:Landroid/app/Activity;
+
+    sput-object v0, Lx4/u0;->w:Landroid/graphics/Bitmap;
+
+    if-eqz v1, :ui_release_done
+
+    const/4 v0, 0x4
+
+    invoke-virtual {v1, v0}, Landroid/view/View;->setVisibility(I)V
+
+    invoke-virtual {v1}, Landroid/view/View;->getParent()Landroid/view/ViewParent;
+
+    move-result-object v0
+
+    instance-of v2, v0, Landroid/view/ViewGroup;
+
+    if-eqz v2, :ui_release_done
+
+    check-cast v0, Landroid/view/ViewGroup;
+
+    invoke-virtual {v0, v1}, Landroid/view/ViewGroup;->removeView(Landroid/view/View;)V
+
+    :ui_release_done
     return-void
 .end method
 

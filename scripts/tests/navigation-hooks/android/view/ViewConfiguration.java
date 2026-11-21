@@ -1,0 +1,5 @@
+package android.view;
+public class ViewConfiguration {
+    public static ViewConfiguration get(android.content.Context context) { return new ViewConfiguration(); }
+    public int getScaledTouchSlop() { return 8; }
+}

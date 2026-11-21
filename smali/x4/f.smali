@@ -93,6 +93,12 @@
     goto :goto_0
 
     :cond_2
+    invoke-virtual {v11}, Landroid/view/View;->isAttachedToWindow()Z
+
+    move-result p0
+
+    if-eqz p0, :goto_0
+
     sget-object p0, Lwex/ui/core/feature/ConversationFilterFeature;->INSTANCE:Lwex/ui/core/feature/ConversationFilterFeature;
 
     invoke-static {p0}, Lwex/ui/core/feature/ConversationFilterFeature;->access$scheduleSync(Lwex/ui/core/feature/ConversationFilterFeature;)V
@@ -111,90 +117,13 @@
 
     instance-of p1, p0, Landroid/app/Activity;
 
-    if-eqz p1, :cond_3
+    if-eqz p1, :goto_1
 
-    move-object v11, p0
+    check-cast p0, Landroid/app/Activity;
 
-    check-cast v11, Landroid/app/Activity;
-
-    :cond_3
-    if-nez v11, :cond_4
-
-    goto :goto_1
-
-    :cond_4
-    invoke-virtual {v11}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
-
-    move-result-object p0
-
-    invoke-virtual {p0}, Ljava/lang/Class;->getName()Ljava/lang/String;
-
-    move-result-object p0
-
-    invoke-static {p0, v7}, Lkotlin/jvm/internal/Intrinsics;->areEqual(Ljava/lang/Object;Ljava/lang/Object;)Z
-
-    move-result p0
-
-    if-nez p0, :cond_5
-
-    goto :goto_1
-
-    :cond_5
-    sget-object p0, Lwex/ui/core/feature/ConversationFilterFeature;->INSTANCE:Lwex/ui/core/feature/ConversationFilterFeature;
-
-    const-string p1, "\u4f1a\u8bdd\u7b5b\u9009: \u9996\u9875\u663e\u793a \u89e6\u53d1"
-
-    invoke-static {p0, p1}, Lwex/ui/core/feature/ConversationFilterFeature;->access$log(Lwex/ui/core/feature/ConversationFilterFeature;Ljava/lang/String;)V
-
-    invoke-static {}, Lwex/ui/core/feature/ConversationFilterFeature;->access$getAdapterRef$p()Ljava/lang/Object;
-
-    move-result-object p1
-
-    if-eqz p1, :cond_6
-
-    invoke-static {}, Lwex/ui/core/feature/ConversationFilterFeature;->access$getFilterMode$p()I
-
-    move-result p1
+    invoke-static {p0}, Lwex/ui/core/feature/FilterBarPlacement;->onHomeResume(Landroid/app/Activity;)V
     :try_end_1
     .catchall {:try_start_1 .. :try_end_1} :catchall_2
-
-    if-eqz p1, :cond_6
-
-    :try_start_2
-    invoke-static {}, Lwex/ui/core/feature/ConversationFilterFeature;->access$getFilterMode$p()I
-
-    move-result p1
-
-    invoke-static {p0, p1}, Lwex/ui/core/feature/ConversationFilterFeature;->access$applyFilter(Lwex/ui/core/feature/ConversationFilterFeature;I)V
-    :try_end_2
-    .catchall {:try_start_2 .. :try_end_2} :catchall_1
-
-    :catchall_1
-    :cond_6
-    :try_start_3
-    new-instance p0, Landroid/os/Handler;
-
-    invoke-static {}, Landroid/os/Looper;->getMainLooper()Landroid/os/Looper;
-
-    move-result-object p1
-
-    invoke-direct {p0, p1}, Landroid/os/Handler;-><init>(Landroid/os/Looper;)V
-
-    new-instance p1, Lx4/e;
-
-    const/4 v0, 0x2
-
-    invoke-direct {p1, v0}, Lx4/e;-><init>(I)V
-
-    iput-object v11, p1, Lx4/e;->d:Landroid/app/Activity;
-
-    invoke-static {}, Ljava/lang/invoke/VarHandle;->storeStoreFence()V
-
-    const-wide/16 v0, 0x258
-
-    invoke-virtual {p0, p1, v0, v1}, Landroid/os/Handler;->postDelayed(Ljava/lang/Runnable;J)Z
-    :try_end_3
-    .catchall {:try_start_3 .. :try_end_3} :catchall_2
 
     goto :goto_1
 
@@ -203,21 +132,7 @@
 
     sget-object p1, Lwex/ui/core/feature/ConversationFilterFeature;->INSTANCE:Lwex/ui/core/feature/ConversationFilterFeature;
 
-    invoke-virtual {p0}, Ljava/lang/Throwable;->getMessage()Ljava/lang/String;
-
-    move-result-object p0
-
-    new-instance v0, Ljava/lang/StringBuilder;
-
-    const-string v1, "\u4f1a\u8bdd\u7b5b\u9009: \u9996\u9875\u56de\u8c03\u5f02\u5e38 "
-
-    invoke-direct {v0, v1}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
-
-    invoke-virtual {v0, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-
-    move-result-object p0
+    const-string p0, "\u4f1a\u8bdd\u7b5b\u9009: \u9996\u9875\u56de\u8c03\u5f02\u5e38"
 
     invoke-static {p1, p0}, Lwex/ui/core/feature/ConversationFilterFeature;->access$log(Lwex/ui/core/feature/ConversationFilterFeature;Ljava/lang/String;)V
 
@@ -1355,130 +1270,10 @@
     return-void
 
     :pswitch_f
-    invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
+    iget-object v0, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
 
-    sget-object p0, Lwex/ui/core/feature/BubbleFeature;->INSTANCE:Lwex/ui/core/feature/BubbleFeature;
+    invoke-static {v0}, Lwex/ui/core/feature/BubbleApply;->onBackground(Ljava/lang/Object;)V
 
-    invoke-static {p0}, Lwex/ui/core/feature/BubbleFeature;->access$getBlurRadius(Lwex/ui/core/feature/BubbleFeature;)I
-
-    move-result p0
-
-    if-nez p0, :cond_40
-
-    goto :goto_14
-
-    :cond_40
-    iget-object p0, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
-
-    instance-of p1, p0, Landroid/view/View;
-
-    if-eqz p1, :cond_41
-
-    check-cast p0, Landroid/view/View;
-
-    goto :goto_13
-
-    :cond_41
-    move-object p0, v11
-
-    :goto_13
-    if-nez p0, :cond_42
-
-    goto :goto_14
-
-    :cond_42
-    invoke-virtual {p0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
-
-    move-result-object p1
-
-    invoke-virtual {p1}, Ljava/lang/Class;->getName()Ljava/lang/String;
-
-    move-result-object p1
-
-    const-string v0, "com.tencent.mm.ui.widget.MMNeat7extView"
-
-    invoke-static {p1, v0}, Lkotlin/jvm/internal/Intrinsics;->areEqual(Ljava/lang/Object;Ljava/lang/Object;)Z
-
-    move-result p1
-
-    if-nez p1, :cond_43
-
-    goto :goto_14
-
-    :cond_43
-    invoke-static {}, Lwex/ui/core/feature/BubbleFeature;->access$getDoneViews$p()Ljava/util/Set;
-
-    move-result-object p1
-
-    invoke-interface {p1, p0}, Ljava/util/Set;->contains(Ljava/lang/Object;)Z
-
-    move-result p1
-
-    if-eqz p1, :cond_44
-
-    goto :goto_14
-
-    :cond_44
-    invoke-virtual {p0}, Landroid/view/View;->getBackground()Landroid/graphics/drawable/Drawable;
-
-    move-result-object p1
-
-    if-eqz p1, :cond_45
-
-    move-object v11, p1
-
-    :cond_45
-    if-nez v11, :cond_46
-
-    goto :goto_14
-
-    :cond_46
-    invoke-virtual {v11}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
-
-    move-result-object p1
-
-    invoke-virtual {p1}, Ljava/lang/Class;->getName()Ljava/lang/String;
-
-    move-result-object p1
-
-    const-string v0, "android.graphics.drawable.StateListDrawable"
-
-    invoke-static {p1, v0}, Lkotlin/jvm/internal/Intrinsics;->areEqual(Ljava/lang/Object;Ljava/lang/Object;)Z
-
-    move-result p1
-
-    if-nez p1, :cond_47
-
-    goto :goto_14
-
-    :cond_47
-    invoke-static {}, Lwex/ui/core/feature/BubbleFeature;->access$getDoneViews$p()Ljava/util/Set;
-
-    move-result-object p1
-
-    invoke-interface {p1, p0}, Ljava/util/Set;->add(Ljava/lang/Object;)Z
-
-    new-instance p1, Landroid/os/Handler;
-
-    invoke-static {}, Landroid/os/Looper;->getMainLooper()Landroid/os/Looper;
-
-    move-result-object v0
-
-    invoke-direct {p1, v0}, Landroid/os/Handler;-><init>(Landroid/os/Looper;)V
-
-    new-instance v0, Lx4/l;
-
-    const/4 v1, 0x1
-
-    invoke-direct {v0, v1}, Lx4/l;-><init>(I)V
-
-    iput-object p0, v0, Lx4/l;->d:Landroid/view/View;
-
-    invoke-static {}, Ljava/lang/invoke/VarHandle;->storeStoreFence()V
-
-    invoke-virtual {p1, v0}, Landroid/os/Handler;->post(Ljava/lang/Runnable;)Z
-
-    :goto_14
     return-void
 
     :pswitch_10

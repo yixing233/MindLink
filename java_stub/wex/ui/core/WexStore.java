@@ -6,6 +6,7 @@ import java.util.List;
 public final class WexStore {
     public static final WexStore INSTANCE = null;
     public String getString(String key, String def) { return def; }
+    public String getSettingChecked(String key) { return null; }
     public boolean getBool(String key, boolean def) { return def; }
     public void putString(String key, String value) {}
     public void putBool(String key, boolean value) {}

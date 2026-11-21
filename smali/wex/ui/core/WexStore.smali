@@ -670,6 +670,72 @@
     return-object p0
 .end method
 
+.method public final getSettingChecked(Ljava/lang/String;)Ljava/lang/String;
+    .locals 5
+
+    invoke-direct {p0}, Lwex/ui/core/WexStore;->openDb()Landroid/database/sqlite/SQLiteDatabase;
+
+    move-result-object v0
+
+    if-nez v0, :setting_db_ready
+
+    new-instance v1, Ljava/lang/IllegalStateException;
+
+    const-string v2, "Settings storage unavailable"
+
+    invoke-direct {v1, v2}, Ljava/lang/IllegalStateException;-><init>(Ljava/lang/String;)V
+
+    throw v1
+
+    :setting_db_ready
+    const/4 v1, 0x0
+
+    :setting_read_start
+    const-string v2, "SELECT value FROM config WHERE key = ?"
+
+    const/4 v3, 0x1
+
+    new-array v3, v3, [Ljava/lang/String;
+
+    const/4 v4, 0x0
+
+    aput-object p1, v3, v4
+
+    invoke-virtual {v0, v2, v3}, Landroid/database/sqlite/SQLiteDatabase;->rawQuery(Ljava/lang/String;[Ljava/lang/String;)Landroid/database/Cursor;
+
+    move-result-object v1
+
+    invoke-interface {v1}, Landroid/database/Cursor;->moveToFirst()Z
+
+    move-result v2
+
+    const/4 v3, 0x0
+
+    if-eqz v2, :setting_value_ready
+
+    invoke-interface {v1, v4}, Landroid/database/Cursor;->getString(I)Ljava/lang/String;
+
+    move-result-object v3
+
+    :setting_value_ready
+    invoke-interface {v1}, Landroid/database/Cursor;->close()V
+    :setting_read_end
+    .catchall {:setting_read_start .. :setting_read_end} :setting_read_failed
+
+    invoke-interface {v0}, Ljava/io/Closeable;->close()V
+
+    return-object v3
+
+    :setting_read_failed
+    move-exception v2
+
+    invoke-static {v1, v2}, Ln4/a;->m(Ljava/io/Closeable;Ljava/lang/Throwable;)V
+
+    invoke-static {v0, v2}, Ln4/a;->m(Ljava/io/Closeable;Ljava/lang/Throwable;)V
+
+    throw v2
+.end method
+
 .method public final logStatus(Ljava/lang/String;)V
     .locals 3
 

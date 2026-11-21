@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- GPL-3.0-only: copied/modified WeKit side-panel strings/arrays; sourceprovenance records entries. -->
+<resources>
+    <string name="wekit_sp_action_add">添加</string>
+    <string name="wekit_sp_fab_default_scan">扫一扫</string>
+    <string name="wekit_sp_fab_default_moments">朋友圈</string>
+    <string name="wekit_sp_fab_default_wallet">钱包</string>
+    <string name="wekit_sp_fab_default_channels">视频号</string>
+    <string name="wekit_sp_fab_default_settings">设置</string>
+    <string name="wekit_sp_fab_default_favorites">收藏夹</string>
+    <string name="wekit_sp_fab_default_module_settings">模块设置</string>
+    <string name="wekit_sp_fab_default_restart_wechat">重启微信</string>
+    <string name="wekit_sp_fab_default_force_stop">强行停止</string>
+    <string name="wekit_sp_fab_default_mark_all_read">清空未读</string>
+    <string name="wekit_sp_home_side_panel_action_add_friend">添加朋友</string>
+    <string name="wekit_sp_loading">加载中…</string>
+    <string name="wekit_sp_unknown">未知</string>
+    <string name="wekit_sp_home_side_panel_wechat_user">微信用户</string>
+    <string name="wekit_sp_home_side_panel_scan">扫一扫</string>
+    <string name="wekit_sp_home_side_panel_open_profile">打开个人资料</string>
+    <string name="wekit_sp_home_side_panel_settings">侧栏设置</string>
+    <string name="wekit_sp_home_side_panel_online">在线</string>
+    <string name="wekit_sp_home_side_panel_fetch_failed">获取失败</string>
+    <string name="wekit_sp_home_side_panel_refresh_status">刷新状态</string>
+    <string name="wekit_sp_home_side_panel_date_pattern">M月d日 E</string>
+    <string name="wekit_sp_home_side_panel_lunar_prefix">农历</string>
+    <string name="wekit_sp_home_side_panel_lunar_leap_prefix">闰</string>
+    <string-array name="wekit_sp_home_side_panel_lunar_month_names">
+        <item>正月</item>
+        <item>二月</item>
+        <item>三月</item>
+        <item>四月</item>
+        <item>五月</item>
+        <item>六月</item>
+        <item>七月</item>
+        <item>八月</item>
+        <item>九月</item>
+        <item>十月</item>
+        <item>冬月</item>
+        <item>腊月</item>
+    </string-array>
+    <string-array name="wekit_sp_home_side_panel_lunar_day_names">
+        <item>初一</item>
+        <item>初二</item>
+        <item>初三</item>
+        <item>初四</item>
+        <item>初五</item>
+        <item>初六</item>
+        <item>初七</item>
+        <item>初八</item>
+        <item>初九</item>
+        <item>初十</item>
+        <item>十一</item>
+        <item>十二</item>
+        <item>十三</item>
+        <item>十四</item>
+        <item>十五</item>
+        <item>十六</item>
+        <item>十七</item>
+        <item>十八</item>
+        <item>十九</item>
+        <item>二十</item>
+        <item>廿一</item>
+        <item>廿二</item>
+        <item>廿三</item>
+        <item>廿四</item>
+        <item>廿五</item>
+        <item>廿六</item>
+        <item>廿七</item>
+        <item>廿八</item>
+        <item>廿九</item>
+        <item>三十</item>
+    </string-array>
+    <string name="wekit_sp_home_side_panel_greeting_morning">早上好，今天也要保持好心情。</string>
+    <string name="wekit_sp_home_side_panel_greeting_afternoon">下午好，愿今天一切顺利。</string>
+    <string name="wekit_sp_home_side_panel_greeting_evening">晚上好，愿你今晚安心入睡。</string>
+    <string name="wekit_sp_home_side_panel_weather">天气</string>
+    <string name="wekit_sp_home_side_panel_updated_at">更新于 %1$s</string>
+    <string name="wekit_sp_home_side_panel_feels_like">体感 %1$s°</string>
+    <string name="wekit_sp_home_side_panel_no_weather_data">暂无天气数据，点击卡片重试</string>
+    <string name="wekit_sp_home_side_panel_high_low">最高 / 最低</string>
+    <string name="wekit_sp_home_side_panel_humidity">湿度</string>
+    <string name="wekit_sp_home_side_panel_wind_speed">风速</string>
+    <string name="wekit_sp_home_side_panel_current_balance">当前余额</string>
+    <string name="wekit_sp_home_side_panel_payment_code">付款码</string>
+    <string name="wekit_sp_home_side_panel_hitokoto">一言</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_loading">一言加载中…</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_tap">点击卡片获取一言</string>
+    <string name="wekit_sp_home_side_panel_open_panel">打开侧栏</string>
+    <string name="wekit_sp_home_side_panel_fallback_initial">微</string>
+    <string name="wekit_sp_home_side_panel_discard_editing">关闭并放弃更改</string>
+    <string name="wekit_sp_home_side_panel_save_editing">保存侧栏布局</string>
+    <string name="wekit_sp_home_side_panel_add_card">添加卡片</string>
+    <string name="wekit_sp_home_side_panel_card_image">图片</string>
+    <string name="wekit_sp_home_side_panel_image_select">点击选择图片</string>
+    <string name="wekit_sp_home_side_panel_image_replace">替换图片</string>
+    <string name="wekit_sp_home_side_panel_image_enter_edit">进入编辑模式选择图片</string>
+    <string name="wekit_sp_home_side_panel_image_load_failed">图片加载失败</string>
+    <string name="wekit_sp_home_side_panel_image_load_failed_replace">图片加载失败，点击替换</string>
+    <string name="wekit_sp_home_side_panel_image_scale_mode">缩放模式</string>
+    <string name="wekit_sp_home_side_panel_image_scale_crop">裁剪填充</string>
+    <string name="wekit_sp_home_side_panel_image_scale_fit">完整显示</string>
+    <string name="wekit_sp_home_side_panel_image_scale_stretch">拉伸填充</string>
+    <string name="wekit_sp_home_side_panel_image_scale_auto_ratio">适应比例</string>
+    <string name="wekit_sp_home_side_panel_image_resize">调整图片卡片高度</string>
+    <string name="wekit_sp_home_side_panel_image_aspect_ratio_unsupported">图片宽高比过于极端</string>
+    <string name="wekit_sp_home_side_panel_edit_card">编辑卡片</string>
+    <string name="wekit_sp_home_side_panel_delete_card">删除卡片</string>
+    <string name="wekit_sp_home_side_panel_delete_action">删除动作</string>
+    <string name="wekit_sp_home_side_panel_delete_empty_action_card">删除空动作卡片</string>
+    <string name="wekit_sp_weather_sunny">晴</string>
+    <string name="wekit_sp_weather_cloudy">多云</string>
+    <string name="wekit_sp_weather_overcast">阴</string>
+    <string name="wekit_sp_weather_shower">阵雨</string>
+    <string name="wekit_sp_weather_thunderstorm">雷阵雨</string>
+    <string name="wekit_sp_weather_hail_thunderstorm">雷阵雨并伴有冰雹</string>
+    <string name="wekit_sp_weather_sleet">雨夹雪</string>
+    <string name="wekit_sp_weather_light_rain">小雨</string>
+    <string name="wekit_sp_weather_moderate_rain">中雨</string>
+    <string name="wekit_sp_weather_heavy_rain">大雨</string>
+    <string name="wekit_sp_weather_rainstorm">暴雨</string>
+    <string name="wekit_sp_weather_heavy_rainstorm">大暴雨</string>
+    <string name="wekit_sp_weather_severe_rainstorm">特大暴雨</string>
+    <string name="wekit_sp_weather_snow_shower">阵雪</string>
+    <string name="wekit_sp_weather_light_snow">小雪</string>
+    <string name="wekit_sp_weather_moderate_snow">中雪</string>
+    <string name="wekit_sp_weather_heavy_snow">大雪</string>
+    <string name="wekit_sp_weather_blizzard">暴雪</string>
+    <string name="wekit_sp_weather_fog">雾</string>
+    <string name="wekit_sp_weather_freezing_rain">冻雨</string>
+    <string name="wekit_sp_weather_dust_storm">沙尘暴</string>
+    <string name="wekit_sp_weather_light_to_moderate_rain">小雨-中雨</string>
+    <string name="wekit_sp_weather_moderate_to_heavy_rain">中雨-大雨</string>
+    <string name="wekit_sp_weather_heavy_rain_to_rainstorm">大雨-暴雨</string>
+    <string name="wekit_sp_weather_rainstorm_to_heavy">暴雨-大暴雨</string>
+    <string name="wekit_sp_weather_heavy_to_severe_rainstorm">大暴雨-特大暴雨</string>
+    <string name="wekit_sp_weather_light_to_moderate_snow">小雪-中雪</string>
+    <string name="wekit_sp_weather_moderate_to_heavy_snow">中雪-大雪</string>
+    <string name="wekit_sp_weather_heavy_snow_to_blizzard">大雪-暴雪</string>
+    <string name="wekit_sp_weather_dust">浮尘</string>
+    <string name="wekit_sp_weather_sand">扬沙</string>
+    <string name="wekit_sp_weather_severe_dust_storm">强沙尘暴</string>
+    <string name="wekit_sp_weather_squall">飑</string>
+    <string name="wekit_sp_weather_tornado">龙卷风</string>
+    <string name="wekit_sp_weather_blowing_snow">吹雪</string>
+    <string name="wekit_sp_weather_mist">轻雾</string>
+    <string name="wekit_sp_weather_haze">霾</string>
+    <string name="wekit_sp_home_side_panel_attribution_author_source">—— %1$s「%2$s」</string>
+    <string name="wekit_sp_home_side_panel_attribution_author">—— %1$s</string>
+    <string name="wekit_sp_home_side_panel_attribution_source">——「%1$s」</string>
+    <string name="wekit_sp_home_side_panel_card_date_time">日期时间</string>
+    <string name="wekit_sp_home_side_panel_card_weather">天气</string>
+    <string name="wekit_sp_home_side_panel_card_wallet">钱包</string>
+    <string name="wekit_sp_home_side_panel_card_hitokoto">一言</string>
+    <string name="wekit_sp_home_side_panel_card_horizontal_actions">横向动作</string>
+    <string name="wekit_sp_home_side_panel_card_vertical_actions">纵向动作</string>
+    <string name="wekit_sp_home_side_panel_show_lunar_calendar">显示农历</string>
+    <string name="wekit_sp_home_side_panel_hide_balance_default">默认隐藏余额</string>
+    <string name="wekit_sp_home_side_panel_categories">分类</string>
+    <string name="wekit_sp_home_side_panel_show_source">显示出处</string>
+    <string name="wekit_sp_home_side_panel_show_author">显示作者</string>
+    <string name="wekit_sp_home_side_panel_restore_defaults">恢复默认</string>
+    <string name="wekit_sp_home_side_panel_city_code_label">城市代码（如 101010100）</string>
+    <string name="wekit_sp_home_side_panel_city_code_apply">应用城市代码</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_length_summary">字数范围：%1$d – %2$d 字（均为 0 时不限制）</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_animation">动画</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_comics">漫画</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_games">游戏</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_literature">文学</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_original">原创</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_web">网络</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_other">其他</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_movies">影视</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_poetry">诗词</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_netease_music">网易云音乐</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_philosophy">哲学</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_witty">妙语</string>
+</resources>

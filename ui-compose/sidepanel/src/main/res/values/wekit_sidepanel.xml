@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- GPL-3.0-only: copied/modified WeKit side-panel strings/arrays; sourceprovenance records entries. -->
+<resources>
+    <string name="wekit_sp_action_add">Add</string>
+    <string name="wekit_sp_fab_default_scan">Scan</string>
+    <string name="wekit_sp_fab_default_moments">Moments</string>
+    <string name="wekit_sp_fab_default_wallet">Wallet</string>
+    <string name="wekit_sp_fab_default_channels">Channels</string>
+    <string name="wekit_sp_fab_default_settings">Settings</string>
+    <string name="wekit_sp_fab_default_favorites">Favorites</string>
+    <string name="wekit_sp_fab_default_module_settings">Module settings</string>
+    <string name="wekit_sp_fab_default_restart_wechat">Restart WeChat</string>
+    <string name="wekit_sp_fab_default_force_stop">Force stop</string>
+    <string name="wekit_sp_fab_default_mark_all_read">Mark all as read</string>
+    <string name="wekit_sp_home_side_panel_action_add_friend">Add friends</string>
+    <string name="wekit_sp_loading">Loading…</string>
+    <string name="wekit_sp_unknown">Unknown</string>
+    <string name="wekit_sp_home_side_panel_wechat_user">WeChat user</string>
+    <string name="wekit_sp_home_side_panel_scan">Scan</string>
+    <string name="wekit_sp_home_side_panel_open_profile">Open profile</string>
+    <string name="wekit_sp_home_side_panel_settings">Side panel settings</string>
+    <string name="wekit_sp_home_side_panel_online">Online</string>
+    <string name="wekit_sp_home_side_panel_fetch_failed">Failed to load</string>
+    <string name="wekit_sp_home_side_panel_refresh_status">Refresh status</string>
+    <string name="wekit_sp_home_side_panel_date_pattern">MMM d, EEE</string>
+    <string name="wekit_sp_home_side_panel_lunar_prefix">Lunar\u0020</string>
+    <string name="wekit_sp_home_side_panel_lunar_leap_prefix">leap\u0020</string>
+    <string name="wekit_sp_home_side_panel_lunar_separator">,\u0020</string>
+    <string-array name="wekit_sp_home_side_panel_lunar_month_names">
+        <item>1st month</item>
+        <item>2nd month</item>
+        <item>3rd month</item>
+        <item>4th month</item>
+        <item>5th month</item>
+        <item>6th month</item>
+        <item>7th month</item>
+        <item>8th month</item>
+        <item>9th month</item>
+        <item>10th month</item>
+        <item>11th month</item>
+        <item>12th month</item>
+    </string-array>
+    <string-array name="wekit_sp_home_side_panel_lunar_day_names">
+        <item>day 1</item>
+        <item>day 2</item>
+        <item>day 3</item>
+        <item>day 4</item>
+        <item>day 5</item>
+        <item>day 6</item>
+        <item>day 7</item>
+        <item>day 8</item>
+        <item>day 9</item>
+        <item>day 10</item>
+        <item>day 11</item>
+        <item>day 12</item>
+        <item>day 13</item>
+        <item>day 14</item>
+        <item>day 15</item>
+        <item>day 16</item>
+        <item>day 17</item>
+        <item>day 18</item>
+        <item>day 19</item>
+        <item>day 20</item>
+        <item>day 21</item>
+        <item>day 22</item>
+        <item>day 23</item>
+        <item>day 24</item>
+        <item>day 25</item>
+        <item>day 26</item>
+        <item>day 27</item>
+        <item>day 28</item>
+        <item>day 29</item>
+        <item>day 30</item>
+    </string-array>
+    <string name="wekit_sp_home_side_panel_greeting_morning">Good morning. Keep your spirits up today.</string>
+    <string name="wekit_sp_home_side_panel_greeting_afternoon">Good afternoon. Hope everything goes smoothly today.</string>
+    <string name="wekit_sp_home_side_panel_greeting_evening">Good evening. Rest well tonight.</string>
+    <string name="wekit_sp_home_side_panel_weather">Weather</string>
+    <string name="wekit_sp_home_side_panel_updated_at">Updated at %1$s</string>
+    <string name="wekit_sp_home_side_panel_feels_like">Feels like %1$s°</string>
+    <string name="wekit_sp_home_side_panel_no_weather_data">No weather data. Tap the card to retry.</string>
+    <string name="wekit_sp_home_side_panel_high_low">High / low</string>
+    <string name="wekit_sp_home_side_panel_humidity">Humidity</string>
+    <string name="wekit_sp_home_side_panel_wind_speed">Wind speed</string>
+    <string name="wekit_sp_home_side_panel_current_balance">Current balance</string>
+    <string name="wekit_sp_home_side_panel_payment_code">Payment code</string>
+    <string name="wekit_sp_home_side_panel_hitokoto">Hitokoto</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_loading">Loading Hitokoto…</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_tap">Tap the card to get a Hitokoto</string>
+    <string name="wekit_sp_home_side_panel_open_panel">Open side panel</string>
+    <string name="wekit_sp_home_side_panel_fallback_initial">W</string>
+    <string name="wekit_sp_home_side_panel_discard_editing">Close and discard changes</string>
+    <string name="wekit_sp_home_side_panel_save_editing">Save side panel layout</string>
+    <string name="wekit_sp_home_side_panel_add_card">Add card</string>
+    <string name="wekit_sp_home_side_panel_card_image">Image</string>
+    <string name="wekit_sp_home_side_panel_image_select">Click to select an image</string>
+    <string name="wekit_sp_home_side_panel_image_replace">Replace image</string>
+    <string name="wekit_sp_home_side_panel_image_enter_edit">Enter edit mode to select an image</string>
+    <string name="wekit_sp_home_side_panel_image_load_failed">Image failed to load</string>
+    <string name="wekit_sp_home_side_panel_image_load_failed_replace">Image failed to load; tap to replace</string>
+    <string name="wekit_sp_home_side_panel_image_scale_mode">Scale mode</string>
+    <string name="wekit_sp_home_side_panel_image_scale_crop">Crop</string>
+    <string name="wekit_sp_home_side_panel_image_scale_fit">Fit</string>
+    <string name="wekit_sp_home_side_panel_image_scale_stretch">Stretch</string>
+    <string name="wekit_sp_home_side_panel_image_scale_auto_ratio">Auto ratio</string>
+    <string name="wekit_sp_home_side_panel_image_resize">Resize image card</string>
+    <string name="wekit_sp_home_side_panel_image_aspect_ratio_unsupported">Image aspect ratio is too extreme</string>
+    <string name="wekit_sp_home_side_panel_edit_card">Edit card</string>
+    <string name="wekit_sp_home_side_panel_delete_card">Delete card</string>
+    <string name="wekit_sp_home_side_panel_delete_action">Delete action</string>
+    <string name="wekit_sp_home_side_panel_delete_empty_action_card">Delete empty action card</string>
+    <string name="wekit_sp_weather_sunny">Sunny</string>
+    <string name="wekit_sp_weather_cloudy">Cloudy</string>
+    <string name="wekit_sp_weather_overcast">Overcast</string>
+    <string name="wekit_sp_weather_shower">Showers</string>
+    <string name="wekit_sp_weather_thunderstorm">Thunderstorms</string>
+    <string name="wekit_sp_weather_hail_thunderstorm">Thunderstorms with hail</string>
+    <string name="wekit_sp_weather_sleet">Sleet</string>
+    <string name="wekit_sp_weather_light_rain">Light rain</string>
+    <string name="wekit_sp_weather_moderate_rain">Moderate rain</string>
+    <string name="wekit_sp_weather_heavy_rain">Heavy rain</string>
+    <string name="wekit_sp_weather_rainstorm">Rainstorm</string>
+    <string name="wekit_sp_weather_heavy_rainstorm">Heavy rainstorm</string>
+    <string name="wekit_sp_weather_severe_rainstorm">Severe rainstorm</string>
+    <string name="wekit_sp_weather_snow_shower">Snow showers</string>
+    <string name="wekit_sp_weather_light_snow">Light snow</string>
+    <string name="wekit_sp_weather_moderate_snow">Moderate snow</string>
+    <string name="wekit_sp_weather_heavy_snow">Heavy snow</string>
+    <string name="wekit_sp_weather_blizzard">Blizzard</string>
+    <string name="wekit_sp_weather_fog">Fog</string>
+    <string name="wekit_sp_weather_freezing_rain">Freezing rain</string>
+    <string name="wekit_sp_weather_dust_storm">Dust storm</string>
+    <string name="wekit_sp_weather_light_to_moderate_rain">Light to moderate rain</string>
+    <string name="wekit_sp_weather_moderate_to_heavy_rain">Moderate to heavy rain</string>
+    <string name="wekit_sp_weather_heavy_rain_to_rainstorm">Heavy rain to rainstorm</string>
+    <string name="wekit_sp_weather_rainstorm_to_heavy">Rainstorm to heavy rainstorm</string>
+    <string name="wekit_sp_weather_heavy_to_severe_rainstorm">Heavy to severe rainstorm</string>
+    <string name="wekit_sp_weather_light_to_moderate_snow">Light to moderate snow</string>
+    <string name="wekit_sp_weather_moderate_to_heavy_snow">Moderate to heavy snow</string>
+    <string name="wekit_sp_weather_heavy_snow_to_blizzard">Heavy snow to blizzard</string>
+    <string name="wekit_sp_weather_dust">Floating dust</string>
+    <string name="wekit_sp_weather_sand">Blowing sand</string>
+    <string name="wekit_sp_weather_severe_dust_storm">Severe dust storm</string>
+    <string name="wekit_sp_weather_squall">Squall</string>
+    <string name="wekit_sp_weather_tornado">Tornado</string>
+    <string name="wekit_sp_weather_blowing_snow">Blowing snow</string>
+    <string name="wekit_sp_weather_mist">Mist</string>
+    <string name="wekit_sp_weather_haze">Haze</string>
+    <string name="wekit_sp_home_side_panel_attribution_author_source">— %1$s, “%2$s”</string>
+    <string name="wekit_sp_home_side_panel_attribution_author">— %1$s</string>
+    <string name="wekit_sp_home_side_panel_attribution_source">— “%1$s”</string>
+    <string name="wekit_sp_home_side_panel_card_date_time">Date &amp; time</string>
+    <string name="wekit_sp_home_side_panel_card_weather">Weather</string>
+    <string name="wekit_sp_home_side_panel_card_wallet">Wallet</string>
+    <string name="wekit_sp_home_side_panel_card_hitokoto">Hitokoto</string>
+    <string name="wekit_sp_home_side_panel_card_horizontal_actions">Horizontal actions</string>
+    <string name="wekit_sp_home_side_panel_card_vertical_actions">Vertical actions</string>
+    <string name="wekit_sp_home_side_panel_show_lunar_calendar">Show lunar calendar</string>
+    <string name="wekit_sp_home_side_panel_hide_balance_default">Hide balance by default</string>
+    <string name="wekit_sp_home_side_panel_categories">Categories</string>
+    <string name="wekit_sp_home_side_panel_show_source">Show source</string>
+    <string name="wekit_sp_home_side_panel_show_author">Show author</string>
+    <string name="wekit_sp_home_side_panel_restore_defaults">Restore defaults</string>
+    <string name="wekit_sp_home_side_panel_city_code_label">City code (e.g. 101010100)</string>
+    <string name="wekit_sp_home_side_panel_city_code_apply">Apply city code</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_length_summary">Length range: %1$d – %2$d characters (no limit when both are 0)</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_animation">Animation</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_comics">Comics</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_games">Games</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_literature">Literature</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_original">Original</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_web">Internet</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_other">Other</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_movies">Movies</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_poetry">Poetry</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_netease_music">NetEase Music</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_philosophy">Philosophy</string>
+    <string name="wekit_sp_home_side_panel_hitokoto_witty">Witty remarks</string>
+</resources>

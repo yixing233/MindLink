@@ -1,0 +1,4 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- UI/resource linking only. No Activity, hook, network service, or standalone application. -->
+    <application android:allowBackup="false" />
+</manifest>

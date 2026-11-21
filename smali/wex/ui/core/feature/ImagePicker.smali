@@ -170,7 +170,7 @@
 .end method
 
 .method private final handleResult(Landroid/app/Activity;Landroid/net/Uri;Ljava/lang/String;)Ljava/lang/String;
-    .locals 6
+    .locals 7
 
     const-string v0, "\u80cc\u666f\u5df2\u4fdd\u5b58: "
 
@@ -240,6 +240,10 @@
     .catch Ljava/lang/Exception; {:try_start_0 .. :try_end_0} :catch_0
 
     :try_start_1
+    invoke-static {p3}, Lwex/ui/core/feature/SettingsChanges;->imageBefore(Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object v6
+
     new-instance v2, Ljava/io/FileOutputStream;
 
     invoke-direct {v2, v3}, Ljava/io/FileOutputStream;-><init>(Ljava/io/File;)V
@@ -267,8 +271,19 @@
 
     invoke-virtual {v2}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
-    invoke-virtual {p2, p3, v2}, Lwex/ui/core/WexStore;->putString(Ljava/lang/String;Ljava/lang/String;)V
+    invoke-static {p3, v2, v6}, Lwex/ui/core/feature/SettingsChanges;->saveImage(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z
 
+    move-result v4
+
+    if-nez v4, :image_setting_saved
+
+    const-string v4, "图片已写入，但设置保存未确认，请重试"
+
+    invoke-virtual {p0, p1, v4}, Lwex/ui/core/feature/ImagePicker;->toast(Landroid/app/Activity;Ljava/lang/String;)V
+
+    return-object v1
+
+    :image_setting_saved
     invoke-virtual {v3}, Ljava/io/File;->getAbsolutePath()Ljava/lang/String;
 
     move-result-object p2
@@ -389,38 +404,39 @@
 .end method
 
 .method public static forceStopSelf(Landroid/content/Context;)V
-    .locals 4
+    .locals 3
 
-    :try_start_0
-    # 1) 移除任务栈，避免系统把它当“最近任务”恢复
+    if-eqz p0, :kill_self
+
+    :try_start_tasks
     const-string v0, "activity"
 
-    invoke-virtual {p1, v0}, Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;
+    invoke-virtual {p0, v0}, Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;
 
     move-result-object v0
 
     check-cast v0, Landroid/app/ActivityManager;
 
-    if-eqz v0, :cond_1
+    if-eqz v0, :tasks_done
 
     invoke-virtual {v0}, Landroid/app/ActivityManager;->getAppTasks()Ljava/util/List;
 
-    move-result-object v1
+    move-result-object v0
 
-    if-eqz v1, :cond_1
+    if-eqz v0, :tasks_done
 
-    invoke-interface {v1}, Ljava/util/List;->iterator()Ljava/util/Iterator;
+    invoke-interface {v0}, Ljava/util/List;->iterator()Ljava/util/Iterator;
 
-    move-result-object v1
+    move-result-object v0
 
-    :goto_0
-    invoke-interface {v1}, Ljava/util/Iterator;->hasNext()Z
+    :next_task
+    invoke-interface {v0}, Ljava/util/Iterator;->hasNext()Z
 
-    move-result v2
+    move-result v1
 
-    if-eqz v2, :cond_1
+    if-eqz v1, :tasks_done
 
-    invoke-interface {v1}, Ljava/util/Iterator;->next()Ljava/lang/Object;
+    invoke-interface {v0}, Ljava/util/Iterator;->next()Ljava/lang/Object;
 
     move-result-object v2
 
@@ -428,57 +444,33 @@
 
     invoke-virtual {v2}, Landroid/app/ActivityManager$AppTask;->finishAndRemoveTask()V
 
-    goto :goto_0
+    goto :next_task
 
-    :cond_1
-    # 2) 反射调用 forceStopPackage（系统签名才有权限，失败就跳过）
-    invoke-virtual {p1}, Landroid/content/Context;->getPackageName()Ljava/lang/String;
+    :tasks_done
+    :try_end_tasks
+    .catchall {:try_start_tasks .. :try_end_tasks} :catch_tasks
 
-    move-result-object v0
+    goto :kill_self
 
-    const-string v1, "android.app.ActivityManager"
+    :catch_tasks
+    move-exception v0
 
-    invoke-virtual {p1, v1}, Landroid/content/Context;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;
-
-    move-result-object v1
-
-    if-eqz v1, :cond_2
-
-    invoke-virtual {v1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
-
-    move-result-object v2
-
-    const-string v3, "forceStopPackage"
-
-    invoke-virtual {v2, v3}, Ljava/lang/Class;->getMethod(Ljava/lang/String;)Ljava/lang/reflect/Method;
-
-    move-result-object v2
-
-    const/4 v3, 0x1
-
-    invoke-virtual {v2, v3}, Ljava/lang/reflect/Method;->setAccessible(Z)V
-
-    filled-new-array {v0}, [Ljava/lang/Object;
-
-    move-result-object v3
-
-    invoke-virtual {v2, v1, v3}, Ljava/lang/reflect/Method;->invoke(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;
-    :try_end_0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_0
-
-    :cond_2
-    :catchall_0
-    :try_start_1
-    # 3) 兜底：杀掉本进程
+    :kill_self
+    :try_start_kill
+    # Only terminate this process; no privileged forceStopPackage reflection.
     invoke-static {}, Landroid/os/Process;->myPid()I
 
     move-result v0
 
     invoke-static {v0}, Landroid/os/Process;->killProcess(I)V
-    :try_end_1
-    .catchall {:try_start_1 .. :try_end_1} :catchall_1
+    :try_end_kill
+    .catchall {:try_start_kill .. :try_end_kill} :catch_kill
 
-    :catchall_1
+    return-void
+
+    :catch_kill
+    move-exception v0
+
     return-void
 .end method
 
@@ -527,7 +519,7 @@
 
 # virtual methods
 .method public final hotRestartWechat(Landroid/app/Activity;)V
-    .locals 3
+    .locals 5
 
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
@@ -634,9 +626,9 @@
 
     invoke-static {}, Ljava/lang/invoke/VarHandle;->storeStoreFence()V
 
-    const-wide/16 p0, 0x12c
+    const-wide/16 v3, 0x12c
 
-    invoke-virtual {v0, v1, p0, p1}, Landroid/os/Handler;->postDelayed(Ljava/lang/Runnable;J)Z
+    invoke-virtual {v0, v1, v3, v4}, Landroid/os/Handler;->postDelayed(Ljava/lang/Runnable;J)Z
     :try_end_2
     .catch Ljava/lang/Exception; {:try_start_2 .. :try_end_2} :catch_1
 

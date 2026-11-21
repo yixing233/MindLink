@@ -2,6 +2,9 @@
 .super Ljava/lang/Object;
 .source "SourceFile"
 
+# 来源：输入栏背景清理与持续透明守卫的做法参照 WeKit 的
+# features/items/chat/FloatingChatFooter.kt、DisableChatBackgroundDimming.kt（GPL-3.0）。
+
 
 # annotations
 .annotation build Landroidx/compose/runtime/internal/StabilityInferred;
