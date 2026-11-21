@@ -231,6 +231,22 @@ public class HostTargetResolver {
 }
 
 SOURCES.update({
+    "android/animation/TimeInterpolator.java": r'''package android.animation;
+public interface TimeInterpolator {float getInterpolation(float value);}''',
+    "android/view/animation/LinearInterpolator.java": r'''package android.view.animation;
+public class LinearInterpolator implements android.animation.TimeInterpolator {public float getInterpolation(float value){return value;}}''',
+    "android/animation/ValueAnimator.java": r'''package android.animation;
+public class ValueAnimator {
+public interface AnimatorUpdateListener {void onAnimationUpdate(ValueAnimator animator);}
+public static boolean enabled;public static ValueAnimator last;public boolean running;public long duration;public TimeInterpolator interpolator;
+private float from,to,fraction;private AnimatorUpdateListener listener;
+public static boolean areAnimatorsEnabled(){return enabled;}
+public static ValueAnimator ofFloat(float... values){ValueAnimator a=new ValueAnimator();a.from=values[0];a.to=values[values.length-1];last=a;return a;}
+public ValueAnimator setDuration(long value){duration=value;return this;}public void setInterpolator(TimeInterpolator value){interpolator=value;}
+public void addUpdateListener(AnimatorUpdateListener value){listener=value;}public Object getAnimatedValue(){return from+(to-from)*interpolator.getInterpolation(fraction);}
+public float getAnimatedFraction(){return fraction;}public void start(){running=true;frame(0);}public void cancel(){running=false;}
+public void frame(float value){if(!running)return;fraction=value;listener.onAnimationUpdate(this);if(value>=1)running=false;}
+}''',
     "android/widget/EditText.java": r'''package android.widget;
 public class EditText extends android.view.View {public EditText(android.content.Context c){super(c);}}''',
     "android/graphics/drawable/ColorDrawable.java": r'''package android.graphics.drawable;

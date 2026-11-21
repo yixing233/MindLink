@@ -963,7 +963,7 @@ public final class FloatingChatFooterFeature {
                 ((ChatGlassSurface) surface).configure(color, radius, density,
                         SettingsTheme.isDark(footer.getContext()), config.glass, config.glassBlur);
                 ((ChatGlassSurface) surface).visibleHeight(overlay != null && overlay.applied != null
-                        ? overlay.applied.visible : -1);
+                        ? overlay.visibleHeight() : -1);
             } else {
                 if (surface instanceof ChatGlassSurface) { ((ChatGlassSurface) surface).stop(); surface = null; surfaceCorner = -1; }
                 if (!(surface instanceof GradientDrawable)) { surface = new GradientDrawable(); surfaceCorner = -1; }
@@ -1008,7 +1008,7 @@ public final class FloatingChatFooterFeature {
         private Rect surfaceBounds(View footer) {
             if (overlay != null && overlay.applied != null) {
                 Rect bounds = new Rect();
-                bounds.right = footer.getWidth(); bounds.bottom = overlay.applied.visible;
+                bounds.right = footer.getWidth(); bounds.bottom = overlay.visibleHeight();
                 return bounds;
             }
             return FloatingFooterLayout.visibleFooterBounds(footer);
@@ -1162,7 +1162,7 @@ public final class FloatingChatFooterFeature {
             if (panelSwitchDepth == 0 && !panelReady) firstNativeScrollArgs = null;
             panelMode = mode; panelSwitchDepth++;
             if (!panelOpened()) overlayNativeScrollArgs = null;
-            if (overlay != null) overlay.transition(mode);
+            if (overlay != null && panelSwitchDepth == 1) overlay.transition(mode);
             traceTransition("beforePanel");
             View footer = footerRef.get();
             if (footer == null || !config.enabled || !config.panelAbove) return;
@@ -1247,6 +1247,9 @@ public final class FloatingChatFooterFeature {
                         && args[3] instanceof Integer && (Integer) args[0] > 0)
                     overlayNativeScrollArgs = args.clone();
                 args[0] = 0;
+                // computeScroll runs during drawing and would overwrite the
+                // overlay's translation even after its pre-draw adjustment.
+                if (args.length > 1 && args[1] instanceof Boolean) args[1] = false;
                 return;
             }
             if (config.enabled && config.panelAbove && !panelReady && panelSwitchDepth > 0 && !replayingScroll

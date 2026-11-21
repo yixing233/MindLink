@@ -25,7 +25,49 @@ public final class ChatFooterOverlayChecks {
         nativePanelOrderStillOverlays();
         messagesFollowVisibleArea();
         resizedImeDoesNotReserveTwice();
+        linearPanelExpansion();
+        resizedWindowKeepsAnimationOrigin();
         System.out.println("GREEN phone footer integration: " + assertions + " assertions");
+    }
+
+    private static void linearPanelExpansion() {
+        Tree tree = new Tree(); RecyclerView list = messageList(tree);
+        ChatFooterOverlay overlay = new ChatFooterOverlay(tree.footer);
+        settleMessages(tree, list, overlay, 0, 874, 356);
+        android.animation.ValueAnimator.enabled = true;
+        settleMessages(tree, list, overlay, 2, 518, 356);
+        android.animation.ValueAnimator animation = android.animation.ValueAnimator.last;
+        check(animation != null && animation.running, "opening a panel starts an animation");
+        check(animation.duration == 220 && animation.interpolator instanceof android.view.animation.LinearInterpolator,
+                "panel expansion uses a 220ms linear interpolator");
+        check(tree.footer.getTranslationY() == 356, "first frame retains the input card's previous screen position");
+        ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) tree.footer.getLayoutParams();
+        for (float fraction : new float[]{0.25f, 0.5f, 0.75f}) {
+            animation.frame(fraction);
+            list.layoutItems(); overlay.apply(2, 0, 356, 10, 12, true);
+            check(tree.footer.getTranslationY() == 356 * (1 - fraction), "input card advances linearly at " + fraction);
+            check(list.contentHeight - list.scrollOffset == Math.round(874 - 356 * fraction),
+                    "last message follows intermediate animation frame " + fraction);
+            check(tree.footer.getHeight() + lp.topMargin + lp.bottomMargin == 0,
+                    "animation never consumes the full-height message viewport");
+        }
+        animation.frame(0.5f);
+        // A new panel starts at the currently rendered position, even halfway through expansion.
+        settleMessages(tree, list, overlay, 3, 654, 220);
+        android.animation.ValueAnimator next = android.animation.ValueAnimator.last;
+        check(next != animation && !animation.running && tree.footer.getTranslationY() == 42,
+                "interruption retargets from the current screen position without a jump");
+        next.frame(1);
+        for (int i = 0; i < 6; i++) { list.layoutItems(); overlay.apply(3, 0, 356, 10, 12, true); }
+        check(tree.footer.getTranslationY() == 0 && list.contentHeight - list.scrollOffset == 654,
+                "completed animation restores exact target geometry and message visibility");
+        settleMessages(tree, list, overlay, 2, 518, 356);
+        android.animation.ValueAnimator cancelled = android.animation.ValueAnimator.last;
+        overlay.restore();
+        check(!cancelled.running && tree.footer.getTranslationY() == 0, "release cancels animation and removes its translation");
+        cancelled.frame(1);
+        check(tree.footer.getTranslationY() == 0, "released animation cannot mutate the footer later");
+        android.animation.ValueAnimator.enabled = false;
     }
 
     private static RecyclerView messageList(Tree tree) {
@@ -34,6 +76,39 @@ public final class ChatFooterOverlayChecks {
         list.layout(0, 0, 400, 1000);
         list.contentHeight = 2000; list.scrollOffset = 1000;
         return list;
+    }
+
+    private static void resizedWindowKeepsAnimationOrigin() {
+        Tree tree = new Tree(); RecyclerView list = messageList(tree);
+        ChatFooterOverlay overlay = new ChatFooterOverlay(tree.footer);
+        tree.root.layout(0, 0, 400, 700);
+        settleMessages(tree, list, overlay, 1, 574, 356);
+        android.animation.ValueAnimator.enabled = true;
+        overlay.transition(2);
+        // Closing the IME grows the host between the switch callback and layout.
+        tree.root.layout(0, 0, 400, 1000);
+        tree.panel.setVisibility(View.VISIBLE);
+        tree.footer.layout(0, 518, 400, 990);
+        tree.row.layout(0, 0, 400, 106);
+        tree.row.getChildAt(0).layout(0, 40, 400, 100);
+        tree.panel.layout(0, 116, 400, 472);
+        tree.app.layout(0, 0, 400, 356);
+        for (int i = 0; i < 8; i++) {
+            list.layoutItems(); overlay.apply(2, 0, 356, 10, 12, true);
+        }
+        android.animation.ValueAnimator animation = android.animation.ValueAnimator.last;
+        int[] location = new int[2]; tree.footer.getLocationOnScreen(location);
+        check(location[1] == 574, "IME resize preserves the input card's screen position on the first frame");
+        animation.frame(0.5f); tree.footer.getLocationOnScreen(location);
+        check(location[1] == 546, "IME-to-panel movement interpolates between screen positions");
+        tree.root.setTranslationY(-40);
+        list.layoutItems(); overlay.apply(2, 0, 356, 10, 12, true);
+        tree.footer.getLocationOnScreen(location);
+        check(location[1] == 526, "ancestor movement updates the screen-space target before drawing");
+        overlay.transition(1);
+        check(!animation.running && tree.footer.getTranslationY() == 0,
+                "returning to IME cancels the module animation");
+        overlay.restore(); android.animation.ValueAnimator.enabled = false;
     }
 
     private static void settleMessages(Tree tree, RecyclerView list, ChatFooterOverlay overlay,
@@ -253,6 +328,7 @@ public final class ChatFooterOverlayChecks {
         de.robv.android.xposed.XposedBridge.invoke(tree.footer, "switchHost",
                 new Class<?>[]{int.class, boolean.class, int.class}, 3, true, 7);
         check(tree.root.lastY == 0, "real completed native switch cancels the open-panel lift");
+        check(!tree.root.lastAnimate, "native scroller settles before the module animates the panel");
         for (int i = 0; i < 4; i++) tree.footer.getViewTreeObserver().draw();
         wex.ui.core.WexStore.INSTANCE.flags.put("floating_chat_footer_enabled", false);
         FloatingChatFooterFeature.refresh(); android.os.Handler.drain();

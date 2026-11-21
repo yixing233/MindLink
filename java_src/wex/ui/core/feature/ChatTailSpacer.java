@@ -50,6 +50,10 @@ final class ChatTailSpacer implements InvocationHandler {
     }
 
     boolean update(int value) {
+        return update(value, false);
+    }
+
+    boolean update(int value, boolean animating) {
         View view = recycler.get();
         if (view == null || !view.isShown() || view.getHeight() <= 0) return true;
         if (view.isLayoutRequested()) return false;
@@ -63,9 +67,9 @@ final class ChatTailSpacer implements InvocationHandler {
         if (pending != value || pendingViewport != nextViewport) {
             captureEnd(view);
             pending = value; pendingViewport = nextViewport; stable = 0;
-            return false;
+            if (!animating) return false;
         }
-        if (++stable < 2) return false;
+        if (++stable < 2 && !animating) return false;
         if (height != value || viewport != nextViewport) {
             // Keep the old end anchor until the decoration has been laid out. The
             // host may already have moved it; scrollBy clamps to the remaining range.

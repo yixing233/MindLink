@@ -1,10 +1,12 @@
 package wex.ui.core.feature;
 
+import android.animation.ValueAnimator;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.LinearInterpolator;
 import android.widget.EditText;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -30,6 +32,11 @@ final class ChatFooterOverlay {
     private final Map<View, Drawable> backgrounds = new IdentityHashMap<>();
     private final Map<View, Drawable> cleared = new IdentityHashMap<>();
     private ChatTailSpacer tail;
+    private ValueAnimator expansion;
+    private View animationParent, animationRoot;
+    private float startTop, animationFrom, animationFraction, animationShift;
+    private boolean animateNext;
+    private int settlingFrames;
 
     ChatFooterOverlay(View footer) { this.footer = footer; }
 
@@ -99,6 +106,12 @@ final class ChatFooterOverlay {
 
     void transition(int mode) {
         if (tail != null) tail.transition();
+        boolean opening = mode == 2 || mode == 3;
+        boolean witnessed = applied != null && (mode != applied.mode || expansion != null);
+        startTop = screenTop();
+        cancelExpansion();
+        animateNext = opening && witnessed && footer.isLaidOut() && ValueAnimator.areAnimatorsEnabled();
+        settlingFrames = 0;
         restoreMore();
         if (mode != 2 && mode != 3) translationOwned = false;
         candidate = null; stable = 0;
@@ -119,15 +132,16 @@ final class ChatFooterOverlay {
     boolean apply(int mode, int depth, int natural, int gapDp, int sideDp, boolean preDraw) {
         changed = false;
         if (!preDraw || depth > 0 || footer.getHeight() <= 0) return false;
-        if (applied != null && !footer.isLayoutRequested()) updateTail();
+        if (expansion != null) positionExpansion();
+        if (applied != null && !animateNext && !footer.isLayoutRequested()) updateTail();
         View panel = component(footer, PANEL);
         // A native closed panel can remain VISIBLE behind negative margins.
         // Only a witnessed switch identifies an open panel.
         boolean open = mode == 2 || mode == 3;
         if (open && (panel == null || !panel.isShown() || panel.getHeight() <= 0
-                || panel.isLayoutRequested())) return false;
+                || panel.isLayoutRequested())) return awaitGeometry();
         int card = inputHeight(panel);
-        if (card <= 0) return false;
+        if (card <= 0) return awaitGeometry();
         Geometry next = new Geometry();
         next.height = footer.getHeight(); next.card = card; next.mode = mode; next.open = open;
         next.visible = open ? Math.max(card, bounds(panel).bottom) : card;
@@ -136,21 +150,23 @@ final class ChatFooterOverlay {
         View host = footer.getParent() instanceof View ? (View) footer.getParent() : footer;
         next.gap += Math.max(FloatingFooterLayout.remainingBottom(host), FloatingFooterLayout.pillClearance(host))
                 - FloatingFooterLayout.bottomCorrection(host);
-        if (open && footer.getTranslationY() != 0f) {
+        if (open && footer.getTranslationY() != animationShift) {
             originalTranslation = footer.getTranslationY(); translationOwned = true;
             translationParent = footer.getParent() instanceof View ? (View) footer.getParent() : null;
             translationRoot = footer.getRootView();
-            footer.setTranslationY(0f);
+            footer.setTranslationY(animationShift);
         }
-        if (footer.isLayoutRequested()) { stable = 0; retry(); return false; }
-        if (!next.same(candidate)) { candidate = next; stable = 0; retry(); return false; }
-        if (++stable < 2) { retry(); return false; }
+        if (footer.isLayoutRequested()) { stable = 0; return awaitGeometry(); }
+        if (!next.same(candidate)) { candidate = next; stable = 0; return awaitGeometry(); }
+        if (++stable < 2) return awaitGeometry();
         if (open && resizePanel(panel, natural, mode, panelLimit(card, next.gap))) {
             candidate = null; stable = 0; changed = true; return true;
         }
         if (!(footer.getLayoutParams() instanceof ViewGroup.MarginLayoutParams)) return false;
         ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) footer.getLayoutParams();
         int top = -(next.visible + next.gap), bottom = -next.height - top;
+        boolean retarget = expansion != null && !next.same(applied);
+        float from = retarget ? screenTop() : startTop;
         changed = params.topMargin != top || params.bottomMargin != bottom
                 || params.leftMargin != next.side || params.rightMargin != next.side;
         applied = next;
@@ -159,8 +175,78 @@ final class ChatFooterOverlay {
             params.leftMargin = next.side; params.rightMargin = next.side;
             footer.setLayoutParams(params);
         }
+        if (animateNext || retarget) {
+            animateNext = false;
+            startExpansion(from);
+        }
         clearBackdrops(footer, 0, 0);
         return changed;
+    }
+
+    private boolean awaitGeometry() {
+        // Hide only the bounded native re-layout before the first animated frame.
+        // A panel that never becomes measurable must not hold the window's drawing.
+        if (animateNext && settlingFrames++ < 12) changed = true;
+        else animateNext = false;
+        retry();
+        return changed;
+    }
+
+    private float screenTop() {
+        int[] location = new int[2];
+        footer.getLocationOnScreen(location);
+        return location[1];
+    }
+
+    private void startExpansion(float from) {
+        cancelExpansion();
+        if (!ValueAnimator.areAnimatorsEnabled()) return;
+        animationParent = footer.getParent() instanceof View ? (View) footer.getParent() : null;
+        animationRoot = footer.getRootView();
+        animationFrom = from;
+        expansion = ValueAnimator.ofFloat(0f, 1f);
+        expansion.setDuration(220L);
+        expansion.setInterpolator(new LinearInterpolator());
+        expansion.addUpdateListener(animation -> {
+            if (animation != expansion) return;
+            if (!footer.isAttachedToWindow() || footer.getParent() != animationParent
+                    || footer.getRootView() != animationRoot) { cancelExpansion(); return; }
+            animationFraction = (Float) animation.getAnimatedValue();
+            positionExpansion();
+            // Reserve the next scroll range before traversal, so pre-draw can
+            // follow the end after layout in the same frame as the moving card.
+            if (!footer.isLayoutRequested()) updateTail();
+            if (animation.getAnimatedFraction() >= 1f) {
+                expansion = null;
+                animationParent = animationRoot = null;
+            }
+            footer.invalidateOutline();
+            retry();
+        });
+        expansion.start();
+    }
+
+    private void positionExpansion() {
+        // IME resize and ancestor translations can change the final screen position
+        // after the panel switch. Rebase each pre-draw without moving the origin.
+        float target = screenTop() - footer.getTranslationY();
+        animationShift = (animationFrom - target) * (1f - animationFraction);
+        footer.setTranslationY(animationShift);
+    }
+
+    private void cancelExpansion() {
+        ValueAnimator previous = expansion;
+        expansion = null;
+        if (previous != null) previous.cancel();
+        if (animationShift != 0f && footer.getTranslationY() == animationShift) footer.setTranslationY(0f);
+        animationShift = 0f;
+        animationParent = animationRoot = null;
+    }
+
+    int visibleHeight() {
+        if (applied == null) return 0;
+        return expansion == null ? applied.visible
+                : Math.max(applied.card, Math.min(footer.getHeight(), Math.round(applied.visible - animationShift)));
     }
 
     private int panelLimit(int card, int gap) {
@@ -257,10 +343,12 @@ final class ChatFooterOverlay {
         // Reserving the lift again would leave an extra keyboard-sized blank tail.
         int obstruction = Math.max(0, Math.min(list.getHeight(),
                 listAt[1] + list.getHeight() - footerAt[1]));
-        if (!tail.update(obstruction)) retry();
+        if (!tail.update(obstruction, expansion != null)) retry();
     }
 
     void restore() {
+        animateNext = false;
+        cancelExpansion();
         restoreMore();
         if (tail != null) tail.release();
         tail = null;
