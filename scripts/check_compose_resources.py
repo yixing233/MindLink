@@ -378,7 +378,11 @@ def validate_launcher(manifest, required=True):
     if required:
         require(launchers == ["wex.ui.core.MainActivity"], "Original launcher must remain wex.ui.core.MainActivity, exactly once")
     else:
-        require(not launchers, "A module build without the standalone desktop must not declare a launcher activity")
+        # 模块自身的启动入口是必需的：微信的包可见性查询只匹配 MAIN/LAUNCHER 应用，
+        # 没有它 createPackageContext("dev.mindlink") 会失败，微信内的侧栏与设置面板
+        # 都会报 "Installed MindLink resources are unavailable"。
+        require(launchers in ([], ["wex.ui.core.MainActivity"]),
+                "Launcher activity must be absent or be exactly wex.ui.core.MainActivity")
     return references
 
 
