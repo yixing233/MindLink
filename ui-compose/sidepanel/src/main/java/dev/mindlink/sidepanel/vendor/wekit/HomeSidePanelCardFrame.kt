@@ -66,6 +66,7 @@ fun HomeSidePanelCardFrame(
         Box(modifier = modifier) {
             MindLinkCard(
                 modifier = cardModifier,
+                shape = shape,
                 colors = colors,
             ) {
                 content()

@@ -1,6 +1,6 @@
 --- WeKit/app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelImageCard.kt
 +++ src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelImageCard.kt
-@@ -1,418 +1,414 @@
+@@ -1,418 +1,415 @@
 -package dev.ujhhgtg.wekit.features.items.beautify.home_screen_panel
 -
 -import androidx.compose.animation.AnimatedVisibility
@@ -494,6 +494,7 @@
 +    onHeightChange: (String, Int) -> Unit = { _, _ -> },
 +    onImageDimensionsChange: (String, Int, Int) -> Unit = { _, _, _ -> },
 +    onDeleteCard: (String) -> Unit = {},
++    onResizeGesture: (Boolean) -> Unit = {},
 +) {
 +    val shape = RoundedCornerShape(24.dp)
 +    var imageFailed by remember(card.imageAssetId, imageBitmap) {
@@ -619,7 +620,7 @@
 +                    HomeSidePanelImageResizeHandle(
 +                        enabled = !importing,
 +                        configuredHeightDp = card.heightDp,
-+                        onResizeStateChange = { active -> resizing = active },
++                        onResizeStateChange = { active -> resizing = active; onResizeGesture(active) },
 +                        onVisualHeightChange = { visualHeightDp = it },
 +                        onHeightCommit = { onHeightChange(card.id, it) },
 +                        modifier = Modifier

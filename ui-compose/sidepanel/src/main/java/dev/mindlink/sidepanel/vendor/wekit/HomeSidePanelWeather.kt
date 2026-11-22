@@ -98,7 +98,7 @@ fun weatherIconKind(code: String): WeatherIconKind = when (code.toIntOrNull()) {
     29 -> WeatherIconKind.DUST
     30 -> WeatherIconKind.SAND
     31 -> WeatherIconKind.DUST_STORM
-    32 -> WeatherIconKind.SQUALL
+    32 -> WeatherIconKind.FOG
     33 -> WeatherIconKind.TORNADO
     34 -> WeatherIconKind.BLIZZARD
     35 -> WeatherIconKind.FOG

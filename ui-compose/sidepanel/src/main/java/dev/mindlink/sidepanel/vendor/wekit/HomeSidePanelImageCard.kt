@@ -73,6 +73,7 @@ fun HomeSidePanelImageCard(
     onHeightChange: (String, Int) -> Unit = { _, _ -> },
     onImageDimensionsChange: (String, Int, Int) -> Unit = { _, _, _ -> },
     onDeleteCard: (String) -> Unit = {},
+    onResizeGesture: (Boolean) -> Unit = {},
 ) {
     val shape = RoundedCornerShape(24.dp)
     var imageFailed by remember(card.imageAssetId, imageBitmap) {
@@ -198,7 +199,7 @@ fun HomeSidePanelImageCard(
                     HomeSidePanelImageResizeHandle(
                         enabled = !importing,
                         configuredHeightDp = card.heightDp,
-                        onResizeStateChange = { active -> resizing = active },
+                        onResizeStateChange = { active -> resizing = active; onResizeGesture(active) },
                         onVisualHeightChange = { visualHeightDp = it },
                         onHeightCommit = { onHeightChange(card.id, it) },
                         modifier = Modifier

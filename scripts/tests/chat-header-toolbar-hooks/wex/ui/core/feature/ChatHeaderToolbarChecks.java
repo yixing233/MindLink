@@ -35,6 +35,7 @@ public final class ChatHeaderToolbarChecks {
     public static void main(String[] args) throws Throwable {
         String variant = args[0];
         if ("separated-geometry".equals(variant)) { separatedGeometry(); return; }
+        toolSettingsRoundtrip();
         flags(true, true);
         if ("pre-fix-header".equals(variant)) {
             try {
@@ -771,6 +772,21 @@ public final class ChatHeaderToolbarChecks {
             field.setAccessible(true);
             field.setInt(null, 0);
         }
+    }
+
+    private static void toolSettingsRoundtrip() {
+        String[] initial = ChatToolbarFeature.toolNames();
+        ChatToolbarFeature.moveTool(initial[1], -1);
+        check(ChatToolbarFeature.toolNames()[0].equals(initial[1]), "settings reader follows saved tool order");
+        ChatToolbarFeature.moveTool(initial[1], 1);
+        check(ChatToolbarFeature.toolNames()[0].equals(initial[0]), "consecutive reorder is reflected immediately");
+        for (String name : initial) ChatToolbarFeature.setToolEnabled(name, false);
+        for (String name : initial) check(!ChatToolbarFeature.isToolEnabled(name), "last disabled tool stays disabled");
+        ChatToolbarFeature.setToolEnabled(initial[0], true);
+        check(ChatToolbarFeature.isToolEnabled(initial[0]) && !ChatToolbarFeature.isToolEnabled(initial[1]), "explicit empty selection can re-enable one tool");
+        WexStore.INSTANCE.putString("chat_toolbar_order", "");
+        WexStore.INSTANCE.putString("chat_toolbar_enabled_items", "");
+        Handler.drain();
     }
 
     private static int hookCount(Class<?> owner, String name, Class<?>... types) {

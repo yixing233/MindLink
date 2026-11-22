@@ -19,8 +19,8 @@
       "sourceSha256": "0123433d60a6bbfe00e1ac578f881171b96815c45741d712fbcaaec8f5f0832c",
       "sourceLines": 172,
       "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelCardFrame.kt",
-      "targetSha256": "5747ecc25f3439bd74b76e4cad0b7c184e344308fbca0d370151532c547e0e37",
-      "modifications": "shared MindLink Material3 card surface; badge actions and animation bodies retained",
+      "targetSha256": "3b080017f58d9f3a945b5c054d85696f59acfda41c3136020ec5d1e704c49af7",
+      "modifications": "shared MindLink Material3 card surface; badge actions and animation bodies retained; drag preview preserves recorded drawing and dimensions; original shape forwarded",
       "diff": "HomeSidePanelCardFrame.kt.patch"
     },
     {
@@ -55,8 +55,8 @@
       "sourceSha256": "2d2207a28725be0530a4379030ebe0624441055692ea175d56143f40c7663abe",
       "sourceLines": 727,
       "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelWeather.kt",
-      "targetSha256": "a456bed6e815423aed214401a267ddd3b44ce006255602740f4ad3ea999db26a",
-      "modifications": "full display models and original icon-code mapping only; network/location/database/services/default city omitted; errors are platform strings",
+      "targetSha256": "54191953e87465e57eab0b774af61fae93e1f3ab74dedbd93409964d7621ea0f",
+      "modifications": "full display models and original icon-code mapping only; network/location/database/services/default city omitted; errors are platform strings; 2026-11-21: Xiaomi v3 code 32 maps to fog.",
       "diff": "HomeSidePanelWeather.kt.patch"
     },
     {
@@ -82,8 +82,8 @@
       "sourceSha256": "ff39ce97b45033e4b45ef4ca23b13ccaf5ad80260e6956fc79a984c9d9095ff4",
       "sourceLines": 722,
       "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelHome.kt",
-      "targetSha256": "3da5c7dd6bcd2012d249685bb3f9378d09c742af8d155b19e42cc715b293d55b",
-      "modifications": "original LazyColumn, in-place editor pulse, 58dp header, 32dp toolbar and all card dispatch retained; drag/full editor host omitted; typed callbacks/platform Bitmap bind existing host",
+      "targetSha256": "69daddb7d466d1c1edf1ff6d518930934130b633b85cd88704e15a9678925a32",
+      "modifications": "original LazyColumn, in-place editor pulse, 58dp header, 32dp toolbar and all card dispatch retained; drag/full editor host omitted; typed callbacks/platform Bitmap bind existing host; 2026-11-21: list-owned long press, overlay draft reorder, edge scrolling and accessible move actions.; drag preview preserves recorded drawing and dimensions; original shape forwarded",
       "diff": "HomeSidePanelHome.kt.patch"
     },
     {
@@ -91,8 +91,8 @@
       "sourceSha256": "2c8103c5ce59416ba4b86ef8042be42eb2600308bf6aa81866641e74fccc7262",
       "sourceLines": 221,
       "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelContent.kt",
-      "targetSha256": "23e403fc0436c49546bf5322b853c4dfd7c3425b212460d127d6b91e5ad04852",
-      "modifications": "retain exact fill-size Material3 surface with topEnd/bottomEnd 28dp and original loading; 2026-11-16: editor routes (edit_home/add_card/card_settings) render inside the SAME Compose root, replacing the removed Java LinearLayout editor (WeKit HomeSidePanelEditor semantics)",
+      "targetSha256": "259b641e85aeda2c575d7fda6410a432231a10b5b22373b1680f0f40ab31d7ec",
+      "modifications": "retain exact fill-size Material3 surface with topEnd/bottomEnd 28dp and original loading; 2026-11-16: editor routes (edit_home/add_card/card_settings) render inside the SAME Compose root, replacing the removed Java LinearLayout editor (WeKit HomeSidePanelEditor semantics); 2026-11-21: one composition call site retains list gestures across entering and leaving edit mode.",
       "diff": "HomeSidePanelContent.kt.patch"
     },
     {
@@ -118,8 +118,8 @@
       "sourceSha256": "9c58967bc6be68e269225dd41f120e9e58d1057e5f7dc774d42338845ca13ce9",
       "sourceLines": 418,
       "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelImageCard.kt",
-      "targetSha256": "53588c6d8dda700f37bb859e73e5cc2ec8253f99081732b712c7a813a4efb1b1",
-      "modifications": "original image shape/heights/scale modes/placeholders/resize/dropdown bodies retained; already-decoded platform Bitmap replaces file/Coil/global image loader (no image networking)",
+      "targetSha256": "72bb6dca460afd5d370d08dd2ba4e861769ce4b16ec359ae25d8d09fee686026",
+      "modifications": "original image shape/heights/scale modes/placeholders/resize/dropdown bodies retained; already-decoded platform Bitmap replaces file/Coil/global image loader (no image networking); 2026-11-21: image resize claims gesture ownership.",
       "diff": "HomeSidePanelImageCard.kt.patch"
     },
     {

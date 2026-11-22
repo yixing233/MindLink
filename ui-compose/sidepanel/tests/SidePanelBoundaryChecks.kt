@@ -7,6 +7,8 @@ import android.view.View
 import androidx.compose.runtime.BroadcastFrameClock
 import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.foundation.lazy.LazyListLayoutInfo
+import androidx.compose.foundation.lazy.LazyListItemInfo
 import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.platform.createLifecycleAwareWindowRecomposer
 import androidx.lifecycle.Lifecycle
@@ -18,6 +20,19 @@ import dev.mindlink.sidepanel.vendor.wekit.HitokotoCardConfig
 import dev.mindlink.sidepanel.vendor.wekit.HitokotoUiState
 import dev.mindlink.sidepanel.vendor.wekit.HomeSidePanelCardRuntimeState
 import dev.mindlink.sidepanel.vendor.wekit.HomeSidePanelState
+import dev.mindlink.sidepanel.vendor.wekit.HomeSidePanelRoute
+import dev.mindlink.sidepanel.vendor.wekit.WeatherIconKind
+import dev.mindlink.sidepanel.vendor.wekit.weatherIconKind
+import dev.mindlink.sidepanel.vendor.wekit.moveSidePanelCard
+import dev.mindlink.sidepanel.vendor.wekit.sidePanelDropIndex
+import dev.mindlink.sidepanel.vendor.wekit.SidePanelCardBounds
+import dev.mindlink.sidepanel.vendor.wekit.SidePanelCardReorder
+import dev.mindlink.sidepanel.vendor.wekit.homeSidePanelPointerLifecycleDecision
+import dev.mindlink.sidepanel.vendor.wekit.HomeSidePanelPointerLifecycleDecision
+import dev.mindlink.compose.SettingsState
+import dev.mindlink.compose.Setting
+import dev.mindlink.compose.sectionsFor
+import java.util.function.Function
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -128,6 +143,7 @@ object SidePanelBoundaryChecks {
             putString("editorRoute", route)
         }
         val callbacks = mapOf(
+            "enter_edit" to Runnable { events += "edit"; state.update(editing("edit_home"), emptyMap()) },
             "card_settings:date-original" to Runnable {
                 events += "settings"
                 state.update(editing("card_settings:date-original"), emptyMap())
@@ -148,8 +164,11 @@ object SidePanelBoundaryChecks {
         )
         state = HomeSidePanelState(display, emptyMap(), callbacks)
         state.lifecycle(true)
+        state.enterEditing()
+        verify(state.uiState.route == HomeSidePanelRoute.EditHome && events == listOf("edit"), "Long press enters global edit mode")
+        events.clear()
         state.editCard("date-original")
-        verify(state.uiState.editing && events == listOf("settings"), "Active long press opens the editor")
+        verify(state.uiState.editing && events == listOf("settings"), "Settings badge opens card configuration")
         state.updateCallbacks(callbacks)
         state.updateLunar("date-original")
         state.openAddCard()
@@ -173,6 +192,120 @@ object SidePanelBoundaryChecks {
         state.saveEditing()
         state.openAddCard()
         verify(events == disposedEvents, "Disposed editor cannot invoke stale host callbacks")
+    }
+
+    private fun settingsAndReorderContracts() {
+        val ids = listOf("a", "b", "c", "d")
+        verify(moveSidePanelCard(ids, "a", 3) == listOf("b", "c", "d", "a"), "Move first card to last")
+        verify(moveSidePanelCard(ids, "d", 0) == listOf("d", "a", "b", "c"), "Move last card to first")
+        verify(moveSidePanelCard(ids, "missing", 0) == ids && moveSidePanelCard(ids, "a", -1) == ids, "Invalid moves leave order intact")
+        val equal = ids.mapIndexed { i, id -> SidePanelCardBounds(id, i * 114, 100) }
+        verify(sidePanelDropIndex(ids, "a", 400f, equal) == 3, "One fast event crosses all three cards")
+        verify(sidePanelDropIndex(ids, "d", 20f, equal) == 0, "One upward event crosses all three cards")
+        val mixed = listOf(SidePanelCardBounds("a", 0, 110), SidePanelCardBounds("b", 124, 800),
+            SidePanelCardBounds("c", 938, 68), SidePanelCardBounds("d", 1020, 240))
+        verify(sidePanelDropIndex(ids, "a", 523f, mixed) == 0, "Tall-card midpoint has not been crossed")
+        verify(sidePanelDropIndex(ids, "a", 525f, mixed) == 1, "Tall-card midpoint is crossed")
+        verify(sidePanelDropIndex(ids, "a", 524f, mixed) == 0, "Exact midpoint does not move the card")
+        verify(sidePanelDropIndex(ids, "missing", 900f, mixed) == -1, "Missing dragged ID has no destination")
+        verify(sidePanelDropIndex(ids, "a", 1200f, emptyList()) == 0, "No visible target retains the source")
+        verify(sidePanelDropIndex(ids, "a", 1200f, mixed) == 3, "Rapid mixed-height drop reaches last card")
+        verify(sidePanelDropIndex(ids, "d", 54f, mixed) == 0, "Mixed-height upward drop reaches first card")
+        verify(sidePanelDropIndex(ids, "a", 970f, mixed) == 1 && sidePanelDropIndex(ids, "a", 973f, mixed) == 2,
+            "Final pointer-up displacement can cross another midpoint")
+        verify(homeSidePanelPointerLifecycleDecision(true, false, true) == HomeSidePanelPointerLifecycleDecision.Cancel, "Consumed pointer-up cancels")
+        verify(weatherIconKind("32") == WeatherIconKind.FOG && weatherIconKind("999") == WeatherIconKind.UNKNOWN, "Native Xiaomi weather codes")
+        val state = SettingsState(bundle("panel_tab" to "0", "top_profile_enabled" to "false"),
+            mapOf("top_profile_enabled" to Function<String, String> { "false" }), emptyMap(), emptyMap(), false)
+        val home = sectionsFor(0, state)
+        val top = home.single { it.master?.key == "top_profile_enabled" }
+        verify(top.rows.any { it.key == "top_search_bar" }, "Search stays under its actual top-bar dependency")
+        val bottom = home.single { it.master?.key == "bottom_bar_enabled" }
+        verify(bottom.rows.any { it.key == "nav_bar_scale" }, "Bottom bar switch and configuration share a feature")
+        val more = sectionsFor(2, state)
+        verify(more.single { it.rows.any { row -> row.key == "nav_bar_glass_mode" } }.master == null, "Shared material remains available independently of bottom-bar switch")
+        for (mode in listOf("0", "1", "2")) {
+            state.write("bubble_mode", mode)
+            val all = (0..2).flatMap { sectionsFor(it, state) }
+            val keys = all.flatMap { section -> (section.rows + listOfNotNull(section.master)).mapNotNull { it.key } }
+            verify(keys.distinct().size == keys.size, "Every setting appears once in mode $mode")
+            verify(all.map { it.id }.distinct().size == all.size, "Stable unique feature keys")
+        }
+        state.toggle("top_profile_enabled", true)
+        verify(!state.flag("top_profile_enabled"), "Failed writes retain effective stored state")
+        val revision = state.actionRevision
+        state.action("toolUp:scan")
+        verify(state.actionRevision == revision + 1, "Tool action invalidates reader data")
+        state.dispose()
+    }
+
+    private fun dragStateContracts() {
+        val ids = listOf("a", "b", "c", "d")
+        val heights = mapOf("a" to 110, "b" to 800, "c" to 68, "d" to 240)
+        var items = emptyList<LazyListItemInfo>()
+        var viewportStart = -24
+        val info = object : LazyListLayoutInfo {
+            override val visibleItemsInfo get() = items
+            override val viewportStartOffset get() = viewportStart
+            override val viewportEndOffset = 1300
+            override val totalItemsCount = 7
+        }
+        fun measure(order: List<String>, scroll: Int = 0) {
+            var top = -scroll
+            items = order.mapIndexed { position, id ->
+                val offset = top
+                val height = heights.getValue(id)
+                top += height + 14
+                object : LazyListItemInfo {
+                    override val index = position + 2
+                    override val key = id
+                    override val offset = offset
+                    override val size = height
+                }
+            }
+        }
+        var anchors = 0
+        val moves = mutableListOf<Pair<String, Int>>()
+        val drag = SidePanelCardReorder({ info }, { anchors++ })
+        measure(ids)
+        verify(!drag.start(1f, ids), "Padding/header is not a card")
+        verify(drag.start(74f, ids) && drag.draggedId == "a", "Start accounts for content padding")
+        verify(drag.height == 110 && drag.overlayTop() == 24f, "Preview preserves measured height and top")
+        drag.drag(918f)
+        verify(drag.order == listOf("b", "c", "a", "d"), "Fast event crosses two mixed-height midpoints")
+        drag.drag(227f)
+        verify(drag.order == listOf("b", "c", "d", "a"), "Later event resolves against still-stale measurement")
+        drag.drag(-625f)
+        verify(drag.order == listOf("b", "a", "c", "d"), "Reverse motion before remeasurement resolves from original order")
+        measure(drag.order!!)
+        drag.reorder()
+        verify(drag.order == listOf("b", "a", "c", "d"), "Remeasured preview is stable without motion")
+        drag.drag(500f)
+        verify(drag.order == listOf("b", "c", "a", "d"), "Motion after remeasurement reaches the next slot")
+        drag.drag(200f)
+        drag.finish(true) { id, index -> moves += id to index }
+        verify(moves == listOf("a" to 3) && anchors > 0, "Completed drop submits one final destination and preserves scroll")
+        drag.finish(true) { id, index -> moves += id to index }
+        verify(moves.size == 1 && drag.draggedId == null && drag.order == null, "Repeated finish never submits again")
+        measure(ids)
+        verify(drag.start(224f, ids) && drag.height == 800, "Tall image-sized card retains its full height")
+        drag.drag(-500f)
+        verify(drag.order == listOf("b", "a", "c", "d") && drag.scrollStep(56f) < 0f, "Upward move reaches first slot and upper scroll edge")
+        drag.finish(false) { id, index -> moves += id to index }
+        verify(moves.size == 1 && drag.order == null, "Cancelled drag discards all preview moves")
+        measure(ids, scroll = 200)
+        verify(drag.start(924f, ids), "Can start on a scrolled card")
+        verify(drag.overlayTop() == 844f, "Scrolled preview uses list coordinates")
+        drag.drag(500f)
+        verify(drag.scrollStep(56f) > 0f, "Lower edge scroll is active")
+        drag.finish(false) { id, index -> moves += id to index }
+        verify(drag.scrollStep(56f) == 0f, "Finishing stops edge scrolling")
+        verify(homeSidePanelPointerLifecycleDecision(true, true, false) == HomeSidePanelPointerLifecycleDecision.Continue,
+            "Pressed pointer continues")
+        verify(homeSidePanelPointerLifecycleDecision(true, false, false) == HomeSidePanelPointerLifecycleDecision.Finish,
+            "Unconsumed pointer-up finishes")
+        verify(homeSidePanelPointerLifecycleDecision(false, false, true) == HomeSidePanelPointerLifecycleDecision.Continue,
+            "Inactive pointer has no completed gesture")
     }
 
     private suspend fun realRecomposerLifecycle() {
@@ -208,6 +341,8 @@ object SidePanelBoundaryChecks {
         verify(mutableStateOf(1).value == 1, "Pinned runtime loaded")
         invalidSettings()
         editorCallbacksStayActive()
+        settingsAndReorderContracts()
+        dragStateContracts()
         realRecomposerLifecycle()
         println("PASS: dedicated side-panel boundary checks ($assertions assertions, real pinned runtime; Android UI/rendering NOT tested)")
     }

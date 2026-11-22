@@ -956,9 +956,10 @@ public final class ChatToolbarFeature {
 
 
     public static String[] toolNames() {
-        String[] names = new String[TOOLS.length];
-        for (int i = 0; i < TOOLS.length; i++) {
-            names[i] = TOOLS[i][0];
+        java.util.List<String[]> ordered = orderedTools();
+        String[] names = new String[ordered.size()];
+        for (int i = 0; i < ordered.size(); i++) {
+            names[i] = ordered.get(i)[0];
         }
         return names;
     }
@@ -1002,7 +1003,7 @@ public final class ChatToolbarFeature {
             }
             raw.append(value);
         }
-        WexStore.INSTANCE.putString(KEY_ENABLED_ITEMS, raw.toString());
+        WexStore.INSTANCE.putString(KEY_ENABLED_ITEMS, raw.length() == 0 ? "__none__" : raw.toString());
         refresh();
     }
 

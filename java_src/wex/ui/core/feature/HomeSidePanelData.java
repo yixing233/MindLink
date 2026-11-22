@@ -128,15 +128,56 @@ final class HomeSidePanelData {
 
     private static void fetchWeather(String id, String configuredCity, String fingerprint) throws Exception {
         JSONObject city = city(configuredCity);
-        String endpoint = "https://weatherapi.market.xiaomi.com/wtr-v3/weather/all"
-                + "?latitude=0&longitude=0&locationKey=" + encode("weathercn:" + city.getString("cityNum"))
-                + "&sign=zUFJoAR2ZVrDy1vF3D07&isGlobal=false&locale=zh_cn&days=5&appKey=weather20151024";
+        String endpoint = weatherEndpoint("0", "0") + "&locationKey=" + encode("weathercn:" + city.getString("cityNum"));
         JSONObject snapshot = parseWeather(get(endpoint, "weatherapi.market.xiaomi.com"),
                 city, System.currentTimeMillis());
         String display = weatherName(snapshot.getString("weatherCode")) + "  "
                 + snapshot.getString("temperature") + "°  " + snapshot.getString("high") + "°/"
                 + snapshot.getString("low") + "°  体感 " + snapshot.getString("feelsLike") + "°";
         write("weather", id, fingerprint, display, snapshot);
+    }
+
+    /** Xiaomi v3 parameters verified against CrabTab's src/utils/weather.ts (9e1f0f7).
+     * Coordinate queries intentionally omit locationKey: a guessed city ID overrides coordinates. */
+    static String weatherEndpoint(String latitude, String longitude) {
+        double lat = Double.parseDouble(latitude), lon = Double.parseDouble(longitude);
+        if (!Double.isFinite(lat) || !Double.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180)
+            throw new IllegalArgumentException("Invalid weather coordinates");
+        return String.format(java.util.Locale.ROOT,
+                "https://weatherapi.market.xiaomi.com/wtr-v3/weather/all?latitude=%.4f&longitude=%.4f", lat, lon)
+                + "&sign=zUFJoAR2ZVrDy1vF3D07&isGlobal=false&locale=zh_cn&days=5&appKey=weather20151024";
+    }
+
+    /** CalendarData's worker-thread bridge. Array contains temperature, condition and emoji. */
+    public static String[] fetchLocationWeather(String latitude, String longitude) throws Exception {
+        requireConsent();
+        String city = WexStore.INSTANCE.getString("weather_city", "当前位置");
+        String[] result = parseLocationWeather(get(weatherEndpoint(latitude, longitude), "weatherapi.market.xiaomi.com"));
+        requireConsent();
+        if (!latitude.equals(WexStore.INSTANCE.getString("wp_lat", ""))
+                || !longitude.equals(WexStore.INSTANCE.getString("wp_lon", ""))
+                || !city.equals(WexStore.INSTANCE.getString("weather_city", "当前位置")))
+            throw new IllegalStateException("Weather location changed during request");
+        return new String[]{result[0], result[1], result[2], city, locationWeatherIdentity(latitude, longitude)};
+    }
+
+    public static String locationWeatherIdentity(String latitude, String longitude) {
+        return "xiaomi_v3:" + latitude + ":" + longitude;
+    }
+
+    static String[] parseLocationWeather(String payload) throws Exception {
+        JSONObject current = new JSONObject(payload).getJSONObject("current");
+        String temperature = numeric(current.getJSONObject("temperature"), "value");
+        String code = required(current, "weather");
+        if (!code.matches("[0-9]+")) throw new IllegalArgumentException("Invalid weather code");
+        required(current, "pubTime");
+        return new String[]{String.valueOf(Math.round(Double.parseDouble(temperature))), weatherName(code), weatherEmoji(code)};
+    }
+
+    private static String numeric(JSONObject owner, String key) throws Exception {
+        String value = required(owner, key);
+        if (!Double.isFinite(Double.parseDouble(value))) throw new IllegalArgumentException("Invalid weather value");
+        return value;
     }
 
     /** Mirrors WeKit parseWeatherPayload, including its explicit from=high / to=low mapping. */
@@ -148,12 +189,12 @@ final class HomeSidePanelData {
         JSONObject snapshot = new JSONObject()
                 .put("city", normalizeCity(selectedCity))
                 .put("weatherCode", required(current, "weather"))
-                .put("temperature", required(current.getJSONObject("temperature"), "value"))
-                .put("feelsLike", required(current.getJSONObject("feelsLike"), "value"))
-                .put("high", required(first, "from"))
-                .put("low", required(first, "to"))
-                .put("humidity", required(current.getJSONObject("humidity"), "value"))
-                .put("windSpeed", required(current.getJSONObject("wind").getJSONObject("speed"), "value"))
+                .put("temperature", numeric(current.getJSONObject("temperature"), "value"))
+                .put("feelsLike", numeric(current.getJSONObject("feelsLike"), "value"))
+                .put("high", numeric(first, "from"))
+                .put("low", numeric(first, "to"))
+                .put("humidity", numeric(current.getJSONObject("humidity"), "value"))
+                .put("windSpeed", numeric(current.getJSONObject("wind").getJSONObject("speed"), "value"))
                 .put("publishedAt", required(current, "pubTime"))
                 .put("fetchedAt", fetchedAt);
         return normalizeWeather(snapshot);
@@ -216,6 +257,7 @@ final class HomeSidePanelData {
     }
 
     private static String get(String address, String expectedHost) throws Exception {
+        requireConsent();
         URL url = new URL(address);
         if (!"https".equals(url.getProtocol()) || !expectedHost.equalsIgnoreCase(url.getHost()))
             throw new IllegalArgumentException("Unexpected endpoint");
@@ -297,8 +339,9 @@ final class HomeSidePanelData {
 
     private static JSONObject normalizeWeather(JSONObject source) throws Exception {
         JSONObject result = new JSONObject().put("city", normalizeCity(source.getJSONObject("city")));
-        for (String name : new String[]{"weatherCode", "temperature", "feelsLike", "high", "low",
-                "humidity", "windSpeed", "publishedAt"}) result.put(name, required(source, name));
+        for (String name : new String[]{"weatherCode", "publishedAt"}) result.put(name, required(source, name));
+        for (String name : new String[]{"temperature", "feelsLike", "high", "low", "humidity", "windSpeed"})
+            result.put(name, numeric(source, name));
         result.put("fetchedAt", fetchedAt(source));
         return result;
     }
@@ -371,7 +414,34 @@ final class HomeSidePanelData {
     private static String encode(String value) { return URLEncoder.encode(value, StandardCharsets.UTF_8); }
     private static String safe(String value) { return value == null ? "" : value; }
     private static void requireConsent() { if (!LocationPrivacy.isEnabled()) throw new SecurityException("Network consent revoked"); }
-    private static String weatherName(String code) { switch (code) { case "0": return "晴"; case "1": return "多云"; case "2": return "阴"; case "3": return "阵雨"; case "4": return "雷阵雨"; case "7": return "小雨"; case "8": return "中雨"; case "9": return "大雨"; case "13": return "阵雪"; case "14": return "小雪"; case "15": return "中雪"; case "16": return "大雪"; case "18": return "雾"; case "53": return "霾"; default: return "天气 " + code; } }
+    private static String weatherName(String code) {
+        switch (code) {
+            case "0": return "晴"; case "1": return "多云"; case "2": return "阴";
+            case "3": return "阵雨"; case "4": return "雷阵雨"; case "5": return "雷阵雨伴有冰雹";
+            case "6": return "雨夹雪"; case "7": return "小雨"; case "8": return "中雨"; case "9": return "大雨";
+            case "10": return "暴雨"; case "11": return "大暴雨"; case "12": return "特大暴雨";
+            case "13": return "阵雪"; case "14": return "小雪"; case "15": return "中雪"; case "16": return "大雪";
+            case "17": return "暴雪"; case "18": return "雾"; case "19": return "冻雨"; case "20": return "沙尘暴";
+            case "21": return "小到中雨"; case "22": return "中到大雨"; case "23": return "大到暴雨";
+            case "24": return "暴雨到大暴雨"; case "25": return "大暴雨到特大暴雨";
+            case "26": return "小到中雪"; case "27": return "中到大雪"; case "28": return "大到暴雪";
+            case "29": return "浮尘"; case "30": return "扬沙"; case "31": return "强沙尘暴";
+            case "32": return "浓雾"; case "53": return "霾"; default: return "天气 " + code;
+        }
+    }
+
+    private static String weatherEmoji(String code) {
+        switch (code) {
+            case "0": return "☀️"; case "1": return "⛅"; case "2": return "☁️";
+            case "4": case "5": return "⛈️";
+            case "6": case "13": case "14": case "15": case "16": case "17":
+            case "26": case "27": case "28": return "🌨️";
+            case "3": case "7": case "8": case "9": case "10": case "11": case "12":
+            case "19": case "21": case "22": case "23": case "24": case "25": return "🌧️";
+            case "18": case "20": case "29": case "30": case "31": case "32": case "53": return "🌫️";
+            default: return "🌡️";
+        }
+    }
     private static void log(String value) { try { XposedBridge.log("WEX: 侧栏数据: " + value); } catch (Throwable ignored) { } }
     private interface Request { void run() throws Exception; }
     private static final class Attempt {

@@ -1849,8 +1849,6 @@
 
     const-string v1, ""
 
-    const-string v2, "https://api.open-meteo.com/v1/forecast?latitude="
-
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
     :try_start_0
@@ -1915,6 +1913,16 @@
     goto/16 :goto_2
 
     :cond_1
+    const-string v5, "weather_source"
+    const-string v6, ""
+    invoke-virtual {v3, v5, v6}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    move-result-object v5
+    invoke-static {v4, v1}, Lwex/ui/core/feature/HomeSidePanelData;->locationWeatherIdentity(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    move-result-object v6
+    invoke-virtual {v6, v5}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+    move-result v6
+    if-eqz v6, :xiaomi_cache_miss
+
     const-string v5, "0"
 
     invoke-virtual {v3, v0, v5}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
@@ -1949,89 +1957,30 @@
 
     if-lez v5, :cond_5
 
-    new-instance v5, Ljava/lang/StringBuilder;
+    goto :fetch_xiaomi
 
-    invoke-direct {v5, v2}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
+    :xiaomi_cache_miss
+    invoke-static {}, Ljava/lang/System;->currentTimeMillis()J
+    move-result-wide v9
 
-    invoke-virtual {v5, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    :fetch_xiaomi
+    invoke-static {v4, v1}, Lwex/ui/core/feature/HomeSidePanelData;->fetchLocationWeather(Ljava/lang/String;Ljava/lang/String;)[Ljava/lang/String;
 
-    const-string v2, "&longitude="
+    move-result-object v7
 
-    invoke-virtual {v5, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    const/4 v2, 0x0
+    aget-object v4, v7, v2
+    const/4 v2, 0x1
+    aget-object v5, v7, v2
+    const/4 v2, 0x2
+    aget-object v1, v7, v2
 
-    invoke-virtual {v5, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    const-string v1, "&current=temperature_2m,weather_code&timezone=auto"
-
-    invoke-virtual {v5, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v5}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-
-    move-result-object v1
-
-    const-string v2, "\u5929\u6c14"
-
-    invoke-virtual {p0, v1, v2}, Lwex/ui/core/feature/CalendarData;->httpGet(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
-
-    move-result-object v1
-
-    invoke-interface {v1}, Ljava/lang/CharSequence;->length()I
-
-    move-result v2
-
-    if-lez v2, :cond_4
-
-    new-instance v2, Lorg/json/JSONObject;
-
-    invoke-direct {v2, v1}, Lorg/json/JSONObject;-><init>(Ljava/lang/String;)V
-
-    const-string v1, "current"
-
-    invoke-virtual {v2, v1}, Lorg/json/JSONObject;->optJSONObject(Ljava/lang/String;)Lorg/json/JSONObject;
-
-    move-result-object v1
-
-    if-eqz v1, :cond_3
-
-    const-string v2, "temperature_2m"
-
-    const-wide/16 v4, 0x0
-
-    invoke-virtual {v1, v2, v4, v5}, Lorg/json/JSONObject;->optDouble(Ljava/lang/String;D)D
-
-    move-result-wide v4
-
-    const-string v2, "weather_code"
-
-    invoke-virtual {v1, v2, v6}, Lorg/json/JSONObject;->optInt(Ljava/lang/String;I)I
-
-    move-result v1
-
-    const-string v2, "weather_city"
-
-    const-string v6, "\u5f53\u524d\u4f4d\u7f6e"
-
-    invoke-virtual {v3, v2, v6}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
-
-    move-result-object v2
+    const/4 v2, 0x4
+    aget-object v12, v7, v2
+    const/4 v2, 0x3
+    aget-object v2, v7, v2
 
     new-instance v6, Lx4/o;
-
-    invoke-static {v4, v5}, Ljava/lang/Math;->round(D)J
-
-    move-result-wide v4
-
-    invoke-static {v4, v5}, Ljava/lang/String;->valueOf(J)Ljava/lang/String;
-
-    move-result-object v4
-
-    invoke-virtual {p0, v1}, Lwex/ui/core/feature/CalendarData;->wmoToCn(I)Ljava/lang/String;
-
-    move-result-object v5
-
-    invoke-virtual {p0, v1}, Lwex/ui/core/feature/CalendarData;->wmoEmoji(I)Ljava/lang/String;
-
-    move-result-object v1
 
     invoke-direct {v6, v2, v4, v5, v1}, Lx4/o;-><init>(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
 
@@ -2059,12 +2008,34 @@
 
     move-result-object v2
 
+    invoke-static {}, Lwex/ui/core/feature/LocationPrivacy;->isEnabled()Z
+    move-result v8
+    if-eqz v8, :cond_3
+
+    const-string v8, "wp_lat"
+    const-string v10, ""
+    invoke-virtual {v3, v8, v10}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    move-result-object v11
+    const-string v8, "wp_lon"
+    invoke-virtual {v3, v8, v10}, Lwex/ui/core/WexStore;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    move-result-object v10
+    invoke-static {v11, v10}, Lwex/ui/core/feature/HomeSidePanelData;->locationWeatherIdentity(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+    move-result-object v10
+    invoke-virtual {v12, v10}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+    move-result v8
+    if-eqz v8, :cond_3
+
     invoke-virtual {v3, v7, v2}, Lwex/ui/core/WexStore;->putString(Ljava/lang/String;Ljava/lang/String;)V
 
     const-string v2, "weather_emoji"
 
     invoke-virtual {v3, v2, v1}, Lwex/ui/core/WexStore;->putString(Ljava/lang/String;Ljava/lang/String;)V
 
+    const-string v2, "weather_source"
+    invoke-virtual {v3, v2, v12}, Lwex/ui/core/WexStore;->putString(Ljava/lang/String;Ljava/lang/String;)V
+
+    invoke-static {}, Ljava/lang/System;->currentTimeMillis()J
+    move-result-wide v9
     invoke-static {v9, v10}, Ljava/lang/String;->valueOf(J)Ljava/lang/String;
 
     move-result-object v1
@@ -2178,7 +2149,7 @@
     invoke-virtual {p2}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
     :try_start_0
-    const-string v1, "https://api.open-meteo.com/"
+    const-string v1, "https://weatherapi.market.xiaomi.com/"
 
     invoke-virtual {p1, v1}, Ljava/lang/String;->startsWith(Ljava/lang/String;)Z
 

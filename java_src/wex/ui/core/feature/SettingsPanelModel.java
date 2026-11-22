@@ -72,10 +72,10 @@ final class SettingsPanelModel {
             int mode = clamp(requested, 0, 2);
             SettingsChanges.saveString("nav_bar_glass_mode", String.valueOf(mode));
             SettingsChanges.saveBool("nav_bar_use_backdrop", mode != 0);
-            NavigationBarFeature.refresh();
+            refreshGlassSurfaces();
             return String.valueOf(readInt("nav_bar_glass_mode", mode, 0, 2));
         });
-        number("nav_bar_blur_radius", 8, 0, 40, NavigationBarFeature::refresh);
+        number("nav_bar_blur_radius", 8, 0, 40, SettingsPanelModel::refreshGlassSurfaces);
         number("nav_bar_scale", 100, 50, 150, NavigationBarFeature::refresh);
         flag("nav_bar_use_wechat_icons", false, NavigationBarFeature::refresh);
         flag("nav_bar_hide_labels", false, NavigationBarFeature::refresh);
@@ -102,6 +102,7 @@ final class SettingsPanelModel {
         number("floating_chat_footer_corner_radius", 24, 0, 32, FloatingChatFooterFeature::refresh);
         number("floating_chat_footer_elevation", 4, 0, 16, FloatingChatFooterFeature::refresh);
         flag("floating_chat_footer_panel_above", true, FloatingChatFooterFeature::refresh);
+        number("floating_chat_footer_more_height_dp", 220, 220, 360, FloatingChatFooterFeature::refresh);
 
         // ---------- 气泡 ----------
         flag("bubble_enabled", false, BubbleApply::refresh);
@@ -185,6 +186,12 @@ final class SettingsPanelModel {
     }
 
     // ---------- helpers ----------
+
+    private static void refreshGlassSurfaces() {
+        NavigationBarFeature.refresh();
+        FloatingChatHeaderFeature.refresh();
+        FloatingChatFooterFeature.refresh();
+    }
 
     private void flag(String key, boolean def) { flag(key, def, null); }
 

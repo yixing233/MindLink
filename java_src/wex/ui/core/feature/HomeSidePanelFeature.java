@@ -362,6 +362,10 @@ public final class HomeSidePanelFeature {
         float downProgress;
         boolean tracking;
         boolean dragging;
+        boolean composeGesture;
+        float lastTouchX;
+        float velocityX;
+        long lastTouchTime;
         int drawerWidth;
 
         DrawerSession(Activity activity, FrameLayout decor, View content) {
@@ -504,6 +508,8 @@ public final class HomeSidePanelFeature {
             actions.put("open_panel", () -> open(true));
             actions.put("close_panel", () -> close(true));
             actions.put("enter_edit", () -> enterEditor(null));
+            actions.put("gesture_start", () -> { composeGesture = true; tracking = false; });
+            actions.put("gesture_end", () -> composeGesture = false);
             actions.put("save_edit", this::saveEditor);
             actions.put("discard_edit", () -> { discardEditor(); rebuild(); });
             actions.put("add_card", () -> enterEditor(ROUTE_ADD_CARD));
@@ -521,6 +527,12 @@ public final class HomeSidePanelFeature {
                 final String id = card.id;
                 actions.put("delete:" + id, () -> deleteEditorCard(id));
                 actions.put("card_settings:" + id, () -> enterEditor(ROUTE_CARD_SETTINGS + id));
+                if (editorDraft != null) {
+                    for (int index = 0; index < cards.size(); index++) {
+                        final int destination = index;
+                        actions.put("move_card:" + id + ":" + index, () -> moveEditorCard(id, destination));
+                    }
+                }
                 switch (card.type) {
                     case DATE_TIME:
                         actions.put("update_lunar:" + id, () -> {
@@ -662,6 +674,16 @@ public final class HomeSidePanelFeature {
             }
         }
 
+        private void moveEditorCard(String id, int destination) {
+            if (editorDraft == null || destination < 0 || destination >= editorDraft.size()) return;
+            HomeSidePanelLayout.Card target = card(id);
+            int source = editorDraft.indexOf(target);
+            if (source < 0 || source == destination) return;
+            editorDraft.remove(source);
+            editorDraft.add(destination, target);
+            refreshEditingSnapshot();
+        }
+
         private void selectImage(String id) {
             if (editorDraft == null) return;
             HomeSidePanelLayout.Card target = card(id);
@@ -694,6 +716,7 @@ public final class HomeSidePanelFeature {
         }
 
         private void discardEditor() {
+            composeGesture = false;
             if (editorDraft == null) return;
             cleanupDraftAssets(editorDraft, originalAssets);
             editorDraft = null; originalAssets = null;
@@ -726,6 +749,7 @@ public final class HomeSidePanelFeature {
         }
 
         void resumed(boolean value) {
+            if (!value) { composeGesture = false; tracking = false; dragging = false; }
             activityResumed = value;
             if (value && progress > 0f) subscribe(); else unsubscribe();
             syncLifecycle();
@@ -807,24 +831,35 @@ public final class HomeSidePanelFeature {
             }
             switch (event.getActionMasked()) {
                 case MotionEvent.ACTION_DOWN:
+                    composeGesture = false;
                     downX = event.getRawX();
                     downY = event.getRawY();
                     downProgress = progress;
                     tracking = progress > 0f || downX <= dp(activity, 32);
                     dragging = false;
+                    lastTouchX = downX;
+                    lastTouchTime = event.getEventTime();
+                    velocityX = 0f;
                     return false;
                 case MotionEvent.ACTION_MOVE:
-                    if (!tracking) {
+                    if (composeGesture || !tracking) {
                         return false;
                     }
                     float dx = event.getRawX() - downX;
                     float dy = event.getRawY() - downY;
+                    long elapsed = event.getEventTime() - lastTouchTime;
+                    if (elapsed > 0) velocityX = (event.getRawX() - lastTouchX) * 1000f / elapsed;
+                    lastTouchX = event.getRawX();
+                    lastTouchTime = event.getEventTime();
                     if (!dragging && Math.max(Math.abs(dx), Math.abs(dy)) > dp(activity, 10)) {
-                        if (Math.abs(dx) < Math.abs(dy)) {
+                        if (Math.abs(dx) < Math.abs(dy) * 1.25f || downProgress == 0f && dx <= 0f) {
                             tracking = false;
                             return false;
                         }
                         dragging = true;
+                        if (animator != null) animator.cancel();
+                        downProgress = progress;
+                        closing = false;
                         overlay.setVisibility(View.VISIBLE);
                         MotionEvent cancel = MotionEvent.obtain(event.getDownTime(), event.getEventTime(),
                                 MotionEvent.ACTION_CANCEL, event.getX(), event.getY(), event.getMetaState());
@@ -843,7 +878,19 @@ public final class HomeSidePanelFeature {
                     boolean consumed = dragging;
                     tracking = false;
                     dragging = false;
-                    if (consumed) animateTo(progress >= 0.35f ? 1f : 0f);
+                    if (consumed) {
+                        if (event.getActionMasked() == MotionEvent.ACTION_CANCEL) {
+                            animateTo(downProgress >= 0.5f ? 1f : 0f);
+                        } else {
+                            float distance = event.getRawX() - downX;
+                            boolean fling = event.getEventTime() - lastTouchTime <= 120
+                                    && Math.abs(distance) >= dp(activity, 24)
+                                    && Math.abs(velocityX) >= dp(activity, 600);
+                            boolean open = fling ? velocityX > 0f
+                                    : downProgress >= 0.5f ? progress > 0.75f : progress >= 0.25f;
+                            animateTo(open ? 1f : 0f);
+                        }
+                    }
                     return consumed;
                 default:
                     return dragging;

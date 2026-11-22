@@ -43,12 +43,14 @@ import java.util.Objects;
  *
  * Callback keys (Runnable, executed on the UI thread, absent means unavailable):
  * open_profile,open_status,refresh_status,open_settings,open_panel,close_panel,enter_edit,
- * save_edit,discard_edit,add_card,scan,payment_code,edit:<cardId>,delete:<cardId>,
+ * save_edit,discard_edit,add_card,scan,payment_code,card_settings:<cardId>,delete:<cardId>,
+ * gesture_start,gesture_end,move_card:<cardId>:<destinationIndex>,
  * refresh_weather:<cardId>,toggle_wallet:<cardId>,refresh_hitokoto:<cardId>,select_image:<cardId>,
  * run:<cardId>:<actionId>,delete_action:<cardId>:<actionId>,add_action:<cardId>,
  * image_scale:<cardId>:crop|fit|fill_bounds|auto_ratio,image_height:<cardId>:<heightDp>.
  * Image resize callbacks are pre-bound to the finite 80..800 step-8 values; no Kotlin lambda crosses.
- * A card long-press calls edit:<cardId>, falling back to enter_edit; a click never edits implicitly.
+ * Display long-press calls enter_edit; editing long-press owns a drag and commits one draft move on drop.
+ * Card settings badges call card_settings:<cardId>; cancellation does not commit the preview order.
  * payment_code is only a callback to the existing native host navigation, not a payment operation.
  */
 public final class SidePanelComposeBridge {

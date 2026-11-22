@@ -19,6 +19,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -27,6 +30,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -42,6 +46,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,6 +66,7 @@ import dev.mindlink.ui.MindLinkSwitchRow
 import dev.mindlink.ui.MindLinkTheme
 import dev.mindlink.ui.MindLinkIconButton
 import dev.mindlink.ui.MindLinkTopBar
+import dev.mindlink.ui.MindLinkListRow
 
 @Composable
 internal fun SettingsScreen(state: SettingsState) {
@@ -71,6 +77,7 @@ internal fun SettingsScreen(state: SettingsState) {
         var consent by remember { mutableStateOf<Setting.Flag?>(null) }
         var logOpen by remember { mutableStateOf(false) }
         var restarting by remember { mutableStateOf(false) }
+        val listStates = settingsTabs.map { rememberLazyListState() }
 
         MindLinkPage {
                 Header { restarting = true }
@@ -81,12 +88,24 @@ internal fun SettingsScreen(state: SettingsState) {
                 val sections = sectionsFor(state.tabIndex, state)
                 LazyColumn(
                     Modifier.fillMaxWidth().weight(1f),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 28.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    state = listStates[state.tabIndex],
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 28.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    items(sections.size) { index ->
-                        val section = sections[index]
-                        SectionBlock(section) { row ->
+                    item(key = "page-intro:${state.tabIndex}") {
+                        Text(
+                            when (state.tabIndex) {
+                                0 -> "管理首页入口与导航，展开配置调整细节。"
+                                1 -> "按需开启聊天组件，分别调整布局与外观。"
+                                else -> "统一外观材质，管理联网数据与诊断。"
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = colors.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
+                        )
+                    }
+                    items(sections, key = { it.id }) { section ->
+                        SectionBlock(section, section.master?.let { state.flag(it.key) } ?: true) { row ->
                             when (row) {
                                 is Setting.Flag -> FlagRow(row, state.flag(row.key)) { checked ->
                                     if (row.confirm != null && checked) consent = row
@@ -210,17 +229,45 @@ private fun PendingBar(onRestart: () -> Unit) {
 }
 
 @Composable
-private fun SectionBlock(section: Section, row: @Composable (Setting) -> Unit) {
+private fun SectionBlock(section: Section, enabled: Boolean, row: @Composable (Setting) -> Unit) {
+    var expanded by rememberSaveable(section.id, enabled) { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth()) {
-        MindLinkSectionHeader(section.title, section.summary)
         MindLinkCard(modifier = Modifier.fillMaxWidth()) {
             Column {
-                section.rows.forEachIndexed { index, entry ->
-                    if (index > 0) HorizontalDivider(
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .55f),
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                    )
-                    row(entry)
+                if (section.master != null) {
+                    row(section.master.copy(title = section.title, summary = section.summary))
+                    if (section.rows.isNotEmpty()) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .5f))
+                        MindLinkListRow(
+                            title = if (expanded && enabled) "收起配置" else "功能配置",
+                            summary = if (enabled) "${section.rows.count { it !is Setting.Note }} 项设置" else "开启后可调整配置，已保存的参数会保留",
+                            modifier = Modifier.clickable(enabled = enabled) { expanded = !expanded },
+                            trailing = {
+                                Icon(MaterialSymbols.Outlined.Chevron_right, contentDescription = null,
+                                    modifier = Modifier.rotate(if (expanded && enabled) -90f else 90f),
+                                    tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                            },
+                        )
+                    }
+                } else {
+                    Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 6.dp)) {
+                        Text(section.title, style = MaterialTheme.typography.titleMedium)
+                        section.summary?.let {
+                            Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 4.dp))
+                        }
+                    }
+                }
+                AnimatedVisibility(visible = section.master == null || (enabled && expanded)) {
+                    Column(Modifier.background(MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = .45f))) {
+                        section.rows.forEachIndexed { index, entry ->
+                            if (index > 0) HorizontalDivider(
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .4f),
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                            )
+                            row(entry)
+                        }
+                    }
                 }
             }
         }
@@ -236,10 +283,14 @@ private fun FlagRow(row: Setting.Flag, checked: Boolean, onChange: (Boolean) -> 
 private fun RangeRow(row: Setting.Range, initial: Int, state: SettingsState) {
     var draft by remember(row.key, initial) { mutableStateOf(initial.coerceIn(row.min, row.max)) }
     Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 6.dp)) {
-        Text(
-            "${row.title}  ${row.format(draft)}",
-            style = MaterialTheme.typography.bodyMedium,
-        )
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(row.title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = RoundedCornerShape(8.dp)) {
+                Text(row.format(draft), style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+            }
+        }
         Slider(
             value = draft.toFloat(),
             onValueChange = { draft = it.toInt().coerceIn(row.min, row.max) },
@@ -319,7 +370,7 @@ private fun ButtonRow(row: Setting.Button, onClick: () -> Unit) {
 
 @Composable
 private fun ToolsRow(row: Setting.Tools, state: SettingsState) {
-    val names = remember(state.data) { state.read("tools").split(",").filter { it.isNotBlank() } }
+    val names = remember(state.data, state.actionRevision) { state.read("tools").split(",").filter { it.isNotBlank() } }
     val csv = state.value(row.key)
     val enabled = if (csv.isBlank()) names.toSet() else csv.split(",").filter { it.isNotBlank() }.toSet()
     Column(Modifier.fillMaxWidth()) {
@@ -347,7 +398,7 @@ private fun ToolsRow(row: Setting.Tools, state: SettingsState) {
                     checked = name in enabled,
                     onCheckedChange = { checked ->
                         val next = if (checked) enabled + name else enabled - name
-                        state.write(row.key, names.filter { it in next }.joinToString(","))
+                        state.write(row.key, names.filter { it in next }.joinToString(",").ifEmpty { "__none__" })
                     },
                 )
             }

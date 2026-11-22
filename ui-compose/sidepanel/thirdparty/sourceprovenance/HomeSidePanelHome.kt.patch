@@ -1,6 +1,6 @@
---- WeKit/app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelHome.kt
+--- app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelHome.kt
 +++ src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelHome.kt
-@@ -1,722 +1,611 @@
+@@ -1,722 +1,694 @@
 -package dev.ujhhgtg.wekit.features.items.beautify.home_screen_panel
 -
 -import android.graphics.PorterDuff
@@ -736,6 +736,7 @@
 +import androidx.compose.animation.core.Animatable
 +import androidx.compose.animation.core.tween
 +import androidx.compose.foundation.background
++import androidx.compose.foundation.Canvas
 +import androidx.compose.foundation.clickable
 +import androidx.compose.foundation.layout.Arrangement
 +import androidx.compose.foundation.layout.Box
@@ -751,6 +752,7 @@
 +import androidx.compose.foundation.layout.padding
 +import androidx.compose.foundation.layout.safeDrawing
 +import androidx.compose.foundation.layout.size
++import androidx.compose.foundation.layout.height
 +import androidx.compose.foundation.layout.widthIn
 +import androidx.compose.foundation.lazy.LazyColumn
 +import androidx.compose.foundation.lazy.LazyListState
@@ -762,6 +764,13 @@
 +import androidx.compose.material3.MaterialTheme
 +import androidx.compose.material3.Text
 +import androidx.compose.runtime.Composable
++import androidx.compose.runtime.DisposableEffect
++import androidx.compose.runtime.withFrameNanos
++import androidx.compose.foundation.gestures.scrollBy
++import androidx.compose.ui.platform.LocalHapticFeedback
++import androidx.compose.ui.hapticfeedback.HapticFeedbackType
++import androidx.compose.ui.semantics.CustomAccessibilityAction
++import androidx.compose.ui.semantics.customActions
 +import androidx.compose.runtime.LaunchedEffect
 +import androidx.compose.runtime.getValue
 +import androidx.compose.runtime.key
@@ -771,6 +780,10 @@
 +import androidx.compose.ui.Alignment
 +import androidx.compose.ui.Modifier
 +import androidx.compose.ui.draw.clip
++import androidx.compose.ui.draw.drawWithContent
++import androidx.compose.ui.graphics.layer.drawLayer
++import androidx.compose.ui.graphics.rememberGraphicsLayer
++import androidx.compose.ui.graphics.drawscope.translate
 +import androidx.compose.ui.graphics.graphicsLayer
 +import androidx.compose.ui.graphics.Color
 +import androidx.compose.ui.graphics.toArgb
@@ -804,7 +817,31 @@
 +    panelState: HomeSidePanelState,
 +    listState: LazyListState,
 +) {
-+    val displayedCards = state.renderedLayout.cards.withIndex().toList()
++    val reorder = remember(listState) { SidePanelCardReorder(listState) }
++    val cards = state.renderedLayout.cards
++    // Own the recorded layers outside lazy items so a tall card survives scrolling
++    // offscreen. The preview retains its exact pixels, dimensions and badge state.
++    val cardLayers = cards.associate { card ->
++        card.id to key(card.id) { rememberGraphicsLayer() }
++    }
++    val displayedCards = reorder.order?.mapNotNull { id -> cards.find { it.id == id } } ?: cards
++    val haptics = LocalHapticFeedback.current
++    val edge = with(LocalDensity.current) { 56.dp.toPx() }
++    LaunchedEffect(reorder.draggedId) {
++        if (reorder.draggedId != null) {
++            var previous = withFrameNanos { it }
++            while (reorder.draggedId != null) {
++                val now = withFrameNanos { it }
++                val step = reorder.scrollStep(edge) * ((now - previous) / 16_666_667f).coerceAtMost(2f)
++                previous = now
++                if (step != 0f) listState.scrollBy(step)
++                reorder.reorder()
++            }
++        }
++    }
++    DisposableEffect(panelState) {
++        onDispose { panelState.setGestureOwnership(false) }
++    }
 +    val editorMotion = remember { Animatable(0f) }
 +    var editorMotionDirection by remember { mutableStateOf(1f) }
 +    var previousRoute by remember { mutableStateOf<HomeSidePanelRoute?>(null) }
@@ -828,11 +865,32 @@
 +        }
 +    }
 +    val editorTranslation = with(LocalDensity.current) { 8.dp.toPx() }
++    Box(Modifier.fillMaxSize()) {
 +    LazyColumn(
 +        state = listState,
-+        userScrollEnabled = true,
++        userScrollEnabled = reorder.draggedId == null,
 +        modifier = Modifier
 +            .fillMaxSize()
++            .sidePanelLongPressDrag(
++                onStart = { point ->
++                    if (panelState.gestureInProgress) false
++                    else if (!state.editing) {
++                        panelState.setGestureOwnership(true)
++                        panelState.enterEditing()
++                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
++                        true
++                    } else if (reorder.start(point.y, cards.map { it.id })) {
++                        panelState.setGestureOwnership(true)
++                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
++                        true
++                    } else false
++                },
++                onDrag = reorder::drag,
++                onFinish = { completed ->
++                    try { reorder.finish(completed, panelState::moveCard) }
++                    finally { panelState.setGestureOwnership(false) }
++                },
++            )
 +            .graphicsLayer {
 +                val progress = editorMotion.value
 +                alpha = 1f - 0.08f * progress
@@ -854,24 +912,48 @@
 +                modifier = Modifier.padding(start = 18.dp, top = 14.dp, end = 18.dp),
 +            )
 +        }
-+        displayedCards.forEach { indexedCard ->
-+            val card = indexedCard.value
++        if (state.editing) item(key = "editing-hint") {
++            Text("长按卡片拖动排序 · 点设置调整内容", style = MaterialTheme.typography.labelMedium,
++                color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 18.dp))
++        }
++        displayedCards.forEachIndexed { index, card ->
 +            item(key = card.id) {
++                if (reorder.draggedId == card.id) {
++                    Box(Modifier.fillMaxWidth().height(with(LocalDensity.current) { reorder.height.toDp() }))
++                } else {
 +                HomeSidePanelLayoutCard(
 +                    card = card,
 +                    editMode = state.editing,
 +                    imageImportingCardIds = state.imageImportingCardIds,
 +                    panelState = panelState,
 +                    modifier = Modifier
-+                        .animateItem(fadeOutSpec = null)
++                        .animateItem(fadeInSpec = null, fadeOutSpec = null)
++                        .drawWithContent {
++                            val layer = cardLayers.getValue(card.id)
++                            layer.record { this@drawWithContent.drawContent() }
++                            drawLayer(layer)
++                        }
 +                        .padding(horizontal = 18.dp)
-+                        .sidePanelEditLongPress(card.id) { panelState.editCard(card.id) },
++                        .semantics {
++                            if (state.editing) customActions = buildList {
++                                if (index > 0) add(CustomAccessibilityAction("上移") { panelState.moveCard(card.id, index - 1); true })
++                                if (index < cards.lastIndex) add(CustomAccessibilityAction("下移") { panelState.moveCard(card.id, index + 1); true })
++                            }
++                        },
 +                )
++                }
 +            }
 +        }
 +        item(key = "bottom-space") {
 +            Box(Modifier.size(4.dp))
 +        }
++    }
++    reorder.draggedId?.let { id ->
++        // A drawing has no click/resize targets and cannot replay card animations.
++        Canvas(Modifier.fillMaxSize()) {
++            translate(top = reorder.overlayTop()) { drawLayer(cardLayers.getValue(id)) }
++        }
++    }
 +    }
 +}
 +
@@ -960,6 +1042,7 @@
 +            onHeightChange = panelState::updateImageHeight,
 +            onImageDimensionsChange = { _, _, _ -> },
 +            onDeleteCard = panelState::removeCard,
++            onResizeGesture = panelState::setGestureOwnership,
 +        )
 +
 +        is HorizontalActionsCardConfig -> HomeSidePanelHorizontalActionsCard(

@@ -66,7 +66,7 @@ object SidePanelUi {
             panel.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             panel.bindParent()
             // Installation/rendering must still be verified on Android; this is not desktop navigation.
-            Log.i("MindLinkSidePanel", "WeKit-view-created entry=${if (toolbar) "toolbar" else "drawer"} runtime=isolated")
+            Log.i("MindLinkSidePanel", "WeKit-view-created entry=${if (toolbar) "toolbar" else "drawer"} runtime=isolated drag=20261121-v2 hostGesture=${callbacks.containsKey("gesture_start")}")
             return panel
         } catch (error: Throwable) {
             panel.dispose()

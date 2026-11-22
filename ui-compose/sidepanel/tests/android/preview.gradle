@@ -1,0 +1,8 @@
+allprojects {
+    afterEvaluate { project ->
+        if (project.plugins.hasPlugin('com.android.application')) {
+            project.android.sourceSets.debug.java.srcDir(project.file('tests/android'))
+            project.android.sourceSets.debug.manifest.srcFile(project.file('tests/android/AndroidManifest.xml'))
+        }
+    }
+}

@@ -112,6 +112,36 @@ public final class SidePanelChecks {
     }
 
     private static void data() throws Exception {
+        String endpoint = HomeSidePanelData.weatherEndpoint("31.2304", "121.4737");
+        check(endpoint.startsWith("https://weatherapi.market.xiaomi.com/wtr-v3/weather/all?")
+                && endpoint.contains("latitude=31.2304&longitude=121.4737") && !endpoint.contains("locationKey"),
+                "coordinate-only Xiaomi query does not override location with a guessed city");
+        for (String bad : new String[]{"NaN", "Infinity", "91", "1&locationKey=other", ""}) {
+            boolean invalid = false;
+            try { HomeSidePanelData.weatherEndpoint(bad, "121"); } catch (RuntimeException expected) { invalid = true; }
+            check(invalid, "invalid latitude rejected before URL construction: " + bad);
+        }
+        for (String temp : new String[]{"0", "-8", "25"}) {
+            JSONObject payload = weatherPayload();
+            payload.getJSONObject("current").getJSONObject("temperature").put("value", temp);
+            payload.getJSONObject("current").put("weather", "2");
+            String[] result = HomeSidePanelData.parseLocationWeather(payload.toString());
+            check(result[0].equals(temp) && result[1].equals("阴"), "Xiaomi zero/negative temperature and native code retained");
+        }
+        for (String temp : new String[]{"", "null", "NaN", "Infinity"}) {
+            JSONObject payload = weatherPayload();
+            payload.getJSONObject("current").getJSONObject("temperature").put("value", temp);
+            boolean invalid = false;
+            try { HomeSidePanelData.parseLocationWeather(payload.toString()); } catch (Exception expected) { invalid = true; }
+            check(invalid, "empty or invalid weather never becomes zero/clear: " + temp);
+        }
+        JSONObject fog = weatherPayload();fog.getJSONObject("current").put("weather", "32");
+        check(HomeSidePanelData.parseLocationWeather(fog.toString())[1].equals("浓雾"), "Xiaomi dense-fog mapping");
+        fog.getJSONObject("current").put("weather", "999");
+        check(HomeSidePanelData.parseLocationWeather(fog.toString())[1].equals("天气 999"), "unknown weather is not fabricated clear sky");
+        boolean blocked = false;
+        try { HomeSidePanelData.fetchLocationWeather("31.2304", "121.4737"); } catch (SecurityException expected) { blocked = true; }
+        check(blocked && connections.get() == 0, "calendar opt-in checked before opening a connection");
         JSONObject city=HomeSidePanelData.city("101010100");
         check(city.getString("city").isEmpty()&&city.getString("province").isEmpty()&&city.getString("countryCode").isEmpty(),"code alone never invents geographic names");
         JSONObject weather=HomeSidePanelData.parseWeather(weatherPayload().toString(),city,System.currentTimeMillis());
@@ -127,6 +157,11 @@ public final class SidePanelChecks {
         seed("weather",w,w.weatherCity,null,"旧展示天气");
         Bundle legacy=HomeSidePanelData.weatherState(w,true);
         check(legacy.getString("kind").equals("error")&&!legacy.containsKey("snapshot")&&!legacy.containsKey("cached")&&legacy.getString("legacyDisplay").equals("旧展示天气"),"display-only cache is explicit error, not manufactured snapshot");
+        seed("weather",w,w.weatherCity,weather,"旧展示天气");
+        JSONObject poisoned = HomeSidePanelData.parseWeather(weatherPayload().toString(), city, System.currentTimeMillis());
+        poisoned.put("temperature", "NaN");
+        seed("weather",w,w.weatherCity,poisoned,"旧展示天气");
+        check(!HomeSidePanelData.weatherState(w,false).containsKey("cached"), "invalid numeric cache never restores Ready data");
         seed("weather",w,w.weatherCity,weather,"旧展示天气");
         String retained=WexStore.INSTANCE.strings.get("home_side_panel_weather_cache_"+w.id);
         Bundle denied=HomeSidePanelData.weatherState(w,true);
@@ -309,6 +344,55 @@ public final class SidePanelChecks {
         call(session, "detach");
         check(!SidePanelComposeBridge.dispatch(root, "save_edit")
                 && !SidePanelComposeBridge.active.containsKey(root), "detach still disposes callbacks");
+    }
+
+    private static boolean touch(Object session, int action, float x, float y, long time) throws Exception {
+        android.view.MotionEvent event = android.view.MotionEvent.obtain(0, time, action, x, y, 0);
+        return (Boolean) call(session, "onTouch", new Class<?>[]{android.view.MotionEvent.class}, event);
+    }
+
+    private static void gestures() throws Exception {
+        resetLayout(List.of(make(HomeSidePanelLayout.CardType.DATE_TIME, "a"),
+                make(HomeSidePanelLayout.CardType.WEATHER, "b"), make(HomeSidePanelLayout.CardType.WALLET, "c")));
+        Object session = session(new com.tencent.mm.ui.LauncherUI());open(session);
+        View root = (View) get(session, "compose");
+        check(!SidePanelComposeBridge.lastCallbacks.actions.containsKey("move_card:a:2"), "display has no reorder mutation");
+        invoke("enter_edit");
+        check("edit_home".equals(SidePanelComposeBridge.lastSnapshot.values.getString("editorRoute")), "long-press entry selects editor home");
+        invoke("move_card:a:2");
+        check(card(SidePanelComposeBridge.lastSnapshot, 2).getString("id").equals("a"), "drop changes draft order");
+        check(HomeSidePanelFeature.loadLayout().get(0).id.equals("a"), "drop does not persist until save");
+        invoke("discard_edit");
+        check(card(SidePanelComposeBridge.lastSnapshot, 0).getString("id").equals("a"), "discard restores original order");
+        invoke("enter_edit");invoke("move_card:c:0");invoke("save_edit");
+        check(HomeSidePanelFeature.loadLayout().get(0).id.equals("c") && get(session, "compose") == root, "save persists stable IDs without replacing root");
+        invoke("enter_edit");
+        call(session, "moveEditorCard", new Class<?>[]{String.class, int.class}, "missing", 0);
+        call(session, "moveEditorCard", new Class<?>[]{String.class, int.class}, "c", -1);
+        check(card(SidePanelComposeBridge.lastSnapshot, 0).getString("id").equals("c"), "stale card and invalid destination ignored");
+
+        touch(session, 0, 200, 300, 0);invoke("gesture_start");
+        check(!touch(session, 2, 50, 305, 800) && (Float)get(session, "progress") == 1f, "long-held card owns horizontal movement");
+        touch(session, 1, 50, 305, 820);invoke("gesture_end");
+        check(!(Boolean)get(session, "composeGesture"), "release clears gesture ownership");
+        touch(session, 0, 200, 300, 1000);
+        check(!touch(session, 2, 195, 200, 1100), "vertical movement remains list scrolling");
+        touch(session, 1, 195, 200, 1200);
+        float width = (Integer)get(session, "drawerWidth");
+        touch(session, 0, 220, 300, 2000);
+        check(touch(session, 2, 220 - width * .30f, 302, 3000), "left swipe captured");
+        touch(session, 1, 220 - width * .30f, 302, 3200);
+        check((Float)get(session, "progress") == 0f && get(session, "editorDraft") == null, "30 percent swipe closes drawer and discards draft");
+        open(session);touch(session, 0, 220, 300, 4000);touch(session, 2, 220-width*.10f, 300, 5000);
+        touch(session, 1, 220-width*.10f, 300, 5200);
+        check((Float)get(session, "progress") == 1f, "short slow swipe snaps open");
+        touch(session, 0, 220, 300, 6000);touch(session, 2, 180, 300, 6040);touch(session, 1, 180, 300, 6050);
+        check((Float)get(session, "progress") == 0f, "short deliberate left fling closes");
+        open(session);touch(session, 0, 220, 300, 7000);touch(session, 2, 100, 300, 7100);touch(session, 3, 100, 300, 7110);
+        check((Float)get(session, "progress") == 1f, "cancelled swipe restores starting state");
+        invoke("gesture_start");call(session, "resumed", new Class<?>[]{boolean.class}, false);
+        check(!(Boolean)get(session, "composeGesture"), "pause releases Compose ownership");
+        call(session, "detach");
     }
 
     private static void wallet() throws Throwable {
@@ -617,6 +701,7 @@ public final class SidePanelChecks {
             case "host":host();break;
             case "editor":editor();break;
             case "editor-lifecycle":editorLifecycle();break;
+            case "gestures":gestures();break;
             case "wallet":wallet();break;
             case "toolbar":toolbar();break;
             case "resume":resume();break;

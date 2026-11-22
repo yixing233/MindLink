@@ -135,14 +135,18 @@ def main():
     record = {"commands": commands, "results": results, "ui_build": str(Path(args.ui_build).resolve()),
               "claim": "JVM boundary checks using real pinned Compose/Lifecycle; only Android and JSON platform fixtures; no rendering/device validation",
               "source_inputs": {str(path): hashlib.sha256(path.read_bytes()).hexdigest()
-                                for path in [Path(__file__), state, payloads, layout, project / "tests/SidePanelBoundaryChecks.kt", project / "tests/HomeSidePanelLayoutChecks.java"]}}
+                                for path in [Path(__file__), state, payloads, layout,
+                                             project / "src/main/java/dev/mindlink/sidepanel/vendor/wekit/SidePanelCardReorder.kt",
+                                             project / "tests/SidePanelBoundaryChecks.kt", project / "tests/HomeSidePanelLayoutChecks.java"]}}
     try:
         run("fixture-compile", [str(Path(args.jdk) / "bin/javac.exe"), "-encoding", "UTF-8", "-d", str(classes), *map(str, fixture.rglob("*.java"))])
         run("layout-compile", [str(Path(args.jdk) / "bin/javac.exe"), "-encoding", "UTF-8", "-cp", str(classes), "-d", str(classes), str(layout), str(project / "tests/HomeSidePanelLayoutChecks.java")])
         run("layout-checks", [str(Path(args.jdk) / "bin/java.exe"), "-cp", str(classes), "wex.ui.core.feature.HomeSidePanelLayoutChecks"])
         run("state-real-runtime-compile", [str(Path(args.jdk) / "bin/java.exe"), "-cp", ";".join(inputs["compiler_classpath"]),
             "org.jetbrains.kotlin.cli.jvm.K2JVMCompiler", "-no-stdlib", "-no-reflect", "-jvm-target", "17", "-classpath", ";".join(classpath), "-d", str(classes),
-            str(state), str(payloads), str(project / "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelHitokoto.kt"), str(project / "tests/SidePanelBoundaryChecks.kt")])
+            str(state), str(payloads), str(project / "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelHitokoto.kt"),
+            str(project / "src/main/java/dev/mindlink/sidepanel/vendor/wekit/SidePanelCardReorder.kt"),
+            str(project / "src/main/java/dev/mindlink/compose/SettingsSpec.kt"), str(project / "tests/SidePanelBoundaryChecks.kt")])
         run("real-runtime-boundary-checks", [str(Path(args.jdk) / "bin/java.exe"), "-cp", ";".join(classpath), "dev.mindlink.compose.tests.SidePanelBoundaryChecks"])
         record["passed"] = True
     finally:

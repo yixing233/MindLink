@@ -61,6 +61,8 @@ class HomeSidePanelState(snapshot: Bundle, images: Map<String, Bitmap>, callback
     private var callbacks = callbacks.toMap()
     private var active = false
     private var disposed = false
+    var gestureInProgress = false
+        private set
 
     fun update(snapshot: Bundle, images: Map<String, Bitmap>) {
         checkMain()
@@ -76,8 +78,12 @@ class HomeSidePanelState(snapshot: Bundle, images: Map<String, Bitmap>, callback
         if (!disposed) this.callbacks = callbacks.toMap()
     }
 
-    fun lifecycle(active: Boolean) { this.active = active && !disposed }
+    fun lifecycle(active: Boolean) {
+        if (!active) setGestureOwnership(false)
+        this.active = active && !disposed
+    }
     fun dispose() {
+        setGestureOwnership(false)
         disposed = true
         active = false
         callbacks = emptyMap()
@@ -98,6 +104,12 @@ class HomeSidePanelState(snapshot: Bundle, images: Map<String, Bitmap>, callback
 
     fun runtimeState(id: String) = uiState.runtimeStates[id]
     fun imageBitmap(id: String) = imageKeys[id]?.let { images[it] }?.takeUnless { it.isRecycled }
+    fun enterEditing() = call("enter_edit")
+    fun moveCard(id: String, destination: Int) = call("move_card:$id:$destination")
+    fun setGestureOwnership(owned: Boolean) {
+        gestureInProgress = owned && active && !disposed
+        call(if (gestureInProgress) "gesture_start" else "gesture_end")
+    }
     fun editCard(id: String) = call(if (callbacks.containsKey("card_settings:$id")) "card_settings:$id" else "enter_edit")
     fun removeCard(id: String) = call("delete:$id")
     fun openAddCard() = call("add_card")

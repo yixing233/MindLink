@@ -168,8 +168,8 @@ def static_checks():
     assert "return ChatToolbarViews.findInputContainer(root);" in toolbar
     assert 'flag("chat_toolbar_enabled", false, ChatToolbarFeature::refresh)' in model
     manifest = read("AndroidManifest.xml")
-    assert "android.intent.category.LAUNCHER" not in manifest, "桌面入口必须已移除"
-    assert "wex.ui.core.MainActivity" not in manifest, "桌面 Activity 必须已移除"
+    assert manifest.count("android.intent.category.LAUNCHER") == 1, "保留唯一桌面入口供宿主发现模块资源"
+    assert 'android:name="wex.ui.core.MainActivity"' in manifest, "桌面入口应使用现有 MainActivity"
     for kept in ['android:name="xposedmodule"', 'android:name="xposedscope"', 'android:name="xposedminversion"']:
         assert kept in manifest, kept
     dashboard = read("java_src/wex/ui/core/feature/ComposePayloadBridge.java")
@@ -178,7 +178,8 @@ def static_checks():
     assert "ComposePayloadBridge.build" in facade and "ModuleDashboardPage" not in facade
     payload_loader = read("java_src/wex/ui/core/feature/ComposePayloadLoader.java")
     assert "Application.getProcessName()" in dashboard and "Compose UI is desktop-process only" in dashboard
-    assert "ComposePayloadLoader.entry" in dashboard and '"compose-payload"' in dashboard
+    assert "ComposePayloadLoader.entry" in dashboard and '"sidepanel-compose-payload"' in dashboard
+    assert '"dev.mindlink.compose.DesktopUi"' in dashboard
     assert "InMemoryDexClassLoader" in payload_loader
     assert "Activity.class.getClassLoader()" in payload_loader and "getSystemClassLoader" not in payload_loader
     assert 'prefix + "/index.txt"' in payload_loader and "MessageDigest" in payload_loader
@@ -426,7 +427,9 @@ def theme_checks():
     for token in ["WexStore", "SettingsChanges", "setOnClickListener", "setOnSeekBarChangeListener"]:
         assert token not in theme, token
     # 卡片行由 Material3 组件渲染：开关用 Switch、滑杆用 Slider，不再手绘主题色。
-    for token in ["Switch(checked = checked", "Slider(", "Setting.Flag(", "Setting.Range(", "Setting.Photo("]:
+    components = read("ui-compose/sidepanel/src/main/java/dev/mindlink/ui/MindLinkComponents.kt")
+    assert "MindLinkSwitchRow(" in screen and "Switch(checked = checked" in components
+    for token in ["Slider(", "Setting.Flag(", "Setting.Range(", "Setting.Photo("]:
         assert token in screen or token in spec, token
     # 全屏壁纸（四页蒙层）的开关/换图/不透明度必须仍在面板里可调。
     for key in ["tab_bg_enabled", "tab_bg_global", "tab_bg_alpha"]:
@@ -561,6 +564,7 @@ def runtime_checks(jdk):
         menu_sources = sorted((ROOT / "scripts/tests/menu").rglob("*.java"))
         run([jdk / "bin/javac.exe", "-encoding", "UTF-8", "-d", menu_out,
              ROOT / "java_src/wex/ui/core/feature/PlusMenuExtra.java",
+             ROOT / "shared-ui/src/main/java/dev/mindlink/ui/MindLinkColors.java",
              ROOT / "java_src/wex/ui/core/feature/SettingsTheme.java", *menu_sources])
         run([jdk / "bin/java.exe", "-cp", menu_out, "wex.ui.core.feature.PlusMenuChecks"])
         run([jdk / "bin/java.exe", "-cp", menu_out, "wex.ui.core.feature.SettingsThemeChecks"])

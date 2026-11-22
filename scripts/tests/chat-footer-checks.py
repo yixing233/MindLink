@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 FEATURE = ROOT / "java_src/wex/ui/core/feature"
 
 SOURCES = {
-"wex/ui/core/feature/ChatEntrySupport.java": "package wex.ui.core.feature;public final class ChatEntrySupport {public static void fromFooter(android.view.View footer){} public static void releaseFooter(android.view.View footer){}}",
+"wex/ui/core/feature/ChatEntrySupport.java": "package wex.ui.core.feature;public final class ChatEntrySupport {public static void fromFooter(android.view.View footer){} public static void releaseFooter(android.view.View footer){} public static android.view.View headerFallback(android.view.View layout,android.app.Activity activity,android.view.View original){return original;}}",
 "android/content/Context.java": r'''package android.content;
 public class Context { private final android.content.res.Resources resources=new android.content.res.Resources(); public android.content.res.Resources getResources(){return resources;} }
 ''',

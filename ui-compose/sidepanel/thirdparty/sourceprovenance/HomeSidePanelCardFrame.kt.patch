@@ -1,6 +1,6 @@
---- WeKit/app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelCardFrame.kt
+--- app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelCardFrame.kt
 +++ src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelCardFrame.kt
-@@ -1,172 +1,178 @@
+@@ -1,172 +1,179 @@
 -package dev.ujhhgtg.wekit.features.items.beautify.home_screen_panel
 -
 -import androidx.annotation.StringRes
@@ -220,6 +220,7 @@
 +import com.composables.icons.materialsymbols.outlined.Close
 +import com.composables.icons.materialsymbols.outlined.Edit
 +import dev.mindlink.sidepanel.R
++import dev.mindlink.ui.MindLinkCard
 +
 +@Composable
 +fun HomeSidePanelCardFrame(
@@ -238,7 +239,7 @@
 +) {
 +    key(cardId) {
 +        Box(modifier = modifier) {
-+            Card(
++            MindLinkCard(
 +                modifier = cardModifier,
 +                shape = shape,
 +                colors = colors,

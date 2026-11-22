@@ -43,8 +43,8 @@ fun HomeSidePanelContent(state: HomeSidePanelUiState, panelState: HomeSidePanelS
             }
         } else {
             when (state.route) {
-                HomeSidePanelRoute.Home -> HomeSidePanelHome(state = state, panelState = panelState, listState = listState)
-                HomeSidePanelRoute.EditHome -> HomeSidePanelHome(state = state, panelState = panelState, listState = listState)
+                HomeSidePanelRoute.Home, HomeSidePanelRoute.EditHome ->
+                    HomeSidePanelHome(state = state, panelState = panelState, listState = listState)
                 HomeSidePanelRoute.AddCard -> HomeSidePanelAddCardPage(panelState = panelState)
                 is HomeSidePanelRoute.CardSettings -> HomeSidePanelCardSettingsPage(
                     state = state,
