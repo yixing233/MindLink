@@ -211,7 +211,7 @@ public final class SettingsTheme {
             }
         } catch (Throwable t) {
             try {
-                de.robv.android.xposed.XposedBridge.log("WEX: 设置弹窗主题: " + t.getClass().getSimpleName());
+                dev.mindlink.xposed.XposedBridge.log("WEX: 设置弹窗主题: " + t.getClass().getSimpleName());
             } catch (Throwable ignored) {
             }
         }

@@ -102,6 +102,14 @@ object SettingsUi {
         (view as SettingsView).owner.resumed(resumed)
     }
 
+    /** System back inside the panel: pops one detail page; false at the overview so the host closes. */
+    @JvmStatic
+    fun back(view: View): Boolean {
+        mainThread()
+        val panel = view as SettingsView
+        return panel.owner.state.back()
+    }
+
     private class SettingsView(
         context: Context,
         val owner: SettingsOwner,

@@ -12,7 +12,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
 import java.util.WeakHashMap;
 
-import de.robv.android.xposed.XposedBridge;
+import dev.mindlink.xposed.XposedBridge;
 
 /**
  * Chat setup that must not depend on which entry opened the activity.

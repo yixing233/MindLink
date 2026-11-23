@@ -27,7 +27,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import de.robv.android.xposed.XposedBridge;
+import dev.mindlink.xposed.XposedBridge;
 import wex.ui.core.WexStore;
 
 /** Real Java feature checks, using synthetic data only; no Compose visual or native DEX claim. */

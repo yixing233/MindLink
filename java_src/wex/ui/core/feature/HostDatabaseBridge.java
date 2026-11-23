@@ -14,9 +14,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import dev.mindlink.xposed.XC_MethodHook;
+import dev.mindlink.xposed.XposedBridge;
+import dev.mindlink.xposed.callbacks.XC_LoadPackage;
 
 /** Captures WeChat's initialized database wrapper and exposes read-only queries. */
 public final class HostDatabaseBridge {

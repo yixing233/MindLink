@@ -17,11 +17,11 @@
         "",
         "<init>",
         "()V",
-        "Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;",
+        "Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;",
         "lpparam",
         "Lj3/x;",
         "init",
-        "(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V",
+        "(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V",
         "",
         "isEnabled",
         "()Z",
@@ -310,10 +310,10 @@
     return p0
 .end method
 
-.method public static final synthetic access$registerFrost2(Lwex/ui/core/feature/BottomBarComposeFeature;Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+.method public static final synthetic access$registerFrost2(Lwex/ui/core/feature/BottomBarComposeFeature;Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
     .locals 0
 
-    invoke-direct {p0, p1}, Lwex/ui/core/feature/BottomBarComposeFeature;->registerFrost2(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+    invoke-direct {p0, p1}, Lwex/ui/core/feature/BottomBarComposeFeature;->registerFrost2(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
 
     return-void
 .end method
@@ -2458,7 +2458,7 @@
     :try_start_1
     const-string v0, "f"
 
-    invoke-static {p0, v0, v1}, Lde/robv/android/xposed/XposedHelpers;->setBooleanField(Ljava/lang/Object;Ljava/lang/String;Z)V
+    invoke-static {p0, v0, v1}, Ldev/mindlink/xposed/XposedHelpers;->setBooleanField(Ljava/lang/Object;Ljava/lang/String;Z)V
     :try_end_1
     .catchall {:try_start_1 .. :try_end_1} :catchall_0
 
@@ -2563,7 +2563,7 @@
 
     move-result-object p0
 
-    invoke-static {p0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
+    invoke-static {p0}, Ldev/mindlink/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
     :try_start_0
     sget-object p0, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
@@ -2627,7 +2627,7 @@
     return p2
 .end method
 
-.method private final registerFrost2(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+.method private final registerFrost2(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
     .locals 7
 
     sget-object p1, Ljava/lang/Boolean;->TYPE:Ljava/lang/Class;
@@ -2668,7 +2668,7 @@
 
     move-result-object v4
 
-    invoke-static {v2, v3, v4}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v2, v3, v4}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string v3, "\u60ac\u6d6e\u5e95\u680f: \u6bdb\u73bb\u7483\u4e3b\u538b\u5236\u5df2\u6ce8\u518c"
 
@@ -2714,7 +2714,7 @@
 
     move-result-object v4
 
-    invoke-static {v2, v3, v4}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v2, v3, v4}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
     :try_end_3
     .catchall {:try_start_3 .. :try_end_3} :catchall_1
 
@@ -2726,7 +2726,7 @@
 
     move-result-object v4
 
-    invoke-static {v2, v3, v4}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v2, v3, v4}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
     :try_end_4
     .catchall {:try_start_4 .. :try_end_4} :catchall_2
 
@@ -2738,7 +2738,7 @@
 
     move-result-object v1
 
-    invoke-static {v2, v3, v1}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v2, v3, v1}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
     :try_end_5
     .catchall {:try_start_5 .. :try_end_5} :catchall_3
 
@@ -2759,7 +2759,7 @@
 
     move-result-object v4
 
-    invoke-static {v2, v3, v4}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v2, v3, v4}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
     :try_end_7
     .catchall {:try_start_7 .. :try_end_7} :catchall_4
 
@@ -2773,7 +2773,7 @@
 
     move-result-object p1
 
-    invoke-static {v2, v3, p1}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v2, v3, p1}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
     :try_end_8
     .catchall {:try_start_8 .. :try_end_8} :catchall_5
 
@@ -3424,7 +3424,7 @@
 
 
 # virtual methods
-.method public final init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+.method public final init(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
     .locals 11
 
     const-class v0, Landroid/graphics/Canvas;
@@ -3470,37 +3470,37 @@
     .catchall {:try_start_0 .. :try_end_0} :catchall_4
 
     :try_start_1
-    iget-object v9, p1, Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->classLoader:Ljava/lang/ClassLoader;
+    iget-object v9, p1, Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->classLoader:Ljava/lang/ClassLoader;
 
     filled-new-array {v4, v8}, [Ljava/lang/Object;
 
     move-result-object v10
 
-    invoke-static {v5, v9, v10}, Lde/robv/android/xposed/XposedHelpers;->findAndHookConstructor(Ljava/lang/String;Ljava/lang/ClassLoader;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v5, v9, v10}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookConstructor(Ljava/lang/String;Ljava/lang/ClassLoader;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
     :try_end_1
     .catchall {:try_start_1 .. :try_end_1} :catchall_0
 
     :catchall_0
     :try_start_2
-    iget-object v9, p1, Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->classLoader:Ljava/lang/ClassLoader;
+    iget-object v9, p1, Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->classLoader:Ljava/lang/ClassLoader;
 
     filled-new-array {v4, v3, v8}, [Ljava/lang/Object;
 
     move-result-object v10
 
-    invoke-static {v5, v9, v10}, Lde/robv/android/xposed/XposedHelpers;->findAndHookConstructor(Ljava/lang/String;Ljava/lang/ClassLoader;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v5, v9, v10}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookConstructor(Ljava/lang/String;Ljava/lang/ClassLoader;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
     :try_end_2
     .catchall {:try_start_2 .. :try_end_2} :catchall_1
 
     :catchall_1
     :try_start_3
-    iget-object v9, p1, Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->classLoader:Ljava/lang/ClassLoader;
+    iget-object v9, p1, Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->classLoader:Ljava/lang/ClassLoader;
 
     filled-new-array {v4, v3, v2, v8}, [Ljava/lang/Object;
 
     move-result-object v3
 
-    invoke-static {v5, v9, v3}, Lde/robv/android/xposed/XposedHelpers;->findAndHookConstructor(Ljava/lang/String;Ljava/lang/ClassLoader;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v5, v9, v3}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookConstructor(Ljava/lang/String;Ljava/lang/ClassLoader;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
     :try_end_3
     .catchall {:try_start_3 .. :try_end_3} :catchall_2
 
@@ -3520,7 +3520,7 @@
 
     move-result-object v3
 
-    invoke-static {v6, v1, v3}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v6, v1, v3}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string v3, "\u60ac\u6d6e\u5e95\u680f: \u6302\u8f7d\u70b9\u5df2\u6ce8\u518c"
 
@@ -3536,7 +3536,7 @@
 
     move-result-object v3
 
-    invoke-static {v6, v1, v3}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v6, v1, v3}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string v1, "\u60ac\u6d6e\u5e95\u680f: \u9875\u9762\u5bb9\u5668\u62c9\u6ee1\u5df2\u6ce8\u518c"
 
@@ -3554,7 +3554,7 @@
 
     move-result-object v2
 
-    invoke-static {v6, v1, v2}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v6, v1, v2}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string v1, "\u60ac\u6d6e\u5e95\u680f: \u6301\u7eed\u538b\u5236\u5df2\u6ce8\u518c"
 
@@ -3565,7 +3565,7 @@
     :try_start_5
     const-string v1, "com.tencent.mm.ui.TabIconView"
 
-    iget-object v2, p1, Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->classLoader:Ljava/lang/ClassLoader;
+    iget-object v2, p1, Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->classLoader:Ljava/lang/ClassLoader;
 
     const-string v3, "onDraw"
 
@@ -3579,7 +3579,7 @@
 
     move-result-object v4
 
-    invoke-static {v1, v2, v3, v4}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v1, v2, v3, v4}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string v1, "\u60ac\u6d6e\u5e95\u680f: \u56fe\u6807\u81ea\u7ed8\u6b7b\u52fe\u5df2\u6ce8\u518c"
 
@@ -3600,7 +3600,7 @@
 
     move-result-object v0
 
-    invoke-static {v6, v1, v0}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v6, v1, v0}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string v0, "\u60ac\u6d6e\u5e95\u680f: \u56fe\u6807\u7ed8\u5236\u4e3b\u94a9\u5df2\u6ce8\u518c"
 
@@ -3660,13 +3660,13 @@
 
     const/4 v3, 0x0
 
-    invoke-direct {v2, p1, v3}, Lx4/k;-><init>(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;I)V
+    invoke-direct {v2, p1, v3}, Lx4/k;-><init>(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;I)V
 
     filled-new-array {v2}, [Ljava/lang/Object;
 
     move-result-object p1
 
-    invoke-static {v0, v1, p1}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v0, v1, p1}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string p1, "\u60ac\u6d6e\u5e95\u680f: \u6bdb\u73bb\u7483\u538b\u5236\u5165\u53e3\u5df2\u6ce8\u518c"
 

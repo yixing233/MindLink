@@ -17,6 +17,13 @@ final class HomeSidePanelLayout {
     static final int IMAGE_MIN_HEIGHT_DP = 80;
     static final int IMAGE_MAX_HEIGHT_DP = 800;
     static final int IMAGE_HEIGHT_STEP_DP = 8;
+    /** Wire names shared with the Compose card (HomeSidePanelImageScaleMode, lower-case). */
+    static final String[] IMAGE_SCALE_MODES = {"crop", "fit", "fill_bounds", "auto_ratio"};
+
+    static boolean isImageScaleMode(String raw) {
+        for (String mode : IMAGE_SCALE_MODES) if (mode.equals(raw)) return true;
+        return false;
+    }
 
     enum CardType {
         DATE_TIME("date_time"),
@@ -75,6 +82,7 @@ final class HomeSidePanelLayout {
         // IMAGE
         String imageAssetId;
         Integer imageHeightDp = 240;
+        String imageScaleMode = "crop";
         // ACTIONS
         List<Action> actions = new ArrayList<Action>();
     }
@@ -152,6 +160,7 @@ final class HomeSidePanelLayout {
                     case IMAGE:
                         value.put("imageAssetId", card.imageAssetId == null ? JSONObject.NULL : card.imageAssetId);
                         value.put("heightDp", card.imageHeightDp == null ? 240 : card.imageHeightDp);
+                        value.put("scaleMode", card.imageScaleMode == null ? "crop" : card.imageScaleMode);
                         break;
                     case HORIZONTAL_ACTIONS:
                     case VERTICAL_ACTIONS:
@@ -190,6 +199,9 @@ final class HomeSidePanelLayout {
             card.hideWalletBalance = value.optBoolean("hideBalanceByDefault", false);
             card.imageAssetId = value.isNull("imageAssetId") ? null : value.optString("imageAssetId", null);
             card.imageHeightDp = value.has("heightDp") ? value.optInt("heightDp", 240) : 240;
+            // Layouts saved before scale modes existed have no key: they keep the old crop rendering.
+            String scaleMode = value.optString("scaleMode", "crop");
+            card.imageScaleMode = isImageScaleMode(scaleMode) ? scaleMode : "crop";
             JSONObject settings = value.optJSONObject("settings");
             if (settings != null) {
                 card.hitokotoCategories = settings.optString("categories", "");
@@ -219,6 +231,15 @@ final class HomeSidePanelLayout {
             validateStructure(cards);
             return decode(encodeValues(cards));
         } catch (Exception error) { throw new IllegalArgumentException("Unable to copy side-panel layout", error); }
+    }
+
+    /** Same persisted content: order, ids and every field. Drafts that would fail validation still compare. */
+    static boolean sameLayout(List<Card> a, List<Card> b) {
+        try {
+            return encodeValues(a).equals(encodeValues(b));
+        } catch (RuntimeException error) {
+            return false;
+        }
     }
 
     static void validate(List<Card> cards) throws IllegalArgumentException {
@@ -268,6 +289,9 @@ final class HomeSidePanelLayout {
                         && (height < IMAGE_MIN_HEIGHT_DP || height > IMAGE_MAX_HEIGHT_DP
                         || height % IMAGE_HEIGHT_STEP_DP != 0)) {
                     throw new IllegalArgumentException("Invalid image height " + height);
+                }
+                if (card.imageScaleMode != null && !isImageScaleMode(card.imageScaleMode)) {
+                    throw new IllegalArgumentException("Invalid image scale mode " + card.imageScaleMode);
                 }
             }
         }

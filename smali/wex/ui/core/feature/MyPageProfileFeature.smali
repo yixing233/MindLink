@@ -30,10 +30,10 @@
         "Lj3/x;",
         "applyProfileLayout",
         "(Landroid/view/View;Landroid/widget/RelativeLayout;)V",
-        "Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;",
+        "Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;",
         "lpparam",
         "init",
-        "(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V",
+        "(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V",
         "",
         "TAG",
         "Ljava/lang/String;",
@@ -136,7 +136,7 @@
 
 
 # virtual methods
-.method public final init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+.method public final init(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
     .locals 4
 
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
@@ -156,7 +156,7 @@
     return-void
 
     :cond_0
-    iget-object p0, p1, Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->packageName:Ljava/lang/String;
+    iget-object p0, p1, Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->packageName:Ljava/lang/String;
 
     new-instance v0, Ljava/lang/StringBuilder;
 
@@ -170,12 +170,12 @@
 
     move-result-object p0
 
-    invoke-static {p0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
+    invoke-static {p0}, Ldev/mindlink/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
     :try_start_0
     const-string p0, "com.tencent.mm.pluginsdk.ui.preference.AccountInfoPreference"
 
-    iget-object p1, p1, Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->classLoader:Ljava/lang/ClassLoader;
+    iget-object p1, p1, Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->classLoader:Ljava/lang/ClassLoader;
 
     const-string v0, "w"
 
@@ -191,11 +191,11 @@
 
     move-result-object v1
 
-    invoke-static {p0, p1, v0, v1}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {p0, p1, v0, v1}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string p0, "W\u0415\u0425: Hook\u6302\u8f7d\u6210\u529f"
 
-    invoke-static {p0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
+    invoke-static {p0}, Ldev/mindlink/xposed/XposedBridge;->log(Ljava/lang/String;)V
     :try_end_0
     .catchall {:try_start_0 .. :try_end_0} :catchall_0
 
@@ -220,7 +220,7 @@
 
     move-result-object p0
 
-    invoke-static {p0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
+    invoke-static {p0}, Ldev/mindlink/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
     return-void
 .end method

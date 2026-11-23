@@ -180,6 +180,10 @@ def main():
         dispatch = dispatch.replace("onEditCard = panelState::open" + name + "Settings", "onEditCard = panelState::editCard")
     dispatch = dispatch.replace("            imageFile = panelState.imageFile(card.id),", "            imageBitmap = panelState.imageBitmap(card.id),")
     dispatch = dispatch.replace("            onImageDimensionsChange = panelState::updateImageDimensions,", "            onImageDimensionsChange = { _, _, _ -> },")
+    dispatch = dispatch.replace(
+        "            onResizeGesture = panelState::setGestureOwnership,\n        )\n\n        is HorizontalActionsCardConfig",
+        "            onResizeGesture = panelState::setGestureOwnership,\n            onEditCard = panelState::editCard,\n        )\n\n        is HorizontalActionsCardConfig",
+    )
     for name in ["HorizontalActions", "VerticalActions"]:
         marker = "is " + ("Horizontal" if name.startswith("Horizontal") else "Vertical") + "ActionsCardConfig -> HomeSidePanel" + name + "Card("
         first = dispatch.index(marker)

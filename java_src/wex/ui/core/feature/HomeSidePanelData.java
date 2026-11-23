@@ -18,7 +18,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import de.robv.android.xposed.XposedBridge;
+import dev.mindlink.xposed.XposedBridge;
 import wex.ui.core.WexStore;
 
 /** Full WeKit data snapshots; existing endpoints, consent, per-card caches and TTLs are retained. */

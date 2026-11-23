@@ -4,7 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.SystemClock;
-import de.robv.android.xposed.XposedBridge;
+import dev.mindlink.xposed.XposedBridge;
 import java.util.Arrays;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;

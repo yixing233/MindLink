@@ -73,7 +73,7 @@ def main():
     assert manifest == old_manifest, "manifest/launcher permissions changed"
     assert new_classes["classes.dex"] == old_classes["classes.dex"], "primary definitions changed"
     assert not any("/tests/" in name or name.endswith("Checks;") for name in new_classes["classes2.dex"]), "test code packaged"
-    assert not any(name.startswith(("Landroid/", "Landroidx/", "Lde/robv/android/xposed/", "Lcom/tencent/mm/")) for name in new_classes["classes2.dex"]), "compile/runtime stub packaged"
+    assert not any(name.startswith(("Landroid/", "Landroidx/", "Lde/robv/android/xposed/", "Lio/github/libxposed/", "Lcom/tencent/mm/")) for name in new_classes["classes2.dex"]), "compile/runtime stub packaged"
     changed, raw_changed = [], []
     with zipfile.ZipFile(args.baseline) as before, zipfile.ZipFile(args.apk) as after:
         old_names = {name for name in before.namelist() if not h.signature_entry(name)}
@@ -88,7 +88,7 @@ def main():
                 raw_changed.append(name)
         assert changed == ["classes2.dex"] == raw_changed, "non-effect APK content or compressed payload changed"
         assert after.read("classes2.dex") == (args.generation / "feature/classes.dex").read_bytes(), "signed feature differs from checked mixture"
-        assert after.read("assets/xposed_init").strip() == b"wex.ui.core.xposed.HookEntry", "Xposed entry changed"
+        assert after.read("META-INF/xposed/java_init.list").strip() == b"dev.mindlink.xposed.ModuleEntry", "Xposed entry changed"
         assert not any(name.startswith("assets/sidepanel-compose-payload/") for name in after.namelist()), "deferred sidebar runtime was added"
         for source, archive in (("current", before), ("candidate", after)):
             dest = args.output / "inputs" / source

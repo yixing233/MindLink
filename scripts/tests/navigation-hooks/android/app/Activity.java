@@ -12,8 +12,8 @@ public class Activity extends android.content.Context {
     public boolean isFinishing() { return finishing; }
     public boolean isDestroyed() { return destroyed; }
     public void finish() { finishing = true; }
-    public void onResume() { de.robv.android.xposed.XposedBridge.baseLifecycle(this, "onResume", false); }
-    public void onPause() { de.robv.android.xposed.XposedBridge.baseLifecycle(this, "onPause", true); }
-    public void onDestroy() { de.robv.android.xposed.XposedBridge.baseLifecycle(this, "onDestroy", true); destroyed = true; }
+    public void onResume() { dev.mindlink.xposed.XposedBridge.baseLifecycle(this, "onResume", false); }
+    public void onPause() { dev.mindlink.xposed.XposedBridge.baseLifecycle(this, "onPause", true); }
+    public void onDestroy() { dev.mindlink.xposed.XposedBridge.baseLifecycle(this, "onDestroy", true); destroyed = true; }
     public void destroyForTest() { destroyed = true; }
 }

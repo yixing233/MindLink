@@ -19,6 +19,9 @@ sharedLibrary: false
 sparseResources: false
 unknownFiles:
   DebugProbesKt.bin: 8
+  META-INF/xposed/java_init.list: 8
+  META-INF/xposed/module.prop: 8
+  META-INF/xposed/scope.list: 8
 doNotCompress:
 - classes.dex
 - resources.arsc

@@ -15,10 +15,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import dev.mindlink.xposed.XC_MethodHook;
+import dev.mindlink.xposed.XposedBridge;
+import dev.mindlink.xposed.XposedHelpers;
+import dev.mindlink.xposed.callbacks.XC_LoadPackage;
 import wex.ui.core.WexStore;
 
 /** WeKit-inspired visual replacement; native pager count, items and logical indices remain untouched. */
@@ -33,6 +33,8 @@ public final class NavigationBarFeature {
     static final String KEY_HIDE_LABELS = "nav_bar_hide_labels";
     static final String KEY_NATIVE_ICONS = "nav_bar_use_wechat_icons";
     static final String KEY_BLUR = "nav_bar_blur_radius";
+    /** Glass tint opacity in percent, shared with the chat cards; blank keeps the per-material default. */
+    static final String KEY_OPACITY = "nav_bar_surface_opacity";
     static final String KEY_SCALE = "nav_bar_scale";
     static final String KEY_GRAVITY = "nav_bar_dynamic_gravity_highlight";
 
@@ -49,6 +51,7 @@ public final class NavigationBarFeature {
         final boolean hideLabels = flag(KEY_HIDE_LABELS, false);
         final boolean gravityHighlight = flag(KEY_GRAVITY, false);
         final int blur = BubbleSettings.readInt(KEY_BLUR, effect == 1 ? 25 : 8, 0, 40);
+        final int opacity = BubbleSettings.readInt(KEY_OPACITY, LiquidGlassLayer.AUTO_OPACITY, LiquidGlassLayer.AUTO_OPACITY, 100);
         final int scale = BubbleSettings.readInt(KEY_SCALE, 100, 50, 150);
     }
 

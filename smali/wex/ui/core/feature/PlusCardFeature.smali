@@ -45,11 +45,11 @@
         "Landroid/graphics/Bitmap;",
         "loadIcon",
         "(Ljava/lang/String;)Landroid/graphics/Bitmap;",
-        "Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;",
+        "Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;",
         "lpparam",
         "modPath",
         "init",
-        "(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V",
+        "(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V",
         "TAG",
         "Ljava/lang/String;",
         "KEY_ENABLED",
@@ -1145,7 +1145,7 @@
     .locals 6
 
     # --- Tabler 矢量图标：命中即用 ---
-    invoke-static {p1}, Lwex/ui/core/feature/TablerIcons;->has(Ljava/lang/String;)Z
+    invoke-static {p1}, Lwex/ui/core/feature/LucideIcons;->has(Ljava/lang/String;)Z
 
     move-result v0
 
@@ -1166,7 +1166,7 @@
     :cond_tabler_render
     const/high16 v1, 0x42140000    # 37.0f
 
-    invoke-static {p1, v1}, Lwex/ui/core/feature/TablerIcons;->bitmapDp(Ljava/lang/String;F)Landroid/graphics/Bitmap;
+    invoke-static {p1, v1}, Lwex/ui/core/feature/LucideIcons;->bitmapDp(Ljava/lang/String;F)Landroid/graphics/Bitmap;
 
     move-result-object v1
 
@@ -1749,7 +1749,7 @@
 
 
 # virtual methods
-.method public final init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V
+.method public final init(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V
     .locals 2
 
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
@@ -1777,7 +1777,7 @@
 
     move-result-object p2
 
-    invoke-static {p0, p1, p2}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {p0, p1, p2}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-class p0, Landroid/app/Activity;
 
@@ -1793,7 +1793,7 @@
 
     move-result-object p2
 
-    invoke-static {p0, p1, p2}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {p0, p1, p2}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
     :try_end_0
     .catchall {:try_start_0 .. :try_end_0} :catchall_0
 

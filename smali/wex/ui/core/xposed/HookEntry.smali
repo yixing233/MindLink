@@ -3,8 +3,8 @@
 .source "SourceFile"
 
 # interfaces
-.implements Lde/robv/android/xposed/IXposedHookLoadPackage;
-.implements Lde/robv/android/xposed/IXposedHookZygoteInit;
+.implements Ldev/mindlink/xposed/IXposedHookLoadPackage;
+.implements Ldev/mindlink/xposed/IXposedHookZygoteInit;
 
 
 # annotations
@@ -18,19 +18,19 @@
     }
     d2 = {
         "Lwex/ui/core/xposed/HookEntry;",
-        "Lde/robv/android/xposed/IXposedHookLoadPackage;",
-        "Lde/robv/android/xposed/IXposedHookZygoteInit;",
+        "Ldev/mindlink/xposed/IXposedHookLoadPackage;",
+        "Ldev/mindlink/xposed/IXposedHookZygoteInit;",
         "<init>",
         "()V",
-        "Lde/robv/android/xposed/IXposedHookZygoteInit$StartupParam;",
+        "Ldev/mindlink/xposed/IXposedHookZygoteInit$StartupParam;",
         "startupParam",
         "Lj3/x;",
         "initZygote",
-        "(Lde/robv/android/xposed/IXposedHookZygoteInit$StartupParam;)V",
-        "Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;",
+        "(Ldev/mindlink/xposed/IXposedHookZygoteInit$StartupParam;)V",
+        "Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;",
         "lpparam",
         "handleLoadPackage",
-        "(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V",
+        "(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V",
         "Companion",
         "z4/b",
         "app"
@@ -226,12 +226,12 @@
     return-void
 .end method
 
-.method public static final access$doInit(Lwex/ui/core/xposed/HookEntry;Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+.method public static final access$doInit(Lwex/ui/core/xposed/HookEntry;Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
     .locals 8
 
     invoke-virtual {p0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
-    iget-object v0, p1, Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->processName:Ljava/lang/String;
+    iget-object v0, p1, Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->processName:Ljava/lang/String;
 
     if-eqz v0, :cond_0
 
@@ -257,7 +257,7 @@
     :try_start_feature_bootstrap
     const/4 v0, 0x0
 
-    invoke-static {p1, v0}, Lwex/ui/core/feature/FeatureBootstrap;->init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Landroid/content/Context;)V
+    invoke-static {p1, v0}, Lwex/ui/core/feature/FeatureBootstrap;->init(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Landroid/content/Context;)V
     :try_end_feature_bootstrap
     .catchall {:try_start_feature_bootstrap .. :try_end_feature_bootstrap} :catch_feature_bootstrap
 
@@ -266,7 +266,7 @@
     :catch_feature_bootstrap
     move-exception v0
 
-    invoke-static {v0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/Throwable;)V
+    invoke-static {v0}, Ldev/mindlink/xposed/XposedBridge;->log(Ljava/lang/Throwable;)V
 
     :feature_bootstrap_done
     :try_start_0
@@ -298,7 +298,7 @@
     :try_start_2
     sget-object v0, Lwex/ui/core/feature/FrostGlassSuppressor;->INSTANCE:Lwex/ui/core/feature/FrostGlassSuppressor;
 
-    invoke-virtual {v0, p1}, Lwex/ui/core/feature/FrostGlassSuppressor;->init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+    invoke-virtual {v0, p1}, Lwex/ui/core/feature/FrostGlassSuppressor;->init(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
     :try_end_2
     .catchall {:try_start_2 .. :try_end_2} :catchall_1
 
@@ -341,7 +341,7 @@
 
     move-result-object v2
 
-    invoke-static {v0, v1, v2}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v0, v1, v2}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
     :try_end_3
     .catch Ljava/lang/Exception; {:try_start_3 .. :try_end_3} :catch_1
 
@@ -351,7 +351,7 @@
     :try_start_4
     const-string v1, "android.view.WindowManagerGlobal"
 
-    iget-object v2, p1, Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->classLoader:Ljava/lang/ClassLoader;
+    iget-object v2, p1, Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->classLoader:Ljava/lang/ClassLoader;
 
     const-string v3, "addView"
 
@@ -369,7 +369,7 @@
 
     move-result-object v4
 
-    invoke-static {v1, v2, v3, v4}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v1, v2, v3, v4}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
     :try_end_4
     .catchall {:try_start_4 .. :try_end_4} :catchall_2
 
@@ -410,15 +410,15 @@
 
     const-string p0, "showAsDropDown"
 
-    invoke-static {v0, p0, v1}, Lde/robv/android/xposed/XposedBridge;->hookAllMethods(Ljava/lang/Class;Ljava/lang/String;Lde/robv/android/xposed/XC_MethodHook;)Ljava/util/Set;
+    invoke-static {v0, p0, v1}, Ldev/mindlink/xposed/XposedBridge;->hookAllMethods(Ljava/lang/Class;Ljava/lang/String;Ldev/mindlink/xposed/XC_MethodHook;)Ljava/util/Set;
 
     const-string p0, "showAtLocation"
 
-    invoke-static {v0, p0, v1}, Lde/robv/android/xposed/XposedBridge;->hookAllMethods(Ljava/lang/Class;Ljava/lang/String;Lde/robv/android/xposed/XC_MethodHook;)Ljava/util/Set;
+    invoke-static {v0, p0, v1}, Ldev/mindlink/xposed/XposedBridge;->hookAllMethods(Ljava/lang/Class;Ljava/lang/String;Ldev/mindlink/xposed/XC_MethodHook;)Ljava/util/Set;
 
     const-string p0, "show"
 
-    invoke-static {v0, p0, v1}, Lde/robv/android/xposed/XposedBridge;->hookAllMethods(Ljava/lang/Class;Ljava/lang/String;Lde/robv/android/xposed/XC_MethodHook;)Ljava/util/Set;
+    invoke-static {v0, p0, v1}, Ldev/mindlink/xposed/XposedBridge;->hookAllMethods(Ljava/lang/Class;Ljava/lang/String;Ldev/mindlink/xposed/XC_MethodHook;)Ljava/util/Set;
     :try_end_5
     .catchall {:try_start_5 .. :try_end_5} :catchall_3
 
@@ -455,7 +455,7 @@
 
     sget-object v0, Lwex/ui/core/xposed/HookEntry;->e:Ljava/lang/String;
 
-    invoke-virtual {p0, p1, v0}, Lwex/ui/core/feature/HomeCardManager;->init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V
+    invoke-virtual {p0, p1, v0}, Lwex/ui/core/feature/HomeCardManager;->init(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V
     :try_end_6
     .catchall {:try_start_6 .. :try_end_6} :catchall_4
 
@@ -486,7 +486,7 @@
     :try_start_image_picker
     sget-object p0, Lwex/ui/core/feature/ImagePicker;->INSTANCE:Lwex/ui/core/feature/ImagePicker;
 
-    invoke-virtual {p0, p1}, Lwex/ui/core/feature/ImagePicker;->init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+    invoke-virtual {p0, p1}, Lwex/ui/core/feature/ImagePicker;->init(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
     :try_end_image_picker
     .catchall {:try_start_image_picker .. :try_end_image_picker} :catch_image_picker
 
@@ -505,7 +505,7 @@
 
     sget-object v0, Lwex/ui/core/xposed/HookEntry;->e:Ljava/lang/String;
 
-    invoke-virtual {p0, p1, v0}, Lwex/ui/core/feature/TopBarFeature;->init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V
+    invoke-virtual {p0, p1, v0}, Lwex/ui/core/feature/TopBarFeature;->init(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V
     :try_end_top_bar
     .catchall {:try_start_top_bar .. :try_end_top_bar} :catch_top_bar
 
@@ -522,7 +522,7 @@
     :try_start_7
     sget-object p0, Lwex/ui/core/feature/BubbleFeature;->INSTANCE:Lwex/ui/core/feature/BubbleFeature;
 
-    invoke-virtual {p0, p1}, Lwex/ui/core/feature/BubbleFeature;->init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+    invoke-virtual {p0, p1}, Lwex/ui/core/feature/BubbleFeature;->init(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
     :try_end_7
     .catchall {:try_start_7 .. :try_end_7} :catchall_5
 
@@ -553,7 +553,7 @@
     :try_start_8
     sget-object p0, Lwex/ui/core/feature/MyPageProfileFeature;->INSTANCE:Lwex/ui/core/feature/MyPageProfileFeature;
 
-    invoke-virtual {p0, p1}, Lwex/ui/core/feature/MyPageProfileFeature;->init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+    invoke-virtual {p0, p1}, Lwex/ui/core/feature/MyPageProfileFeature;->init(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
     :try_end_8
     .catchall {:try_start_8 .. :try_end_8} :catchall_6
 
@@ -586,7 +586,7 @@
 
     sget-object v0, Lwex/ui/core/xposed/HookEntry;->e:Ljava/lang/String;
 
-    invoke-virtual {p0, p1, v0}, Lwex/ui/core/feature/PlusCardFeature;->init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V
+    invoke-virtual {p0, p1, v0}, Lwex/ui/core/feature/PlusCardFeature;->init(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V
     :try_end_9
     .catchall {:try_start_9 .. :try_end_9} :catchall_7
 
@@ -627,7 +627,7 @@
     :try_start_tb
     sget-object p0, Lwex/ui/core/feature/ChatToolbarFeature;->INSTANCE:Lwex/ui/core/feature/ChatToolbarFeature;
 
-    invoke-virtual {p0, p1}, Lwex/ui/core/feature/ChatToolbarFeature;->init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+    invoke-virtual {p0, p1}, Lwex/ui/core/feature/ChatToolbarFeature;->init(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
     :try_end_tb
     .catchall {:try_start_tb .. :try_end_tb} :catchall_tb
 
@@ -658,7 +658,7 @@
     :try_start_c
     sget-object p0, Lwex/ui/core/feature/TopBarScanFeature;->INSTANCE:Lwex/ui/core/feature/TopBarScanFeature;
 
-    invoke-virtual {p0, p1}, Lwex/ui/core/feature/TopBarScanFeature;->init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+    invoke-virtual {p0, p1}, Lwex/ui/core/feature/TopBarScanFeature;->init(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
     :try_end_c
     .catchall {:try_start_c .. :try_end_c} :catchall_a
 
@@ -689,7 +689,7 @@
     :try_start_d
     sget-object p0, Lwex/ui/core/feature/TabBackgroundFeature;->INSTANCE:Lwex/ui/core/feature/TabBackgroundFeature;
 
-    invoke-virtual {p0, p1}, Lwex/ui/core/feature/TabBackgroundFeature;->init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+    invoke-virtual {p0, p1}, Lwex/ui/core/feature/TabBackgroundFeature;->init(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
     :try_end_d
     .catchall {:try_start_d .. :try_end_d} :catchall_b
 
@@ -720,7 +720,7 @@
     :try_start_e
     sget-object p0, Lwex/ui/core/feature/ConversationFilterFeature;->INSTANCE:Lwex/ui/core/feature/ConversationFilterFeature;
 
-    invoke-virtual {p0, p1}, Lwex/ui/core/feature/ConversationFilterFeature;->init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+    invoke-virtual {p0, p1}, Lwex/ui/core/feature/ConversationFilterFeature;->init(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
     :try_end_e
     .catchall {:try_start_e .. :try_end_e} :catchall_c
 
@@ -751,7 +751,7 @@
     :try_start_f
     sget-object p0, Lwex/ui/core/feature/DexKitAutoAdapt;->INSTANCE:Lwex/ui/core/feature/DexKitAutoAdapt;
 
-    invoke-virtual {p0, p1}, Lwex/ui/core/feature/DexKitAutoAdapt;->init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+    invoke-virtual {p0, p1}, Lwex/ui/core/feature/DexKitAutoAdapt;->init(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
     :try_end_f
     .catchall {:try_start_f .. :try_end_f} :catchall_d
 
@@ -2032,7 +2032,7 @@
 
     const-string v0, "PlusMenuExtra.sync failed"
 
-    invoke-static {v0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
+    invoke-static {v0}, Ldev/mindlink/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
     return-void
 .end method
@@ -2474,12 +2474,12 @@
     return-object p0
 .end method
 
-.method public handleLoadPackage(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+.method public handleLoadPackage(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
     .locals 4
 
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
-    iget-object v0, p1, Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->packageName:Ljava/lang/String;
+    iget-object v0, p1, Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->packageName:Ljava/lang/String;
 
     const-string v1, "com.tencent.mm"
 
@@ -2501,13 +2501,13 @@
 
     new-instance v3, Lz4/c;
 
-    invoke-direct {v3, p0, p1}, Lz4/c;-><init>(Lwex/ui/core/xposed/HookEntry;Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+    invoke-direct {v3, p0, p1}, Lz4/c;-><init>(Lwex/ui/core/xposed/HookEntry;Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
 
     filled-new-array {v2, v3}, [Ljava/lang/Object;
 
     move-result-object p0
 
-    invoke-static {v0, v1, p0}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v0, v1, p0}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
     :try_end_0
     .catchall {:try_start_0 .. :try_end_0} :catchall_0
 
@@ -2541,12 +2541,12 @@
     return-void
 .end method
 
-.method public initZygote(Lde/robv/android/xposed/IXposedHookZygoteInit$StartupParam;)V
+.method public initZygote(Ldev/mindlink/xposed/IXposedHookZygoteInit$StartupParam;)V
     .locals 0
 
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
-    iget-object p0, p1, Lde/robv/android/xposed/IXposedHookZygoteInit$StartupParam;->modulePath:Ljava/lang/String;
+    iget-object p0, p1, Ldev/mindlink/xposed/IXposedHookZygoteInit$StartupParam;->modulePath:Ljava/lang/String;
 
     sput-object p0, Lwex/ui/core/xposed/HookEntry;->e:Ljava/lang/String;
 

@@ -96,8 +96,8 @@ def main():
             return 1
     common = sorted((TESTS / "common").rglob("*.java")) + [ROOT / relative for relative in (
         "scripts/tests/database-capture/common/android/database/Cursor.java",
-        "scripts/tests/database-capture/common/de/robv/android/xposed/XC_MethodHook.java",
-        "scripts/tests/database-capture/common/de/robv/android/xposed/callbacks/XC_LoadPackage.java",
+        "scripts/tests/database-capture/common/dev/mindlink/xposed/XC_MethodHook.java",
+        "scripts/tests/database-capture/common/dev/mindlink/xposed/callbacks/XC_LoadPackage.java",
     )]
     from contextlib import nullcontext
     workspace = nullcontext(args.classes_dir) if args.classes_dir else tempfile.TemporaryDirectory(prefix="mindlink-profile-config-")

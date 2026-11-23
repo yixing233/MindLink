@@ -55,11 +55,13 @@ final class SettingsPanelModel {
         flag("home_side_panel_enabled", false);
         flag("top_profile_enabled", false);
         flag("top_search_bar", true);
+        flag(HomeTopBarCards.KEY_ENABLED, true, HomeTopBarCards::refresh);
+        flag(HomeTopBarCards.KEY_HIDE_TITLE, true, HomeTopBarCards::refresh);
+        flag(HomeTopBarCards.KEY_OVERLAY, true, HomeTopBarCards::refresh);
+        flag(HomeTopBarCards.KEY_PROGRESSIVE, true, HomeTopBarCards::refresh);
         text("top_title", "");
-        text("top_nickname", "");
-        text("top_status", "");
         text("top_search_hint", "");
-        choice("top_dot_color", "green");
+        // top_nickname / top_status / top_dot_color 已无功能读取，面板不再提供；已保存的值保持原样。
         image("top_avatar_path");
         flag("mark_all_read_enabled", false);
         actions.put("markAllRead", () -> MarkAllReadFeature.markAllRead(activity));
@@ -76,6 +78,17 @@ final class SettingsPanelModel {
             return String.valueOf(readInt("nav_bar_glass_mode", mode, 0, 2));
         });
         number("nav_bar_blur_radius", 8, 0, 40, SettingsPanelModel::refreshGlassSurfaces);
+        // 表面不透明度：留空 = 按材质默认（液态玻璃 40%、毛玻璃 65%），面板据此显示「默认」并可恢复。
+        values.putString(NavigationBarFeature.KEY_OPACITY, surfaceOpacity());
+        writers.put(NavigationBarFeature.KEY_OPACITY, requested -> {
+            String value = requested == null || requested.trim().isEmpty() ? ""
+                    : String.valueOf(clamp(requested, 0, 100));
+            boolean saved = SettingsChanges.saveString(NavigationBarFeature.KEY_OPACITY, value);
+            String actual = surfaceOpacity();
+            if (!saved && !actual.equals(value)) SettingsShell.toast(activity, "保存未确认，请重试");
+            refreshGlassSurfaces();
+            return actual;
+        });
         number("nav_bar_scale", 100, 50, 150, NavigationBarFeature::refresh);
         flag("nav_bar_use_wechat_icons", false, NavigationBarFeature::refresh);
         flag("nav_bar_hide_labels", false, NavigationBarFeature::refresh);
@@ -161,12 +174,6 @@ final class SettingsPanelModel {
         actions.put("copyDiagnostic", this::copyDiagnostic);
 
         // ---------- 动态列表 ----------
-        values.putString("panel_tab", String.valueOf(SettingsShell.currentTab));
-        writers.put("panel_tab", requested -> {
-            int tab = clamp(requested, 0, 2);
-            SettingsShell.currentTab = tab;
-            return String.valueOf(tab);
-        });
         readers.put("tools", ignored -> String.join(",", ChatToolbarFeature.toolNames()));
         readers.put("pending", ignored -> String.valueOf(SettingsChanges.hasPending()));
         readers.put("version", ignored -> version());
@@ -191,6 +198,16 @@ final class SettingsPanelModel {
         NavigationBarFeature.refresh();
         FloatingChatHeaderFeature.refresh();
         FloatingChatFooterFeature.refresh();
+        // The conversation group tabs card shares this material; a host refresh re-dresses it.
+        ConversationGroupingFeature.refreshHostLabels();
+        // So do the home top bar cards.
+        HomeTopBarCards.refresh();
+    }
+
+    /** Stored opacity percent, or "" when the material default applies. */
+    private static String surfaceOpacity() {
+        int value = BubbleSettings.readInt(NavigationBarFeature.KEY_OPACITY, -1, -1, 100);
+        return value < 0 ? "" : String.valueOf(value);
     }
 
     private void flag(String key, boolean def) { flag(key, def, null); }

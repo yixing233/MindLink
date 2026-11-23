@@ -2,24 +2,14 @@
 // Copied and modified from WeKit, Ujhhgtg and upstream contributors.
 // Source: app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelActions.kt
 // MindLink adaptations (2026-11-14): original enum-label-MaterialSymbols mapping only; all native action/payment/service executor code remains in Java callbacks
-// Original component geometry/typography/icons are retained; host hooks are not copied.
+// 2026-11-22: icons switched to Lucide (dev.mindlink.ui.LucideIcons, ISC); see THIRD-PARTY-NOTICES.md.
+// Original component geometry/typography are retained (icons are now Lucide); host hooks are not copied.
 // See thirdparty/sourceprovenance/wekit-sidepanel.json and matching .patch files.
 package dev.mindlink.sidepanel.vendor.wekit
 
+import dev.mindlink.ui.LucideIcons
 import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.composables.icons.materialsymbols.MaterialSymbols
-import com.composables.icons.materialsymbols.outlinedfilled.Camera
-import com.composables.icons.materialsymbols.outlinedfilled.Cancel
-import com.composables.icons.materialsymbols.outlinedfilled.Extension
-import com.composables.icons.materialsymbols.outlinedfilled.Favorite
-import com.composables.icons.materialsymbols.outlinedfilled.Mark_chat_read
-import com.composables.icons.materialsymbols.outlinedfilled.Movie
-import com.composables.icons.materialsymbols.outlinedfilled.Person_add
-import com.composables.icons.materialsymbols.outlinedfilled.Qr_code_scanner
-import com.composables.icons.materialsymbols.outlinedfilled.Settings
-import com.composables.icons.materialsymbols.outlinedfilled.Update
-import com.composables.icons.materialsymbols.outlinedfilled.Wallet
 import dev.mindlink.sidepanel.R
 data class HomeSidePanelActionSpec(
     val kind: HomeSidePanelActionKind,
@@ -31,66 +21,66 @@ fun homeSidePanelActionSpec(kind: HomeSidePanelActionKind): HomeSidePanelActionS
     HomeSidePanelActionKind.ADD_FRIEND -> HomeSidePanelActionSpec(
         kind,
         R.string.wekit_sp_home_side_panel_action_add_friend,
-        MaterialSymbols.OutlinedFilled.Person_add,
+        LucideIcons.UserPlus,
     )
 
     HomeSidePanelActionKind.SCAN -> HomeSidePanelActionSpec(
         kind,
         R.string.wekit_sp_fab_default_scan,
-        MaterialSymbols.OutlinedFilled.Qr_code_scanner,
+        LucideIcons.ScanQrCode,
     )
 
     HomeSidePanelActionKind.MOMENTS -> HomeSidePanelActionSpec(
         kind,
         R.string.wekit_sp_fab_default_moments,
-        MaterialSymbols.OutlinedFilled.Camera,
+        LucideIcons.Aperture,
     )
 
     HomeSidePanelActionKind.WALLET -> HomeSidePanelActionSpec(
         kind,
         R.string.wekit_sp_fab_default_wallet,
-        MaterialSymbols.OutlinedFilled.Wallet,
+        LucideIcons.Wallet,
     )
 
     HomeSidePanelActionKind.CHANNELS -> HomeSidePanelActionSpec(
         kind,
         R.string.wekit_sp_fab_default_channels,
-        MaterialSymbols.OutlinedFilled.Movie,
+        LucideIcons.Clapperboard,
     )
 
     HomeSidePanelActionKind.WECHAT_SETTINGS -> HomeSidePanelActionSpec(
         kind,
         R.string.wekit_sp_fab_default_settings,
-        MaterialSymbols.OutlinedFilled.Settings,
+        LucideIcons.Settings,
     )
 
     HomeSidePanelActionKind.FAVORITES -> HomeSidePanelActionSpec(
         kind,
         R.string.wekit_sp_fab_default_favorites,
-        MaterialSymbols.OutlinedFilled.Favorite,
+        LucideIcons.Star,
     )
 
     HomeSidePanelActionKind.WEKIT_SETTINGS -> HomeSidePanelActionSpec(
         kind,
         R.string.wekit_sp_fab_default_module_settings,
-        MaterialSymbols.OutlinedFilled.Extension,
+        LucideIcons.Puzzle,
     )
 
     HomeSidePanelActionKind.RESTART_WECHAT -> HomeSidePanelActionSpec(
         kind,
         R.string.wekit_sp_fab_default_restart_wechat,
-        MaterialSymbols.OutlinedFilled.Update,
+        LucideIcons.RotateCw,
     )
 
     HomeSidePanelActionKind.FORCE_STOP_WECHAT -> HomeSidePanelActionSpec(
         kind,
         R.string.wekit_sp_fab_default_force_stop,
-        MaterialSymbols.OutlinedFilled.Cancel,
+        LucideIcons.CircleX,
     )
 
     HomeSidePanelActionKind.MARK_ALL_READ -> HomeSidePanelActionSpec(
         kind,
         R.string.wekit_sp_fab_default_mark_all_read,
-        MaterialSymbols.OutlinedFilled.Mark_chat_read,
+        LucideIcons.MessageCircleCheck,
     )
 }

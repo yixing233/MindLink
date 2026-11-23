@@ -59,7 +59,7 @@ find java_stub -name '*.java' > "$BUILD/stub-files.txt"
   -d "$BUILD/stub" @"$BUILD/stub-files.txt"
 
 log '[2/8] 编译 java_src'
-find java_src shared-ui/src/main/java -name '*.java' > "$BUILD/src-files.txt"
+find java_src xposed_compat shared-ui/src/main/java -name '*.java' > "$BUILD/src-files.txt"
 "$JAVAC" -nowarn -source 11 -target 11 -classpath "$ANDROID_JAR:$BUILD/stub" -encoding UTF-8 \
   -d "$BUILD/srcout" @"$BUILD/src-files.txt"
 

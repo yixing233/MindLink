@@ -1,7 +1,7 @@
 package wex.ui.core.feature;
 
 import android.content.Context;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import dev.mindlink.xposed.callbacks.XC_LoadPackage;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -11,7 +11,7 @@ import java.util.Map;
 final class BootstrapDoubles {
     static final List<String> ORDER = List.of("resolver", "host-profile", "profile", "system-bars", "database",
             "text-status", "conversation-storage", "conversation-list", "background",
-            "navigation", "side-panel", "header", "footer");
+            "navigation", "side-panel", "header", "footer", "home-top-cards");
     static final List<String> calls = new ArrayList<>();
     static final Map<String, Throwable> failures = new LinkedHashMap<>();
     static final Map<String, Object[]> arguments = new LinkedHashMap<>();
@@ -69,4 +69,7 @@ final class FloatingChatHeaderFeature {
 }
 final class FloatingChatFooterFeature {
     public static void init(ClassLoader loader) throws Throwable { BootstrapDoubles.call("footer", loader); }
+}
+final class HomeTopBarCards {
+    static void init() { BootstrapDoubles.call("home-top-cards"); }
 }

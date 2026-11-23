@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import dev.mindlink.xposed.XposedBridge;
+import dev.mindlink.xposed.callbacks.XC_LoadPackage;
 import wex.ui.core.WexStore;
 
 /** Resolves obfuscated host targets with the DexKit runtime already bundled in the APK. */

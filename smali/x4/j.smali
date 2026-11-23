@@ -11,7 +11,7 @@
 
 .field public synthetic d:Landroid/app/Activity;
 
-.field public synthetic e:Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;
+.field public synthetic e:Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;
 
 
 # direct methods
@@ -36,26 +36,26 @@
 
     iget-object v0, p0, Lx4/j;->d:Landroid/app/Activity;
 
-    iget-object p0, p0, Lx4/j;->e:Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;
+    iget-object p0, p0, Lx4/j;->e:Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;
 
     sget-object v1, Lwex/ui/core/feature/FrostGlassSuppressor;->INSTANCE:Lwex/ui/core/feature/FrostGlassSuppressor;
 
     invoke-static {v1, v0}, Lwex/ui/core/feature/FrostGlassSuppressor;->access$hideAllFrost(Lwex/ui/core/feature/FrostGlassSuppressor;Landroid/app/Activity;)V
 
-    invoke-static {v1, p0}, Lwex/ui/core/feature/FrostGlassSuppressor;->access$registerFrostedHooks(Lwex/ui/core/feature/FrostGlassSuppressor;Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+    invoke-static {v1, p0}, Lwex/ui/core/feature/FrostGlassSuppressor;->access$registerFrostedHooks(Lwex/ui/core/feature/FrostGlassSuppressor;Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
 
     return-void
 
     :pswitch_0
     iget-object v0, p0, Lx4/j;->d:Landroid/app/Activity;
 
-    iget-object p0, p0, Lx4/j;->e:Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;
+    iget-object p0, p0, Lx4/j;->e:Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;
 
     sget-object v1, Lwex/ui/core/feature/BottomBarComposeFeature;->INSTANCE:Lwex/ui/core/feature/BottomBarComposeFeature;
 
     invoke-static {v1, v0}, Lwex/ui/core/feature/BottomBarComposeFeature;->access$hideAllFrost2(Lwex/ui/core/feature/BottomBarComposeFeature;Landroid/app/Activity;)V
 
-    invoke-static {v1, p0}, Lwex/ui/core/feature/BottomBarComposeFeature;->access$registerFrost2(Lwex/ui/core/feature/BottomBarComposeFeature;Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+    invoke-static {v1, p0}, Lwex/ui/core/feature/BottomBarComposeFeature;->access$registerFrost2(Lwex/ui/core/feature/BottomBarComposeFeature;Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
 
     return-void
 

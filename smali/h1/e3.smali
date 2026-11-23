@@ -166,13 +166,13 @@
     :pswitch_6
     iget-object v0, p0, Lh1/e3;->d:Ljava/lang/Object;
 
-    check-cast v0, Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;
+    check-cast v0, Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;
 
     iget-object p0, p0, Lh1/e3;->e:Ljava/lang/Object;
 
     check-cast p0, Ljava/lang/String;
 
-    invoke-static {v0, p0}, Lwex/ui/core/feature/DexKitAutoAdapt;->f(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V
+    invoke-static {v0, p0}, Lwex/ui/core/feature/DexKitAutoAdapt;->f(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V
 
     return-void
 

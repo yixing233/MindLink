@@ -25,8 +25,8 @@ def main():
     with tempfile.TemporaryDirectory(prefix="mindlink-resolver-") as temporary:
         sources = sorted((ROOT / "scripts/tests/resolver").rglob("*.java"))
         sources += [ROOT / relative for relative in [
-            "scripts/tests/navigation-hooks/de/robv/android/xposed/XC_MethodHook.java",
-            "scripts/tests/navigation-hooks/de/robv/android/xposed/callbacks/XC_LoadPackage.java",
+            "scripts/tests/navigation-hooks/dev/mindlink/xposed/XC_MethodHook.java",
+            "scripts/tests/navigation-hooks/dev/mindlink/xposed/callbacks/XC_LoadPackage.java",
             "scripts/tests/menu/android/os/Build.java",
             "scripts/tests/wex/ui/core/WexStore.java",
         ]]

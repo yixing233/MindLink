@@ -10,7 +10,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
-import de.robv.android.xposed.XposedHelpers;
+import dev.mindlink.xposed.XposedHelpers;
 
 /** Content-free 8.0.76 contacts ownership. Unknown page/wrapper/constraint means no write. */
 final class NavigationContactViewport {

@@ -11,7 +11,7 @@ import com.tencent.mm.ui.MainTabUI;
 import com.tencent.mm.ui.contact.address.MvvmAddressUIFragment;
 import com.tencent.mm.ui.mogic.WxViewPager;
 import com.tencent.mm.view.recyclerview.WxRecyclerView;
-import de.robv.android.xposed.XposedBridge;
+import dev.mindlink.xposed.XposedBridge;
 
 /** Real nav hooks + Session. All results follow LP/padding driven host layout, not hand-set repaired bounds. */
 final class NavigationContactsChecks {
@@ -173,7 +173,7 @@ final class NavigationContactsChecks {
                 "extra wrapper is accepted when list, fragment and pager share the proven parent path");
     }
     public static void main(String[] args) throws Throwable {
-        de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam load = new de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam();
+        dev.mindlink.xposed.callbacks.XC_LoadPackage.LoadPackageParam load = new dev.mindlink.xposed.callbacks.XC_LoadPackage.LoadPackageParam();
         load.classLoader = NavigationContactsChecks.class.getClassLoader(); NavigationBarFeature.init(load); run();
     }
     static void run() throws Throwable {

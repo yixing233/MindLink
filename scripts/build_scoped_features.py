@@ -208,7 +208,7 @@ def build(args):
     normalize = lambda data: re.sub(rb"(?m)^(\s*)const-string/jumbo ", rb"\1const-string ", data)
     patch_failures = [desc for desc in patch if normalize(patch[desc][1]) != normalize(candidate[desc][1])]
     require(not set(candidate) & set(primary), "Cross-DEX duplicate class")
-    require(not any(desc.startswith(("Landroid/", "Landroidx/", "Lcom/tencent/mm/", "Lde/robv/android/xposed/")) for desc in candidate),
+    require(not any(desc.startswith(("Landroid/", "Landroidx/", "Lcom/tencent/mm/", "Lde/robv/android/xposed/", "Lio/github/libxposed/")) for desc in candidate),
             "Compile stub or AndroidX runtime leaked into feature DEX")
     write_json(work / "strict-class-diff.json", {"baseline_class_count": len(old), "candidate_class_count": len(candidate),
             "non_target_byte_exact_count": sum(not target(desc) for desc in old) - len(non_target_failures),

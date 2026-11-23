@@ -46,6 +46,12 @@ public final class SettingsComposeBridge {
         call(view, "dispose", new Class<?>[]{View.class});
     }
 
+    /** Returns true when the panel consumed back by leaving a detail page. */
+    public static boolean back(View view) {
+        Object result = call(view, "back", new Class<?>[]{View.class});
+        return Boolean.TRUE.equals(result);
+    }
+
     private static Object call(View view, String name, Class<?>[] types, Object... args) {
         if (view == null) return null;
         if (!TAG.equals(view.getTag())) throw new IllegalArgumentException("Not an isolated settings view");

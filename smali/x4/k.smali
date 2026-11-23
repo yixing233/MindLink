@@ -1,37 +1,37 @@
 .class public final Lx4/k;
-.super Lde/robv/android/xposed/XC_MethodHook;
+.super Ldev/mindlink/xposed/XC_MethodHook;
 .source "SourceFile"
 
 
 # instance fields
 .field public final synthetic a:I
 
-.field public final synthetic b:Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;
+.field public final synthetic b:Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;
 
 
 # direct methods
-.method public synthetic constructor <init>(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;I)V
+.method public synthetic constructor <init>(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;I)V
     .locals 0
 
     iput p2, p0, Lx4/k;->a:I
 
-    iput-object p1, p0, Lx4/k;->b:Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;
+    iput-object p1, p0, Lx4/k;->b:Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;
 
-    invoke-direct {p0}, Lde/robv/android/xposed/XC_MethodHook;-><init>()V
+    invoke-direct {p0}, Ldev/mindlink/xposed/XC_MethodHook;-><init>()V
 
     return-void
 .end method
 
 
 # virtual methods
-.method public final afterHookedMethod(Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;)V
+.method public final afterHookedMethod(Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;)V
     .locals 6
 
     iget v0, p0, Lx4/k;->a:I
 
     const/4 v1, 0x1
 
-    iget-object p0, p0, Lx4/k;->b:Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;
+    iget-object p0, p0, Lx4/k;->b:Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;
 
     const-string v2, "com.tencent.mm.ui.LauncherUI"
 
@@ -42,7 +42,7 @@
     packed-switch v0, :pswitch_data_0
 
     :try_start_0
-    iget-object p1, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
+    iget-object p1, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
 
     instance-of v0, p1, Landroid/app/Activity;
 
@@ -101,7 +101,7 @@
 
     iput-object v3, v0, Lx4/j;->d:Landroid/app/Activity;
 
-    iput-object p0, v0, Lx4/j;->e:Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;
+    iput-object p0, v0, Lx4/j;->e:Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;
 
     invoke-static {}, Ljava/lang/invoke/VarHandle;->storeStoreFence()V
 
@@ -166,7 +166,7 @@
     goto :goto_1
 
     :cond_5
-    iget-object p1, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
+    iget-object p1, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
 
     instance-of v0, p1, Landroid/app/Activity;
 
@@ -223,7 +223,7 @@
 
     iput-object v3, v0, Lx4/j;->d:Landroid/app/Activity;
 
-    iput-object p0, v0, Lx4/j;->e:Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;
+    iput-object p0, v0, Lx4/j;->e:Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;
 
     invoke-static {}, Ljava/lang/invoke/VarHandle;->storeStoreFence()V
 

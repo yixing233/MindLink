@@ -170,8 +170,17 @@ def static_checks():
     manifest = read("AndroidManifest.xml")
     assert manifest.count("android.intent.category.LAUNCHER") == 1, "保留唯一桌面入口供宿主发现模块资源"
     assert 'android:name="wex.ui.core.MainActivity"' in manifest, "桌面入口应使用现有 MainActivity"
-    for kept in ['android:name="xposedmodule"', 'android:name="xposedscope"', 'android:name="xposedminversion"']:
-        assert kept in manifest, kept
+    for legacy in ['android:name="xposedmodule"', 'android:name="xposedscope"', 'android:name="xposedminversion"', 'android:name="xposeddescription"']:
+        assert legacy not in manifest, "standard 入口不再声明 legacy 元数据: " + legacy
+    assert not (Path(__file__).resolve().parents[2] / "assets/xposed_init").exists(), "legacy assets/xposed_init 应已删除"
+    assert read("unknown/META-INF/xposed/java_init.list").split() == ["dev.mindlink.xposed.ModuleEntry"]
+    assert read("unknown/META-INF/xposed/scope.list").split() == ["com.tencent.mm"]
+    assert "staticScope=true" in read("unknown/META-INF/xposed/module.prop").split()
+    apktool_meta = read("apktool.yml")
+    for packed in ["java_init.list", "module.prop", "scope.list"]:
+        assert f"META-INF/xposed/{packed}:" in apktool_meta, packed
+    hook_entry = read("smali/wex/ui/core/xposed/HookEntry.smali")
+    assert "Lde/robv/android/xposed/" not in hook_entry and ".implements Ldev/mindlink/xposed/IXposedHookLoadPackage;" in hook_entry
     dashboard = read("java_src/wex/ui/core/feature/ComposePayloadBridge.java")
     state = read("java_src/wex/ui/core/feature/ModuleDashboardState.java")
     facade = read("java_src/wex/ui/core/feature/AboutPageBuilder.java")
@@ -479,7 +488,7 @@ def grouping_checks(jdk, cases=None, repeat=1, output=None):
                         "wex.ui.core.feature.ConversationPositionsChecks"], check=True, timeout=30)
         selected = cases or ["epoch", "mutations", "click", "guards", "notify-failure",
                              "snapshot-failure", "fields", "transition", "selection", "reentry",
-                             "host-lifecycle", "tab-updates"]
+                             "host-lifecycle", "tab-updates", "origin-fallback"]
         for iteration in range(repeat):
             for case in selected:
                 print(f"GROUPING {iteration + 1}/{repeat}: {case}", flush=True)

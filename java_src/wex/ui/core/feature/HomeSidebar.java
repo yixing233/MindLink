@@ -32,7 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.WeakHashMap;
 
-import de.robv.android.xposed.XposedBridge;
+import dev.mindlink.xposed.XposedBridge;
 import wex.ui.core.WexStore;
 
 /**
@@ -598,7 +598,7 @@ public final class HomeSidebar {
 
     private static ImageView icon(Activity activity, String name, String description) {
         ImageView view = new ImageView(activity);
-        view.setImageBitmap(TablerIcons.bitmap(name, dp(activity, 22),
+        view.setImageBitmap(LucideIcons.bitmap(name, dp(activity, 22),
                 (activity.getResources().getConfiguration().uiMode & 0x30) == 0x20 ? 0xFFE6E6E6 : 0xFF1A1A1A));
         view.setScaleType(ImageView.ScaleType.CENTER);
         view.setContentDescription(description);

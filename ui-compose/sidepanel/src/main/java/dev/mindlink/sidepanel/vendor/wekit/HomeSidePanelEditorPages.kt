@@ -5,62 +5,84 @@
 // MindLink adaptations (2026-11-16): Compose editor pages replacing the removed Java
 // LinearLayout editor. Routes/callbacks come from Java snapshots; drag-in is phase two.
 // Weather settings keep the existing city-code input (no city database ported yet).
+// 2026-11-22: shared editor scaffold (pinned header with back arrow, scrolling body, pinned
+// bottom actions, single inset pass), live card preview, grouped sections, Hitokoto length
+// fields + category select-all/clear + unsaved-changes confirmation, weather current city.
+// 2026-11-22: image page (picker, scale mode, height slider) and action-card page (reorder,
+// delete, add) backed by the Java image_* / *_action callbacks registered in the same change.
+// 2026-11-22: all icons from Lucide (dev.mindlink.ui.LucideIcons); hand-drawn arrows removed.
 package dev.mindlink.sidepanel.vendor.wekit
 
+import dev.mindlink.ui.LucideIcons
 import dev.mindlink.ui.MindLinkCard
+import dev.mindlink.ui.MindLinkIconButton
+import dev.mindlink.ui.MindLinkListRow
+import dev.mindlink.ui.MindLinkSectionHeader
 import dev.mindlink.ui.MindLinkSwitchRow
 import dev.mindlink.ui.MindLinkTopBar
-import dev.mindlink.ui.MindLinkIconButton
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Slider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.annotation.StringRes
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.composables.icons.materialsymbols.MaterialSymbols
-import com.composables.icons.materialsymbols.outlined.Close
 import dev.mindlink.sidepanel.R
 import java.time.LocalDateTime
+import kotlin.math.roundToInt
 
 private val HOME_SIDE_PANEL_CARD_TYPES = listOf(
     HomeSidePanelCardType.DATE_TIME,
@@ -83,40 +105,133 @@ private fun HomeSidePanelCardType.serialName(): String = when (this) {
     HomeSidePanelCardType.VERTICAL_ACTIONS -> "vertical_actions"
 }
 
+// ------------------------------------------------------------------ shared editor frame
+
+/** Content edge shared by header icon, sections and bottom bar (icon button 4dp + 12dp inset). */
+private val EDITOR_EDGE = 16.dp
+private val EDITOR_SECTION_GAP = 20.dp
+
+/**
+ * The host drawer takes horizontal drags to close itself. A horizontal control inside the drawer
+ * (slider) claims the gesture on press so the drawer leaves it alone until the finger lifts.
+ */
+private fun Modifier.claimDrawerGesture(panelState: HomeSidePanelState): Modifier = pointerInput(panelState) {
+    awaitEachGesture {
+        awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+        panelState.setGestureOwnership(true)
+        try {
+            do {
+                val event = awaitPointerEvent(PointerEventPass.Initial)
+            } while (event.changes.any { it.pressed })
+        } finally {
+            panelState.setGestureOwnership(false)
+        }
+    }
+}
+
+/**
+ * Pinned header + scrolling body + optional pinned bottom bar. Top/bottom safe-drawing insets are
+ * applied exactly once here; the body receives padding that already includes the bottom inset
+ * when there is no bottom bar.
+ */
 @Composable
-private fun HomeSidePanelEditorHeader(title: String, onBack: () -> Unit, modifier: Modifier = Modifier) {
-    MindLinkTopBar(
-        title, modifier,
-        navigation = {
-            MindLinkIconButton(
-                MaterialSymbols.Outlined.Close,
-                stringResource(R.string.wekit_sp_home_side_panel_discard_editing),
-                onBack,
+private fun HomeSidePanelEditorScaffold(
+    title: String,
+    onNavigate: () -> Unit,
+    navigationIcon: ImageVector = LucideIcons.ArrowLeft,
+    navigationLabel: String = stringResource(R.string.wekit_sp_home_side_panel_back),
+    bottomBar: (@Composable () -> Unit)? = null,
+    body: @Composable (PaddingValues) -> Unit,
+) {
+    val insets = WindowInsets.safeDrawing
+    val top = insets.only(WindowInsetsSides.Top).asPaddingValues()
+    val bottom = insets.only(WindowInsetsSides.Bottom).asPaddingValues().calculateBottomPadding()
+    Column(modifier = Modifier.fillMaxSize()) {
+        MindLinkTopBar(
+            title,
+            Modifier.padding(top),
+            navigation = { MindLinkIconButton(navigationIcon, navigationLabel, onNavigate) },
+        )
+        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            body(
+                PaddingValues(
+                    start = EDITOR_EDGE,
+                    top = 4.dp,
+                    end = EDITOR_EDGE,
+                    bottom = if (bottomBar == null) EDITOR_EDGE + bottom else EDITOR_EDGE,
+                ),
             )
-        },
+        }
+        if (bottomBar != null) {
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = EDITOR_EDGE, top = 12.dp, end = EDITOR_EDGE, bottom = 12.dp + bottom),
+            ) { bottomBar() }
+        }
+    }
+}
+
+@Composable
+private fun EditorScrollColumn(padding: PaddingValues, content: @Composable ColumnScope.() -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(padding),
+        verticalArrangement = Arrangement.spacedBy(EDITOR_SECTION_GAP),
+        content = content,
     )
 }
+
+/** Live preview of the card being edited, rendered with the current (draft) configuration. */
+@Composable
+private fun EditorPreview(content: @Composable () -> Unit) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        MindLinkSectionHeader(
+            stringResource(R.string.wekit_sp_home_side_panel_editor_preview),
+            stringResource(R.string.wekit_sp_home_side_panel_editor_draft_hint),
+        )
+        content()
+    }
+}
+
+/** One titled group: rows of the same topic share a single card, separated by dividers. */
+@Composable
+private fun EditorSection(
+    title: String,
+    summary: String? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        MindLinkSectionHeader(title, summary)
+        MindLinkCard(modifier = Modifier.fillMaxWidth(), content = content)
+    }
+}
+
+@Composable
+private fun EditorDivider() {
+    HorizontalDivider(
+        modifier = Modifier.padding(horizontal = EDITOR_EDGE),
+        color = MaterialTheme.colorScheme.outlineVariant,
+    )
+}
+
+// ------------------------------------------------------------------ add card
 
 /** Add-card page: every card type shows a real preview card; tapping appends it to the draft. */
 @Composable
 fun HomeSidePanelAddCardPage(panelState: HomeSidePanelState) {
-    val bottomInset = WindowInsets.safeDrawing.asPaddingValues().calculateBottomPadding()
-    Column(modifier = Modifier.fillMaxSize()) {
-        HomeSidePanelEditorHeader(
-            title = stringResource(R.string.wekit_sp_home_side_panel_add_card),
-            onBack = panelState::discardEditing,
-            modifier = Modifier
-                .padding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top).asPaddingValues())
-                .padding(horizontal = 18.dp, vertical = 10.dp),
-        )
+    HomeSidePanelEditorScaffold(
+        title = stringResource(R.string.wekit_sp_home_side_panel_add_card),
+        onNavigate = panelState::discardEditing,
+        navigationIcon = LucideIcons.X,
+        navigationLabel = stringResource(R.string.wekit_sp_home_side_panel_discard_editing),
+    ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                start = 18.dp,
-                top = 4.dp,
-                end = 18.dp,
-                bottom = 18.dp + bottomInset,
-            ),
+            contentPadding = padding,
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             items(HOME_SIDE_PANEL_CARD_TYPES, key = HomeSidePanelCardType::name) { type ->
@@ -233,6 +348,8 @@ private fun homeSidePanelCardTypeName(type: HomeSidePanelCardType): String = whe
     HomeSidePanelCardType.VERTICAL_ACTIONS -> stringResource(R.string.wekit_sp_home_side_panel_card_vertical_actions)
 }
 
+// ------------------------------------------------------------------ card settings
+
 /** Route dispatch: per-type settings page for the selected draft card. */
 @Composable
 fun HomeSidePanelCardSettingsPage(state: HomeSidePanelUiState, cardId: String, panelState: HomeSidePanelState) {
@@ -246,29 +363,88 @@ fun HomeSidePanelCardSettingsPage(state: HomeSidePanelUiState, cardId: String, p
         is WalletCardConfig -> HomeSidePanelWalletSettings(card, panelState)
         is WeatherCardConfig -> HomeSidePanelWeatherSettings(card, panelState)
         is HitokotoCardConfig -> HomeSidePanelHitokotoSettings(card, panelState)
+        is ImageCardConfig -> HomeSidePanelImageSettings(card, card.id in state.imageImportingCardIds, panelState)
+        is HorizontalActionsCardConfig -> HomeSidePanelActionsSettings(
+            cardId = card.id,
+            title = stringResource(R.string.wekit_sp_home_side_panel_card_horizontal_actions),
+            actions = card.actions,
+            panelState = panelState,
+        ) {
+            HomeSidePanelHorizontalActionsCard(
+                card = card,
+                content = HomeSidePanelActionCardContent.Runtime,
+                editMode = false,
+                interactionEnabled = false,
+            )
+        }
+        is VerticalActionsCardConfig -> HomeSidePanelActionsSettings(
+            cardId = card.id,
+            title = stringResource(R.string.wekit_sp_home_side_panel_card_vertical_actions),
+            actions = card.actions,
+            panelState = panelState,
+        ) {
+            HomeSidePanelVerticalActionsCard(
+                card = card,
+                content = HomeSidePanelActionCardContent.Runtime,
+                editMode = false,
+                interactionEnabled = false,
+            )
+        }
         else -> HomeSidePanelHome(state = state, panelState = panelState, listState = androidx.compose.foundation.lazy.rememberLazyListState())
     }
 }
 
 @Composable
 private fun HomeSidePanelDateTimeSettings(card: DateTimeCardConfig, panelState: HomeSidePanelState) {
-    SettingsColumn(title = stringResource(R.string.wekit_sp_home_side_panel_card_date_time), panelState = panelState) {
-        SettingsRow(
-            title = stringResource(R.string.wekit_sp_home_side_panel_show_lunar_calendar),
-            checked = card.showLunarCalendar,
-            onChange = { panelState.updateLunar(card.id) },
-        )
+    HomeSidePanelEditorScaffold(
+        title = stringResource(R.string.wekit_sp_home_side_panel_card_date_time),
+        onNavigate = { panelState.editCard("") },
+    ) { padding ->
+        EditorScrollColumn(padding) {
+            EditorPreview {
+                HomeSidePanelDateTimeCard(card = card, content = DateTimeCardContent.Runtime, editMode = false)
+            }
+            EditorSection(stringResource(R.string.wekit_sp_home_side_panel_editor_display)) {
+                MindLinkSwitchRow(
+                    title = stringResource(R.string.wekit_sp_home_side_panel_show_lunar_calendar),
+                    checked = card.showLunarCalendar,
+                    onChange = { panelState.updateLunar(card.id) },
+                )
+            }
+        }
     }
 }
 
 @Composable
 private fun HomeSidePanelWalletSettings(card: WalletCardConfig, panelState: HomeSidePanelState) {
-    SettingsColumn(title = stringResource(R.string.wekit_sp_home_side_panel_card_wallet), panelState = panelState) {
-        SettingsRow(
-            title = stringResource(R.string.wekit_sp_home_side_panel_hide_balance_default),
-            checked = card.hideBalanceByDefault,
-            onChange = { panelState.updateWalletMask(card.id) },
-        )
+    val runtime = (panelState.runtimeState(card.id) as? HomeSidePanelCardRuntimeState.Wallet)?.state
+    HomeSidePanelEditorScaffold(
+        title = stringResource(R.string.wekit_sp_home_side_panel_card_wallet),
+        onNavigate = { panelState.editCard("") },
+    ) { padding ->
+        EditorScrollColumn(padding) {
+            if (runtime != null) {
+                EditorPreview {
+                    // Preview the state the card opens in, so the switch below is visible immediately.
+                    HomeSidePanelWalletCard(
+                        card = card,
+                        content = WalletCardContent.Runtime(
+                            runtime.copy(displayState = HomeSidePanelWalletDisplayState(card.hideBalanceByDefault)),
+                        ),
+                        editMode = false,
+                        interactionEnabled = false,
+                    )
+                }
+            }
+            EditorSection(stringResource(R.string.wekit_sp_home_side_panel_editor_display)) {
+                MindLinkSwitchRow(
+                    title = stringResource(R.string.wekit_sp_home_side_panel_hide_balance_default),
+                    checked = card.hideBalanceByDefault,
+                    summary = stringResource(R.string.wekit_sp_home_side_panel_hide_balance_summary),
+                    onChange = { panelState.updateWalletMask(card.id) },
+                )
+            }
+        }
     }
 }
 
@@ -276,87 +452,509 @@ private fun HomeSidePanelWalletSettings(card: WalletCardConfig, panelState: Home
  *  keeps a code input (WeKit's city-database search is not ported in phase one). */
 @Composable
 private fun HomeSidePanelWeatherSettings(card: WeatherCardConfig, panelState: HomeSidePanelState) {
-    var code by remember(card.id, card.city?.cityNum) { mutableStateOf(card.city?.cityNum ?: "") }
-    LaunchedEffect(card.city?.cityNum) { if (card.city?.cityNum != null) code = card.city.cityNum }
-    SettingsColumn(
+    val city = card.city
+    var code by remember(card.id, city?.cityNum) { mutableStateOf(city?.cityNum ?: "") }
+    LaunchedEffect(city?.cityNum) { if (city?.cityNum != null) code = city.cityNum }
+    val trimmed = code.trim()
+    val canApply = trimmed.isNotEmpty() && trimmed != city?.cityNum
+    val runtime = (panelState.runtimeState(card.id) as? HomeSidePanelCardRuntimeState.Weather)?.state
+    HomeSidePanelEditorScaffold(
         title = stringResource(R.string.wekit_sp_home_side_panel_card_weather),
-        panelState = panelState,
-        scroll = true,
-    ) {
-        OutlinedTextField(
-            value = code,
-            onValueChange = { code = it },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            label = { Text(stringResource(R.string.wekit_sp_home_side_panel_city_code_label)) },
-        )
-        Button(
-            onClick = { panelState.updateWeatherCity(card.id, code.trim()) },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = code.isNotBlank(),
-        ) {
-            Text(stringResource(R.string.wekit_sp_home_side_panel_city_code_apply))
+        onNavigate = { panelState.editCard("") },
+    ) { padding ->
+        EditorScrollColumn(padding) {
+            if (runtime != null) {
+                EditorPreview {
+                    HomeSidePanelWeatherCard(
+                        card = card,
+                        content = WeatherCardContent.Runtime(runtime),
+                        editMode = false,
+                        interactionEnabled = false,
+                    )
+                }
+            }
+            EditorSection(stringResource(R.string.wekit_sp_home_side_panel_current_city)) {
+                val name = city?.let { listOfNotNull(it.city, it.district).joinToString("").trim() }.orEmpty()
+                val detail = city?.let { listOf(it.province, it.cityNum).filter(String::isNotBlank).joinToString(" · ") }
+                MindLinkListRow(
+                    title = when {
+                        city == null -> stringResource(R.string.wekit_sp_home_side_panel_city_not_set)
+                        name.isNotEmpty() -> name
+                        else -> city.cityNum
+                    },
+                    summary = detail?.takeIf { it.isNotEmpty() && it != name },
+                )
+            }
+            EditorSection(
+                stringResource(R.string.wekit_sp_home_side_panel_change_city),
+                stringResource(R.string.wekit_sp_home_side_panel_city_code_summary),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(EDITOR_EDGE),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    OutlinedTextField(
+                        value = code,
+                        onValueChange = { value -> code = value.filter(Char::isDigit).take(12) },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        label = { Text(stringResource(R.string.wekit_sp_home_side_panel_city_code)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    )
+                    Button(
+                        onClick = { panelState.updateWeatherCity(card.id, trimmed) },
+                        enabled = canApply,
+                        modifier = Modifier.height(56.dp),
+                    ) {
+                        Text(stringResource(R.string.wekit_sp_home_side_panel_apply))
+                    }
+                }
+            }
         }
+    }
+}
+
+@StringRes
+private fun hitokotoDraftError(settings: HitokotoSettings): Int? {
+    val min = settings.minLength
+    val max = settings.maxLength
+    return when {
+        settings.categories.isEmpty() -> R.string.wekit_sp_home_side_panel_error_no_category
+        min != null && max != null && max < min -> R.string.wekit_sp_home_side_panel_error_length_range
+        else -> null
     }
 }
 
 @Composable
 private fun HomeSidePanelHitokotoSettings(card: HitokotoCardConfig, panelState: HomeSidePanelState) {
     var draft by remember(card.id, card.settings) { mutableStateOf(card.settings) }
+    var confirmLeave by remember(card.id) { mutableStateOf(false) }
+    // Any further edit (or an applied snapshot) dismisses a pending leave confirmation.
+    LaunchedEffect(draft, card.settings) { confirmLeave = false }
     val lengthUpperBound = remember(card.settings) {
         maxOf(500, card.settings.minLength ?: 0, card.settings.maxLength ?: 0)
     }
-    SettingsColumn(
+    val dirty = draft != card.settings
+    val errorRes = hitokotoDraftError(draft)
+    val runtime = (panelState.runtimeState(card.id) as? HomeSidePanelCardRuntimeState.Hitokoto)?.state
+    val leave = fun() {
+        if (dirty) {
+            confirmLeave = true
+        } else {
+            panelState.editCard("")
+        }
+    }
+    HomeSidePanelEditorScaffold(
         title = stringResource(R.string.wekit_sp_home_side_panel_card_hitokoto),
-        panelState = panelState,
-        scroll = true,
-    ) {
-        Text(stringResource(R.string.wekit_sp_home_side_panel_categories), style = MaterialTheme.typography.titleMedium)
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            HITOKOTO_CATEGORY_CODES.sorted().forEach { code ->
-                FilterChip(
-                    selected = code in draft.categories,
-                    onClick = {
-                        draft = draft.copy(
-                            categories = if (code in draft.categories) draft.categories - code else draft.categories + code,
-                        )
-                    },
-                    label = { Text(homeSidePanelHitokotoCategoryName(code)) },
+        onNavigate = leave,
+        bottomBar = {
+            if (confirmLeave) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        stringResource(R.string.wekit_sp_home_side_panel_unsaved_changes),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                        OutlinedButton(
+                            onClick = {
+                                confirmLeave = false
+                                panelState.editCard("")
+                            },
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text(stringResource(R.string.wekit_sp_home_side_panel_discard))
+                        }
+                        Button(
+                            onClick = {
+                                panelState.updateHitokoto(card.id, draft)
+                                panelState.editCard("")
+                            },
+                            enabled = errorRes == null,
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text(stringResource(R.string.wekit_sp_home_side_panel_apply_and_back))
+                        }
+                    }
+                }
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton(
+                        onClick = { draft = HitokotoSettings() },
+                        enabled = draft != HitokotoSettings(),
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(stringResource(R.string.wekit_sp_home_side_panel_restore_defaults))
+                    }
+                    Button(
+                        onClick = { panelState.updateHitokoto(card.id, draft) },
+                        enabled = dirty && errorRes == null,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(stringResource(R.string.wekit_sp_home_side_panel_apply))
+                    }
+                }
+            }
+        },
+    ) { padding ->
+        EditorScrollColumn(padding) {
+            if (runtime != null) {
+                EditorPreview {
+                    // Source/author visibility follows the draft; categories and length apply on next fetch.
+                    HomeSidePanelHitokotoCard(
+                        card = card.copy(settings = draft),
+                        content = HitokotoCardContent.Runtime(runtime),
+                        editMode = false,
+                        interactionEnabled = false,
+                    )
+                }
+            }
+            EditorSection(
+                stringResource(R.string.wekit_sp_home_side_panel_categories),
+                stringResource(R.string.wekit_sp_home_side_panel_categories_selected)
+                    .replace("%1\$d", draft.categories.size.toString())
+                    .replace("%2\$d", HITOKOTO_CATEGORY_CODES.size.toString()),
+            ) {
+                Column(modifier = Modifier.padding(start = EDITOR_EDGE, top = 12.dp, end = EDITOR_EDGE, bottom = 4.dp)) {
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        HITOKOTO_CATEGORY_CODES.sorted().forEach { code ->
+                            FilterChip(
+                                selected = code in draft.categories,
+                                onClick = {
+                                    draft = draft.copy(
+                                        categories = if (code in draft.categories) draft.categories - code else draft.categories + code,
+                                    )
+                                },
+                                label = { Text(homeSidePanelHitokotoCategoryName(code)) },
+                            )
+                        }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                    ) {
+                        TextButton(
+                            onClick = { draft = draft.copy(categories = emptySet()) },
+                            enabled = draft.categories.isNotEmpty(),
+                        ) {
+                            Text(stringResource(R.string.wekit_sp_home_side_panel_clear_all))
+                        }
+                        TextButton(
+                            onClick = { draft = draft.copy(categories = HITOKOTO_CATEGORY_CODES) },
+                            enabled = draft.categories != HITOKOTO_CATEGORY_CODES,
+                        ) {
+                            Text(stringResource(R.string.wekit_sp_home_side_panel_select_all))
+                        }
+                    }
+                }
+            }
+            EditorSection(stringResource(R.string.wekit_sp_home_side_panel_editor_display)) {
+                MindLinkSwitchRow(
+                    title = stringResource(R.string.wekit_sp_home_side_panel_show_source),
+                    checked = draft.showSource,
+                    onChange = { draft = draft.copy(showSource = it) },
+                )
+                EditorDivider()
+                MindLinkSwitchRow(
+                    title = stringResource(R.string.wekit_sp_home_side_panel_show_author),
+                    checked = draft.showAuthor,
+                    onChange = { draft = draft.copy(showAuthor = it) },
+                )
+            }
+            EditorSection(
+                stringResource(R.string.wekit_sp_home_side_panel_length),
+                stringResource(R.string.wekit_sp_home_side_panel_length_summary),
+            ) {
+                HitokotoLengthRow(
+                    title = stringResource(R.string.wekit_sp_home_side_panel_min_length),
+                    value = draft.minLength,
+                    upperBound = lengthUpperBound,
+                    onChange = { draft = draft.copy(minLength = it) },
+                )
+                EditorDivider()
+                HitokotoLengthRow(
+                    title = stringResource(R.string.wekit_sp_home_side_panel_max_length),
+                    value = draft.maxLength,
+                    upperBound = lengthUpperBound,
+                    onChange = { draft = draft.copy(maxLength = it) },
+                )
+            }
+            if (errorRes != null) {
+                Text(
+                    stringResource(errorRes),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(horizontal = 4.dp),
                 )
             }
         }
-        SettingsRow(
-            title = stringResource(R.string.wekit_sp_home_side_panel_show_source),
-            checked = draft.showSource,
-            onChange = { draft = draft.copy(showSource = !draft.showSource) },
+    }
+}
+
+/** Optional length: empty field means no limit (null), matching the persisted model. */
+@Composable
+private fun HitokotoLengthRow(title: String, value: Int?, upperBound: Int, onChange: (Int?) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = EDITOR_EDGE, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+        OutlinedTextField(
+            value = value?.toString() ?: "",
+            onValueChange = { raw ->
+                val digits = raw.filter(Char::isDigit).take(4)
+                onChange(digits.toIntOrNull()?.coerceAtMost(upperBound))
+            },
+            modifier = Modifier.width(112.dp),
+            singleLine = true,
+            placeholder = { Text(stringResource(R.string.wekit_sp_home_side_panel_no_limit)) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         )
-        SettingsRow(
-            title = stringResource(R.string.wekit_sp_home_side_panel_show_author),
-            checked = draft.showAuthor,
-            onChange = { draft = draft.copy(showAuthor = !draft.showAuthor) },
-        )
-        Text(
-            stringResource(R.string.wekit_sp_home_side_panel_hitokoto_length_summary)
-                .replace("%1\$d", (draft.minLength ?: 0).toString())
-                .replace("%2\$d", (draft.maxLength ?: lengthUpperBound).toString()),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            OutlinedButton(
-                onClick = { draft = HitokotoSettings() },
-                modifier = Modifier.weight(1f),
-            ) {
-                Text(stringResource(R.string.wekit_sp_home_side_panel_restore_defaults))
+    }
+}
+
+// ------------------------------------------------------------------ image
+
+private fun snapImageHeight(value: Float): Int {
+    val step = HOME_SIDE_PANEL_IMAGE_HEIGHT_STEP_DP
+    return ((value / step).roundToInt() * step)
+        .coerceIn(HOME_SIDE_PANEL_IMAGE_MIN_HEIGHT_DP, HOME_SIDE_PANEL_IMAGE_MAX_HEIGHT_DP)
+}
+
+private data class ImageScaleOption(
+    val mode: HomeSidePanelImageScaleMode,
+    @StringRes val title: Int,
+    @StringRes val summary: Int,
+)
+
+private val IMAGE_SCALE_OPTIONS = listOf(
+    ImageScaleOption(
+        HomeSidePanelImageScaleMode.CROP,
+        R.string.wekit_sp_home_side_panel_image_scale_crop,
+        R.string.wekit_sp_home_side_panel_image_scale_crop_summary,
+    ),
+    ImageScaleOption(
+        HomeSidePanelImageScaleMode.FIT,
+        R.string.wekit_sp_home_side_panel_image_scale_fit,
+        R.string.wekit_sp_home_side_panel_image_scale_fit_summary,
+    ),
+    ImageScaleOption(
+        HomeSidePanelImageScaleMode.FILL_BOUNDS,
+        R.string.wekit_sp_home_side_panel_image_scale_stretch,
+        R.string.wekit_sp_home_side_panel_image_scale_stretch_summary,
+    ),
+    ImageScaleOption(
+        HomeSidePanelImageScaleMode.AUTO_RATIO,
+        R.string.wekit_sp_home_side_panel_image_scale_auto_ratio,
+        R.string.wekit_sp_home_side_panel_image_scale_auto_ratio_summary,
+    ),
+)
+
+@Composable
+private fun HomeSidePanelImageSettings(card: ImageCardConfig, importing: Boolean, panelState: HomeSidePanelState) {
+    var height by remember(card.id) { mutableFloatStateOf(card.heightDp.toFloat()) }
+    var sliding by remember(card.id) { mutableStateOf(false) }
+    LaunchedEffect(card.heightDp) { if (!sliding) height = card.heightDp.toFloat() }
+    val shownHeight = snapImageHeight(height)
+    HomeSidePanelEditorScaffold(
+        title = stringResource(R.string.wekit_sp_home_side_panel_card_image),
+        onNavigate = { panelState.editCard("") },
+    ) { padding ->
+        EditorScrollColumn(padding) {
+            EditorPreview {
+                HomeSidePanelImageCard(
+                    card = card.copy(heightDp = shownHeight),
+                    imageBitmap = panelState.imageBitmap(card.id),
+                    editMode = false,
+                    importing = importing,
+                    // Without an image the preview says "tap to select", not "enter edit mode".
+                    preview = card.imageAssetId == null,
+                )
             }
-            Button(
-                onClick = { panelState.updateHitokoto(card.id, draft) },
-                modifier = Modifier.weight(1f),
+            EditorSection(stringResource(R.string.wekit_sp_home_side_panel_editor_image)) {
+                ListItem(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(enabled = !importing) { panelState.selectImage(card.id) },
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    headlineContent = {
+                        Text(
+                            stringResource(
+                                if (card.imageAssetId == null) {
+                                    R.string.wekit_sp_home_side_panel_image_select
+                                } else {
+                                    R.string.wekit_sp_home_side_panel_image_replace
+                                },
+                            ),
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    },
+                    supportingContent = if (importing) {
+                        { Text(stringResource(R.string.wekit_sp_home_side_panel_image_importing)) }
+                    } else {
+                        null
+                    },
+                    trailingContent = {
+                        Icon(LucideIcons.ChevronRight, contentDescription = null)
+                    },
+                )
+            }
+            EditorSection(stringResource(R.string.wekit_sp_home_side_panel_image_scale_mode)) {
+                IMAGE_SCALE_OPTIONS.forEachIndexed { index, option ->
+                    if (index > 0) EditorDivider()
+                    val selected = card.scaleMode == option.mode
+                    ListItem(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = selected,
+                                enabled = !importing,
+                                role = Role.RadioButton,
+                                onClick = { panelState.updateImageScaleMode(card.id, option.mode) },
+                            ),
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        headlineContent = { Text(stringResource(option.title), style = MaterialTheme.typography.bodyLarge) },
+                        supportingContent = { Text(stringResource(option.summary), style = MaterialTheme.typography.bodySmall) },
+                        trailingContent = { RadioButton(selected = selected, onClick = null) },
+                    )
+                }
+            }
+            EditorSection(stringResource(R.string.wekit_sp_home_side_panel_image_height)) {
+                if (card.scaleMode == HomeSidePanelImageScaleMode.AUTO_RATIO) {
+                    MindLinkListRow(title = stringResource(R.string.wekit_sp_home_side_panel_image_height_auto))
+                } else {
+                    Column(modifier = Modifier.padding(horizontal = EDITOR_EDGE, vertical = 12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                stringResource(R.string.wekit_sp_home_side_panel_image_height),
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Text(
+                                stringResource(R.string.wekit_sp_home_side_panel_image_height_value)
+                                    .replace("%1\$d", shownHeight.toString()),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                        // Continuous slider snapped to 8dp: 90 discrete steps would draw a wall of ticks.
+                        Slider(
+                            value = height,
+                            onValueChange = {
+                                sliding = true
+                                height = it
+                            },
+                            onValueChangeFinished = {
+                                sliding = false
+                                val committed = snapImageHeight(height)
+                                height = committed.toFloat()
+                                if (committed != card.heightDp) panelState.updateImageHeight(card.id, committed)
+                            },
+                            valueRange = HOME_SIDE_PANEL_IMAGE_MIN_HEIGHT_DP.toFloat()..HOME_SIDE_PANEL_IMAGE_MAX_HEIGHT_DP.toFloat(),
+                            enabled = !importing,
+                            modifier = Modifier.fillMaxWidth().claimDrawerGesture(panelState),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ------------------------------------------------------------------ action cards
+
+@Composable
+private fun HomeSidePanelActionsSettings(
+    cardId: String,
+    title: String,
+    actions: List<HomeSidePanelActionConfig>,
+    panelState: HomeSidePanelState,
+    preview: @Composable () -> Unit,
+) {
+    HomeSidePanelEditorScaffold(
+        title = title,
+        onNavigate = { panelState.editCard("") },
+    ) { padding ->
+        EditorScrollColumn(padding) {
+            if (actions.isNotEmpty()) EditorPreview(preview)
+            EditorSection(
+                stringResource(R.string.wekit_sp_home_side_panel_actions_added),
+                if (actions.isEmpty()) {
+                    null
+                } else {
+                    stringResource(R.string.wekit_sp_home_side_panel_actions_added_summary)
+                        .replace("%1\$d", actions.size.toString())
+                },
             ) {
-                Text(stringResource(R.string.wekit_sp_home_side_panel_save_editing))
+                if (actions.isEmpty()) {
+                    MindLinkListRow(title = stringResource(R.string.wekit_sp_home_side_panel_actions_empty))
+                }
+                actions.forEachIndexed { index, action ->
+                    if (index > 0) EditorDivider()
+                    val spec = homeSidePanelActionSpec(action.kind)
+                    ListItem(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        leadingContent = { Icon(spec.icon, contentDescription = null) },
+                        headlineContent = { Text(stringResource(spec.labelRes), style = MaterialTheme.typography.bodyLarge) },
+                        trailingContent = {
+                            Row {
+                                IconButton(
+                                    onClick = { panelState.moveAction(cardId, action.id, index - 1) },
+                                    enabled = index > 0,
+                                ) {
+                                    Icon(LucideIcons.ChevronUp, stringResource(R.string.wekit_sp_home_side_panel_move_up))
+                                }
+                                IconButton(
+                                    onClick = { panelState.moveAction(cardId, action.id, index + 1) },
+                                    enabled = index < actions.lastIndex,
+                                ) {
+                                    Icon(LucideIcons.ChevronDown, stringResource(R.string.wekit_sp_home_side_panel_move_down))
+                                }
+                                IconButton(onClick = { panelState.removeAction(cardId, action.id) }) {
+                                    Icon(
+                                        LucideIcons.X,
+                                        stringResource(R.string.wekit_sp_home_side_panel_delete_action),
+                                        tint = MaterialTheme.colorScheme.error,
+                                    )
+                                }
+                            }
+                        },
+                    )
+                }
+            }
+            EditorSection(
+                stringResource(R.string.wekit_sp_home_side_panel_actions_available),
+                stringResource(R.string.wekit_sp_home_side_panel_actions_available_summary),
+            ) {
+                val present = actions.mapTo(mutableSetOf(), HomeSidePanelActionConfig::kind)
+                HomeSidePanelActionKind.values().forEachIndexed { index, kind ->
+                    if (index > 0) EditorDivider()
+                    val spec = homeSidePanelActionSpec(kind)
+                    ListItem(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { panelState.addAction(cardId, kind) },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        leadingContent = { Icon(spec.icon, contentDescription = null) },
+                        headlineContent = { Text(stringResource(spec.labelRes), style = MaterialTheme.typography.bodyLarge) },
+                        supportingContent = if (kind in present) {
+                            { Text(stringResource(R.string.wekit_sp_home_side_panel_action_already_added)) }
+                        } else {
+                            null
+                        },
+                        trailingContent = {
+                            Icon(LucideIcons.Plus, stringResource(R.string.wekit_sp_action_add))
+                        },
+                    )
+                }
             }
         }
     }
@@ -381,48 +979,4 @@ private val HITOKOTO_CATEGORY_LABELS = linkedMapOf(
 private fun homeSidePanelHitokotoCategoryName(code: String): String {
     val res = HITOKOTO_CATEGORY_LABELS[code]
     return if (res != null) stringResource(res) else code
-}
-
-@Composable
-private fun SettingsColumn(
-    title: String,
-    panelState: HomeSidePanelState,
-    scroll: Boolean = false,
-    content: @Composable () -> Unit,
-) {
-    val body: @Composable () -> Unit = {
-        HomeSidePanelEditorHeader(
-            title = title,
-            onBack = { panelState.editCard("") },
-            modifier = Modifier
-                .padding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top).asPaddingValues())
-                .padding(horizontal = 18.dp, vertical = 10.dp),
-        )
-        content()
-    }
-    if (scroll) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom).asPaddingValues())
-                .padding(horizontal = 18.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) { body() }
-    } else {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Bottom).asPaddingValues())
-                .padding(horizontal = 18.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) { body() }
-    }
-}
-
-@Composable
-private fun SettingsRow(title: String, checked: Boolean, onChange: () -> Unit) {
-    MindLinkCard(modifier = Modifier.fillMaxWidth()) {
-        MindLinkSwitchRow(title, checked, onChange = { onChange() })
-    }
 }

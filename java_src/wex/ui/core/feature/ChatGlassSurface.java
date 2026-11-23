@@ -43,7 +43,7 @@ final class ChatGlassSurface extends Drawable {
     private View source, content, excluded;
     private WeakReference<View> backdropSource;
     private WeakReference<View> backdropContent;
-    private int mode = LIQUID, color = 0xFFF7F7F7;
+    private int mode = LIQUID, color = 0xFFF7F7F7, opacity = LiquidGlassLayer.AUTO_OPACITY;
     private float radius, blur, density = 1f;
     private boolean dark, running;
     private int visibleHeight = -1;
@@ -58,9 +58,17 @@ final class ChatGlassSurface extends Drawable {
         return BubbleSettings.readInt(NavigationBarFeature.KEY_BLUR, mode == FROSTED ? 25 : 8, 0, 40);
     }
 
+    /** Same tint opacity as the home bar; {@link LiquidGlassLayer#AUTO_OPACITY} keeps the material default. */
+    static int opacity() {
+        return BubbleSettings.readInt(NavigationBarFeature.KEY_OPACITY, LiquidGlassLayer.AUTO_OPACITY,
+                LiquidGlassLayer.AUTO_OPACITY, 100);
+    }
+
     void configure(int color, float radius, float density, boolean dark, int mode, int blurDp) {
         this.color = color; this.radius = radius; this.density = density > 0f ? density : 1f;
         this.dark = dark; this.mode = mode; this.blur = blurDp * this.density;
+        // Read here rather than threaded through every caller: configure runs on each material refresh.
+        this.opacity = opacity();
     }
 
     /** A detached decoration can own a distant chat layout; source == content captures that layout directly. */
@@ -70,6 +78,23 @@ final class ChatGlassSurface extends Drawable {
     }
 
     void visibleHeight(int height) { visibleHeight = height; }
+
+    /**
+     * Binds and starts this surface's backdrop sampler without drawing, for another layer drawn
+     * by the same consumer (the home progressive blur). Null when no backdrop is usable.
+     */
+    ViewBackdropSampler sharedSampler() { return bind() ? sampler : null; }
+
+    /**
+     * The backdrop behind the card changed in a way the sampler cannot see by itself (the host
+     * moved the card's parent back after a pull, a page laid over it went away). Counts as a
+     * host content revision: it renews the capture budget and redraws, so a plain fallback
+     * left by an unusable frame does not wait for the next scroll.
+     */
+    void refresh() {
+        if (sampler != null) sampler.sourceContentChanged();
+        else if (consumer != null) consumer.invalidate();
+    }
 
     @Override public void draw(Canvas canvas) {
         if (visibleHeight > 0 && getBounds().bottom != visibleHeight)
@@ -81,7 +106,7 @@ final class ChatGlassSurface extends Drawable {
         if (!bind()) { plain(canvas); return; }
         keepFresh();
         LiquidGlassLayer layer = layer();
-        boolean sampled = layer.drawBase(canvas, sampler, rect, radius, blur, mode == LIQUID, dark, density, true);
+        boolean sampled = layer.drawBase(canvas, sampler, rect, radius, blur, mode == LIQUID, dark, density, true, opacity);
         if (mode == LIQUID && sampled) {
             decoration.highlight(canvas, rect, radius, density, 0.75f, 0f, -1f, -45f);
         }

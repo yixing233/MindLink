@@ -1,7 +1,7 @@
 package wex.ui.core.feature;
 
 import android.content.Context;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import dev.mindlink.xposed.callbacks.XC_LoadPackage;
 import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.Arrays;

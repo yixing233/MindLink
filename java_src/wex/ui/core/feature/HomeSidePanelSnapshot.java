@@ -112,7 +112,8 @@ final class HomeSidePanelSnapshot {
                 case IMAGE:
                     if (card.imageAssetId != null) value.putString("imageAssetId", card.imageAssetId);
                     value.putInt("heightDp", imageHeight(card.imageHeightDp));
-                    value.putString("scaleMode", "crop"); // Existing Java config/renderer has only CENTER_CROP.
+                    value.putString("scaleMode", HomeSidePanelLayout.isImageScaleMode(card.imageScaleMode)
+                            ? card.imageScaleMode : "crop");
                     Bitmap bitmap = loadedImages.get(card.imageAssetId);
                     value.putBoolean("importing", loadedImages instanceof ImageResult
                             && ((ImageResult) loadedImages).pending.contains(card.imageAssetId));

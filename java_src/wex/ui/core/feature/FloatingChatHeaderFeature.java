@@ -22,9 +22,9 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
+import dev.mindlink.xposed.XC_MethodHook;
+import dev.mindlink.xposed.XposedBridge;
+import dev.mindlink.xposed.XposedHelpers;
 import wex.ui.core.WexStore;
 
 /** Floating chat title owned by its ChattingUILayout; ported from WeKit (GPL-3.0-only). */
@@ -78,6 +78,10 @@ public final class FloatingChatHeaderFeature {
         };
         optionalHook(layout, "onLayout", changed, boolean.class, int.class, int.class, int.class, int.class);
         optionalHook(layout, "onAttachedToWindow", changed);
+        // The chat title is set before the floating header first applies; record its uncut
+        // text from the start so the title can be re-cut for the floating card's real width.
+        try { FloatingHeaderStyle.TitleSource.install(XposedHelpers.findClass("com.tencent.mm.ui.base.NoMeasuredTextView", loader)); }
+        catch (Throwable error) { unavailable("title-source", error); }
         hookTipsPadding(loader);
         hookActivity(Activity.class);
         for (String name : new String[]{LAUNCHER_ACTIVITY, CHAT_ACTIVITY}) {
@@ -332,15 +336,25 @@ public final class FloatingChatHeaderFeature {
         View header, recycler, contentHost;
         FloatingHeaderStyle.WindowHeaderState windowHeader;
         FloatingHeaderStyle.CardState headerStyle;
+        /** Side-button ripples and the integrated title's text limit (FloatingHeaderParts). */
+        FloatingHeaderParts.State headerParts;
         FloatingHeaderStyle.SeparatedState separated;
         FloatingHeaderStyle.TopEdgeState topEdge;
         final WeakHashMap<View, FloatingHeaderStyle.CardState> extraStyles = new WeakHashMap<>();
         final WeakHashMap<View, Margin> extraMargins = new WeakHashMap<>();
         final WeakHashMap<View, Chrome> tipsChrome = new WeakHashMap<>();
+        /** Expand scrims hidden while the feature runs, restored with the panel chrome. */
+        final WeakHashMap<View, Scrim> tipsScrims = new WeakHashMap<>();
+        boolean tipsRelayout, tipsSkipped;
+        View tipsBody;
+        int tipsBodyLogs;
         FloatingHeaderStyle.CardState tipsStyle;
         Margin tipsMargin;
         View tips;
         int tipsTick;
+        /** The page's ChatFooter, handed to the footer feature as a backstop (see adoptFooter). */
+        View footer;
+        int footerTick;
         int listExtra;
         int listWrittenTop = Integer.MIN_VALUE;
         String tipsStage;
@@ -364,7 +378,14 @@ public final class FloatingChatHeaderFeature {
             unwatch(); if (next.isAlive()) { observer = next; observer.addOnPreDrawListener(this); }
         }
 
-        @Override public boolean onPreDraw() { apply(); return true; }
+        @Override public boolean onPreDraw() {
+            apply();
+            // Hiding the expand scrim changes this frame's layout; skip one draw so the full-height
+            // group never flashes. Never two in a row, so a host that relights it cannot stall drawing.
+            boolean skip = tipsRelayout && !tipsSkipped;
+            tipsRelayout = false; tipsSkipped = skip;
+            return !skip;
+        }
 
         void apply() {
             View layout = layoutRef.get();
@@ -403,9 +424,12 @@ public final class FloatingChatHeaderFeature {
                             config.corner, config.elevation, config.glass, config.glassBlur);
                 }
                 applyMargins(layout, header);
+                // After the style pass: the separated pills and the back translation are final here.
+                headerParts = FloatingHeaderParts.apply(header, headerParts, config.separated);
                 applyExtras(layout, header);
                 applyTips(layout, header);
                 applyListPadding(layout, header);
+                adoptFooter(layout);
                 diagnose("applied");
             } catch (Throwable error) {
                 if (!warned) { warned = true; unavailable("apply", error); }
@@ -479,6 +503,22 @@ public final class FloatingChatHeaderFeature {
         }
 
         /**
+         * Hands this chat's input bar to the floating footer feature, which cannot always find it
+         * after a notification entry (its discovery is bounded and tied to the resumed Activity).
+         * Same role as the old phone patch's {@code GlassPatch.onFrame}, which ran from this pre-draw.
+         * The lookup is cached and redone at most every 8th frame; the hand-off is idempotent.
+         */
+        private void adoptFooter(View layout) {
+            if (footer == null || !footer.isAttachedToWindow() || !isDescendant(footer, layout)) {
+                footer = null;
+                if (footerTick++ % 8 != 0) return;
+                footer = findChatChrome(layout, FOOTER, 256);
+                if (footer == null) return;
+            }
+            FloatingChatFooterFeature.adopt(footer);
+        }
+
+        /**
          * Group-chat pinned message / announcement stack ({@code ChatTipsBarGroup}).
          *
          * <p>The host inflates it beside the chat content or inside a wrapping container. Its
@@ -521,36 +561,116 @@ public final class FloatingChatHeaderFeature {
             if (tips.getVisibility() != View.VISIBLE || !tips.isShown()) {
                 diagnoseTips("HIDDEN", layout, tips); return;
             }
+            // Before the card: with the scrim gone the group measures to its real content height.
+            suppressTipsScrim();
             tipsStyle = FloatingHeaderStyle.applyCard(tips, tipsStyle, config.corner, config.elevation,
                     config.glass, config.glassBlur);
             detachTipsPanel();
+            FloatingHeaderStyle.clampCard(tipsStyle, tipsCardHeight());
             diagnoseTips("APPLIED", layout, tips);
+        }
+
+        /**
+         * Expanding several pinned messages makes the host show a full-size scrim inside the group
+         * (a plain {@code View}, match_parent × match_parent, #80000000; tapping it folds the list).
+         * In a wrap_content group that View measures to all the space it is offered, so the group,
+         * and the glass card on it, reached the bottom of the screen. A floating card cannot dim
+         * the whole chat, so the scrim goes, as in WeKit: GONE (no layout, no hit target), alpha 0
+         * and no fill, in case the host relights it mid-animation. Matched by structure only; the
+         * obfuscated id differs between WeChat builds.
+         */
+        private void suppressTipsScrim() {
+            if (!(tips instanceof ViewGroup)) return;
+            ArrayDeque<View> queue = new ArrayDeque<>(); queue.add(tips); int admitted = 1;
+            while (!queue.isEmpty()) {
+                View child = queue.removeFirst();
+                if (child != tips && isScrim(child)) {
+                    if (!tipsScrims.containsKey(child)) tipsScrims.put(child, new Scrim(child));
+                    if (child.getVisibility() != View.GONE) { child.setVisibility(View.GONE); tipsRelayout = true; }
+                    if (child.getAlpha() != 0f) child.setAlpha(0f);
+                    if (child.getBackground() != null) child.setBackground(null);
+                    continue;
+                }
+                if (!(child instanceof ViewGroup)) continue;
+                ViewGroup group = (ViewGroup) child;
+                if (group.getChildCount() > 64 - admitted) continue;
+                for (int i = 0; i < group.getChildCount(); i++) { queue.addLast(group.getChildAt(i)); admitted++; }
+            }
+        }
+
+        private static boolean isScrim(View view) {
+            if (view.getClass() != View.class) return false;
+            ViewGroup.LayoutParams params = view.getLayoutParams();
+            return params != null && params.width == ViewGroup.LayoutParams.MATCH_PARENT
+                    && params.height == ViewGroup.LayoutParams.MATCH_PARENT;
+        }
+
+        /**
+         * Height of the visible card: the bottom of the card body (the group's only
+         * {@code RelativeLayout}, WeKit's "hyi") inside the group. Everything below it — the
+         * collapse placeholder, a scrim the host has just relit — is not card. 0 when the body is
+         * missing or not laid out yet, which leaves the card at the group's own height.
+         */
+        private int tipsCardHeight() {
+            if (tipsBody == null || !isDescendant(tipsBody, tips)) {
+                tipsBody = null;
+                ArrayDeque<View> queue = new ArrayDeque<>(); queue.add(tips); int admitted = 1;
+                while (!queue.isEmpty() && tipsBody == null) {
+                    View child = queue.removeFirst();
+                    if (child != tips && child instanceof RelativeLayout) { tipsBody = child; break; }
+                    if (!(child instanceof ViewGroup)) continue;
+                    ViewGroup group = (ViewGroup) child;
+                    if (group.getChildCount() > 64 - admitted) continue;
+                    for (int i = 0; i < group.getChildCount(); i++) { queue.addLast(group.getChildAt(i)); admitted++; }
+                }
+                if (tipsBody == null && tipsBodyLogs++ < 2) log("stage=tips reason=NO_CARD_BODY");
+            }
+            if (tipsBody == null || tipsBody.getHeight() <= 0) return 0;
+            int bottom = tipsBody.getHeight();
+            for (View current = tipsBody; current != null && current != tips;
+                    current = current.getParent() instanceof View ? (View) current.getParent() : null) {
+                bottom += current.getTop();
+            }
+            return bottom;
         }
 
         /**
          * The card, the scrim and the hairline inside the tip group are host chrome; the material
          * replaces them. The host repaints the panel background on every fold/expand, so this runs
          * per frame. The first background seen for each child is kept for restore.
+         *
+         * <p>Each pinned entry ({@code ChatTipsBar}) also carries WeChat's own rounded white card,
+         * which sat inside the glass as a second, opaque card. The old phone patch
+         * ({@code GlassPatch.onCardApplied}) cleared those; here every container within
+         * {@link #TIPS_CARD_DEPTH} levels loses its fill too, recorded for restore like the panel
+         * chrome. Leaf views keep theirs: an icon or close button may draw itself as a
+         * background. Our own glass is never touched.</p>
          */
         private void detachTipsPanel() {
             if (!(tips instanceof ViewGroup)) return;
-            ArrayDeque<View> queue = new ArrayDeque<>(); queue.add(tips); int admitted = 1;
+            ArrayDeque<View> queue = new ArrayDeque<>(); ArrayDeque<Integer> depths = new ArrayDeque<>();
+            queue.add(tips); depths.add(0); int admitted = 1;
             while (!queue.isEmpty()) {
-                View child = queue.removeFirst();
+                View child = queue.removeFirst(); int depth = depths.removeFirst();
                 int id = child.getId();
                 // WeChat 8.0.76 chrome lives inside a wrapping FrameLayout, not on the group.
-                if (id == 0x7f093d1f || id == 0x7f096d83 || id == 0x7f096d7c) {
-                    if (child.getBackground() != null) {
-                        if (!tipsChrome.containsKey(child)) tipsChrome.put(child, new Chrome(child));
-                        child.setBackground(null);
-                    }
+                boolean chrome = id == 0x7f093d1f || id == 0x7f096d83 || id == 0x7f096d7c;
+                boolean card = depth > 0 && child instanceof ViewGroup && !(child.getBackground() instanceof ChatGlassSurface);
+                if ((chrome || card) && child.getBackground() != null) {
+                    if (!tipsChrome.containsKey(child)) tipsChrome.put(child, new Chrome(child));
+                    child.setBackground(null);
                 }
-                if (id == 0x7f095a10 || !(child instanceof ViewGroup)) continue;
+                if (!(child instanceof ViewGroup) || depth >= TIPS_CARD_DEPTH) continue;
                 ViewGroup group = (ViewGroup) child;
                 if (group.getChildCount() > 64 - admitted) continue;
-                for (int i = 0; i < group.getChildCount(); i++) { queue.addLast(group.getChildAt(i)); admitted++; }
+                for (int i = 0; i < group.getChildCount(); i++) {
+                    queue.addLast(group.getChildAt(i)); depths.addLast(depth + 1); admitted++;
+                }
             }
         }
+
+        /** Group → wrapper → panel → entry list → entry card: the same reach as the old patch. */
+        private static final int TIPS_CARD_DEPTH = 4;
 
         private void diagnoseTips(String reason, View layout, View view) {
             String next = reason + " parent=" + (view != null && view.getParent() instanceof View
@@ -646,6 +766,7 @@ public final class FloatingChatHeaderFeature {
             View layout = layoutRef.get(); if (layout != null && stripChanged && strip != null && strip.getAlpha() == 0) { strip.setAlpha(stripAlpha); layout.invalidate(); }
         }
         void restoreHeader() {
+            FloatingHeaderParts.restore(headerParts); headerParts = null;
             FloatingHeaderStyle.restoreSeparated(separated); separated = null;
             FloatingHeaderStyle.restoreWindowHeader(windowHeader); windowHeader = null;
             FloatingHeaderStyle.restore(headerStyle); headerStyle = null;
@@ -668,9 +789,12 @@ public final class FloatingChatHeaderFeature {
             listExtra = 0; listWrittenTop = Integer.MIN_VALUE;
         }
         void restoreTips() {
+            FloatingHeaderStyle.clampCard(tipsStyle, 0);
             FloatingHeaderStyle.restore(tipsStyle); tipsStyle = null;
             for (Chrome chrome : tipsChrome.values()) chrome.restore();
             tipsChrome.clear();
+            for (Scrim scrim : tipsScrims.values()) scrim.restore();
+            tipsScrims.clear(); tipsBody = null; tipsRelayout = false;
             if (tips != null && tipsMargin != null) tipsMargin.restore(tips);
             tips = null; tipsMargin = null; tipsTick = 0;
         }
@@ -803,5 +927,17 @@ public final class FloatingChatHeaderFeature {
     private static final class Margin { final int left, top, right, bottom; Margin(int l,int t,int r,int b){left=l;top=t;right=r;bottom=b;} static Margin of(View v){if(!(v.getLayoutParams() instanceof ViewGroup.MarginLayoutParams))return null;ViewGroup.MarginLayoutParams p=(ViewGroup.MarginLayoutParams)v.getLayoutParams();return new Margin(p.leftMargin,p.topMargin,p.rightMargin,p.bottomMargin);} void restore(View v){if(v.getLayoutParams() instanceof ViewGroup.MarginLayoutParams){ViewGroup.MarginLayoutParams p=(ViewGroup.MarginLayoutParams)v.getLayoutParams();p.setMargins(left,top,right,bottom);v.setLayoutParams(p);}} }
     /** Host chrome we detach while the tip card carries the material; only the fill is kept. */
     private static final class Chrome { final View view; final Drawable background; Chrome(View view){this.view=view;this.background=view.getBackground();} void restore(){if(view.getBackground()==null)view.setBackground(background);} }
+    private static final class Scrim {
+        final View view; final Drawable background; final float alpha;
+        Scrim(View view) { this.view = view; background = view.getBackground(); alpha = view.getAlpha(); }
+        /**
+         * Visibility stays GONE: the host may have folded the list meanwhile, and a scrim forced
+         * back to VISIBLE would then dim the chat. The host sets it visible itself on the next expand.
+         */
+        void restore() {
+            if (view.getBackground() == null) view.setBackground(background);
+            view.setAlpha(alpha);
+        }
+    }
     private static void log(String message) { XposedBridge.log("WEX: 悬浮顶栏: " + message); }
 }

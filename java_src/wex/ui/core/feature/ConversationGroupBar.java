@@ -25,8 +25,10 @@ final class ConversationGroupBar extends HorizontalScrollView {
         tabs = new LinearLayout(context);
         tabs.setOrientation(LinearLayout.HORIZONTAL);
         tabs.setGravity(Gravity.CENTER_VERTICAL);
+        ConversationGroupCard.styleTabs(tabs);
         addView(tabs, new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
-        setBackgroundColor(SettingsTheme.isDark(context) ? 0xFF191919 : 0xFFF7F7F7);
+        // Transparent: the floating card around the tabs (ConversationGroupCard) owns the surface.
+        setBackgroundColor(0);
         rebuild();
     }
 
@@ -46,7 +48,7 @@ final class ConversationGroupBar extends HorizontalScrollView {
             else {
                 label = new TextView(getContext());
                 label.setTextSize(14); label.setGravity(Gravity.CENTER);
-                label.setMinHeight(dp(48)); label.setPadding(dp(16), dp(10), dp(16), dp(10));
+                label.setMinHeight(dp(ConversationGroupCard.TAB_HEIGHT_DP)); label.setPadding(dp(14), 0, dp(14), 0);
                 label.setOnClickListener(view -> ConversationGroupingFeature.setActive(group.id));
                 tabs.addView(label, tabParams(equal));
                 tabIds.add(group.id);
@@ -54,8 +56,12 @@ final class ConversationGroupBar extends HorizontalScrollView {
             // Selection/host notifications keep the measured children and scroll position.
             if (!group.label().contentEquals(label.getText())) label.setText(group.label());
             boolean selected = group.id.equals(activeId);
+            boolean wasSelected = label.isSelected();
             label.setTextColor(selected ? SettingsTheme.accent(getContext()) : SettingsTheme.ink(getContext()));
             label.setSelected(selected);
+            // Capsule highlight; it fades in only when the selection moves on an existing row.
+            ConversationGroupCard.styleTab(label, selected, sameTabs && selected && !wasSelected);
+            if (selected && !wasSelected) ConversationGroupCard.reveal(this, label);
             label.setOnLongClickListener(view -> {
                 if (activity != null) ConversationGroupEditor.edit(activity, group);
                 return true;
@@ -67,14 +73,20 @@ final class ConversationGroupBar extends HorizontalScrollView {
             add.setText("＋"); add.setTextSize(22); add.setGravity(Gravity.CENTER);
             add.setTextColor(SettingsTheme.accent(getContext())); add.setContentDescription("添加会话分组");
             add.setOnClickListener(view -> { if (activity != null) ConversationGroupEditor.edit(activity, null); });
-            tabs.addView(add, new LinearLayout.LayoutParams(dp(48), dp(48)));
+            ConversationGroupCard.styleAdd(add);
+            LinearLayout.LayoutParams addParams = new LinearLayout.LayoutParams(
+                    dp(ConversationGroupCard.TAB_HEIGHT_DP), dp(ConversationGroupCard.TAB_HEIGHT_DP));
+            ConversationGroupCard.tabMargins(addParams, getContext());
+            tabs.addView(add, addParams);
         } else ((TextView) tabs.getChildAt(groups.size())).setTextColor(SettingsTheme.accent(getContext()));
         equalWidth = equal;
     }
 
     private LinearLayout.LayoutParams tabParams(boolean equal) {
-        return new LinearLayout.LayoutParams(equal ? 0 : LayoutParams.WRAP_CONTENT,
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(equal ? 0 : LayoutParams.WRAP_CONTENT,
                 LayoutParams.WRAP_CONTENT, equal ? 1f : 0f);
+        ConversationGroupCard.tabMargins(params, getContext());
+        return params;
     }
 
     private int dp(int value) { return Math.round(getResources().getDisplayMetrics().density * value); }

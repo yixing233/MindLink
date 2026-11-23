@@ -87,22 +87,32 @@ fun MindLinkListRow(
     modifier: Modifier = Modifier,
     summary: String? = null,
     trailing: (@Composable () -> Unit)? = null,
+    leading: (@Composable () -> Unit)? = null,
 ) {
     ListItem(
         modifier = modifier.fillMaxWidth(),
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         headlineContent = { Text(title, style = MaterialTheme.typography.bodyLarge) },
         supportingContent = summary?.let { { Text(it, style = MaterialTheme.typography.bodySmall) } },
+        leadingContent = leading,
         trailingContent = trailing,
     )
 }
 
 @Composable
-fun MindLinkSwitchRow(title: String, checked: Boolean, summary: String? = null, onChange: (Boolean) -> Unit) {
+fun MindLinkSwitchRow(
+    title: String,
+    checked: Boolean,
+    summary: String? = null,
+    enabled: Boolean = true,
+    leading: (@Composable () -> Unit)? = null,
+    onChange: (Boolean) -> Unit,
+) {
     MindLinkListRow(
         title = title, summary = summary,
-        modifier = Modifier.toggleable(value = checked, role = Role.Switch, onValueChange = onChange),
-        trailing = { Switch(checked = checked, onCheckedChange = null) },
+        modifier = Modifier.toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onChange),
+        trailing = { Switch(checked = checked, onCheckedChange = null, enabled = enabled) },
+        leading = leading,
     )
 }
 

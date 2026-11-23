@@ -1,6 +1,6 @@
 --- WeKit/app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelDataCards.kt
 +++ src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelDataCards.kt
-@@ -1,760 +1,765 @@
+@@ -1,760 +1,739 @@
 -package dev.ujhhgtg.wekit.features.items.beautify.home_screen_panel
 -
 -import androidx.annotation.StringRes
@@ -765,10 +765,12 @@
 +// Copied and modified from WeKit, Ujhhgtg and upstream contributors.
 +// Source: app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelDataCards.kt
 +// MindLink adaptations (2026-11-14): resource namespace and platform localized context/error text only; DateTime/Weather/Wallet/Hitokoto bodies retained
-+// Original component geometry/typography/icons are retained; host hooks are not copied.
++// 2026-11-22: icons switched to Lucide (dev.mindlink.ui.LucideIcons, ISC); see THIRD-PARTY-NOTICES.md.
++// Original component geometry/typography are retained (icons are now Lucide); host hooks are not copied.
 +// See thirdparty/sourceprovenance/wekit-sidepanel.json and matching .patch files.
 +package dev.mindlink.sidepanel.vendor.wekit
 +
++import dev.mindlink.ui.LucideIcons
 +import androidx.annotation.StringRes
 +import androidx.compose.foundation.BorderStroke
 +import androidx.compose.foundation.background
@@ -815,34 +817,6 @@
 +import androidx.compose.ui.text.style.TextOverflow
 +import androidx.compose.ui.unit.dp
 +import androidx.compose.ui.unit.sp
-+import com.composables.icons.materialsymbols.MaterialSymbols
-+import com.composables.icons.materialsymbols.outlined.Air
-+import com.composables.icons.materialsymbols.outlined.Cloud
-+import com.composables.icons.materialsymbols.outlined.Cloudy_snowing
-+import com.composables.icons.materialsymbols.outlined.Cyclone
-+import com.composables.icons.materialsymbols.outlined.Device_thermostat
-+import com.composables.icons.materialsymbols.outlined.Foggy
-+import com.composables.icons.materialsymbols.outlined.Format_quote
-+import com.composables.icons.materialsymbols.outlined.Grain
-+import com.composables.icons.materialsymbols.outlined.Humidity_percentage
-+import com.composables.icons.materialsymbols.outlined.Location_on
-+import com.composables.icons.materialsymbols.outlined.Partly_cloudy_day
-+import com.composables.icons.materialsymbols.outlined.Qr_code_scanner
-+import com.composables.icons.materialsymbols.outlined.Question_mark
-+import com.composables.icons.materialsymbols.outlined.Rainy
-+import com.composables.icons.materialsymbols.outlined.Rainy_heavy
-+import com.composables.icons.materialsymbols.outlined.Rainy_light
-+import com.composables.icons.materialsymbols.outlined.Rainy_snow
-+import com.composables.icons.materialsymbols.outlined.Snowing
-+import com.composables.icons.materialsymbols.outlined.Snowing_heavy
-+import com.composables.icons.materialsymbols.outlined.Storm
-+import com.composables.icons.materialsymbols.outlined.Sunny
-+import com.composables.icons.materialsymbols.outlined.Sunny_snowing
-+import com.composables.icons.materialsymbols.outlined.Thunderstorm
-+import com.composables.icons.materialsymbols.outlined.Tornado
-+import com.composables.icons.materialsymbols.outlined.Wallet
-+import com.composables.icons.materialsymbols.outlined.Weather_hail
-+import com.composables.icons.materialsymbols.outlined.Weather_snowy
 +import dev.mindlink.sidepanel.R
 +import androidx.compose.ui.platform.LocalContext
 +import kotlinx.coroutines.delay
@@ -1011,7 +985,7 @@
 +                verticalAlignment = Alignment.CenterVertically,
 +            ) {
 +                Icon(
-+                    MaterialSymbols.Outlined.Location_on,
++                    LucideIcons.MapPin,
 +                    contentDescription = null,
 +                    modifier = Modifier.size(18.dp),
 +                    tint = contentColor,
@@ -1121,7 +1095,7 @@
 +                        verticalAlignment = Alignment.CenterVertically,
 +                    ) {
 +                        HomeSidePanelWeatherMetric(
-+                            icon = MaterialSymbols.Outlined.Device_thermostat,
++                            icon = LucideIcons.Thermometer,
 +                            value = snapshot?.let { "${it.high}° / ${it.low}°" } ?: "-- / --",
 +                            label = stringResource(R.string.wekit_sp_home_side_panel_high_low),
 +                            modifier = Modifier.weight(1f),
@@ -1133,7 +1107,7 @@
 +                            color = contentColor.copy(alpha = 0.12f),
 +                        )
 +                        HomeSidePanelWeatherMetric(
-+                            icon = MaterialSymbols.Outlined.Humidity_percentage,
++                            icon = LucideIcons.Droplets,
 +                            value = snapshot?.let { "${it.humidity}%" } ?: "--",
 +                            label = stringResource(R.string.wekit_sp_home_side_panel_humidity),
 +                            modifier = Modifier.weight(1f),
@@ -1145,7 +1119,7 @@
 +                            color = contentColor.copy(alpha = 0.12f),
 +                        )
 +                        HomeSidePanelWeatherMetric(
-+                            icon = MaterialSymbols.Outlined.Air,
++                            icon = LucideIcons.Wind,
 +                            value = snapshot?.let { "${it.windSpeed} km/h" } ?: "--",
 +                            label = stringResource(R.string.wekit_sp_home_side_panel_wind_speed),
 +                            modifier = Modifier.weight(1f),
@@ -1220,7 +1194,7 @@
 +                horizontalArrangement = Arrangement.spacedBy(8.dp),
 +            ) {
 +                Icon(
-+                    MaterialSymbols.Outlined.Wallet,
++                    LucideIcons.Wallet,
 +                    contentDescription = null,
 +                    modifier = Modifier.size(20.dp),
 +                    tint = contentColor,
@@ -1256,7 +1230,7 @@
 +                    ),
 +                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 12.dp),
 +                ) {
-+                    Icon(MaterialSymbols.Outlined.Qr_code_scanner, contentDescription = null, modifier = Modifier.size(18.dp))
++                    Icon(LucideIcons.ScanQrCode, contentDescription = null, modifier = Modifier.size(18.dp))
 +                    Text(stringResource(R.string.wekit_sp_home_side_panel_scan), modifier = Modifier.padding(start = 7.dp), maxLines = 1)
 +                }
 +                Button(
@@ -1271,7 +1245,7 @@
 +                    ),
 +                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 12.dp),
 +                ) {
-+                    Icon(MaterialSymbols.Outlined.Wallet, contentDescription = null, modifier = Modifier.size(18.dp))
++                    Icon(LucideIcons.Wallet, contentDescription = null, modifier = Modifier.size(18.dp))
 +                    Text(stringResource(R.string.wekit_sp_home_side_panel_payment_code), modifier = Modifier.padding(start = 7.dp), maxLines = 1)
 +                }
 +            }
@@ -1323,7 +1297,7 @@
 +    ) {
 +        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
 +            Row(verticalAlignment = Alignment.CenterVertically) {
-+                Icon(MaterialSymbols.Outlined.Format_quote, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
++                Icon(LucideIcons.Quote, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
 +                Text(
 +                    stringResource(R.string.wekit_sp_home_side_panel_hitokoto),
 +                    modifier = Modifier.padding(start = 8.dp),
@@ -1452,31 +1426,31 @@
 +}
 +
 +private fun weatherIcon(code: String): ImageVector = when (weatherIconKind(code)) {
-+    WeatherIconKind.SUNNY -> MaterialSymbols.Outlined.Sunny
-+    WeatherIconKind.PARTLY_CLOUDY -> MaterialSymbols.Outlined.Partly_cloudy_day
-+    WeatherIconKind.OVERCAST -> MaterialSymbols.Outlined.Cloud
-+    WeatherIconKind.SHOWER -> MaterialSymbols.Outlined.Rainy
-+    WeatherIconKind.THUNDERSTORM -> MaterialSymbols.Outlined.Thunderstorm
-+    WeatherIconKind.HAIL -> MaterialSymbols.Outlined.Weather_hail
-+    WeatherIconKind.SLEET -> MaterialSymbols.Outlined.Rainy_snow
-+    WeatherIconKind.LIGHT_RAIN -> MaterialSymbols.Outlined.Rainy_light
-+    WeatherIconKind.RAIN -> MaterialSymbols.Outlined.Rainy
-+    WeatherIconKind.HEAVY_RAIN -> MaterialSymbols.Outlined.Rainy_heavy
-+    WeatherIconKind.RAINSTORM -> MaterialSymbols.Outlined.Storm
-+    WeatherIconKind.SNOW_SHOWER -> MaterialSymbols.Outlined.Sunny_snowing
-+    WeatherIconKind.LIGHT_SNOW -> MaterialSymbols.Outlined.Snowing
-+    WeatherIconKind.SNOW -> MaterialSymbols.Outlined.Weather_snowy
-+    WeatherIconKind.HEAVY_SNOW -> MaterialSymbols.Outlined.Snowing_heavy
-+    WeatherIconKind.BLIZZARD -> MaterialSymbols.Outlined.Cloudy_snowing
-+    WeatherIconKind.FOG -> MaterialSymbols.Outlined.Foggy
-+    WeatherIconKind.FREEZING_RAIN -> MaterialSymbols.Outlined.Rainy_snow
-+    WeatherIconKind.DUST_STORM -> MaterialSymbols.Outlined.Storm
-+    WeatherIconKind.DUST -> MaterialSymbols.Outlined.Grain
-+    WeatherIconKind.SAND -> MaterialSymbols.Outlined.Grain
-+    WeatherIconKind.SQUALL -> MaterialSymbols.Outlined.Cyclone
-+    WeatherIconKind.TORNADO -> MaterialSymbols.Outlined.Tornado
-+    WeatherIconKind.HAZE -> MaterialSymbols.Outlined.Air
-+    WeatherIconKind.UNKNOWN -> MaterialSymbols.Outlined.Question_mark
++    WeatherIconKind.SUNNY -> LucideIcons.Sun
++    WeatherIconKind.PARTLY_CLOUDY -> LucideIcons.CloudSun
++    WeatherIconKind.OVERCAST -> LucideIcons.Cloud
++    WeatherIconKind.SHOWER -> LucideIcons.CloudRain
++    WeatherIconKind.THUNDERSTORM -> LucideIcons.CloudLightning
++    WeatherIconKind.HAIL -> LucideIcons.CloudHail
++    WeatherIconKind.SLEET -> LucideIcons.CloudSnow
++    WeatherIconKind.LIGHT_RAIN -> LucideIcons.CloudDrizzle
++    WeatherIconKind.RAIN -> LucideIcons.CloudRain
++    WeatherIconKind.HEAVY_RAIN -> LucideIcons.CloudRainWind
++    WeatherIconKind.RAINSTORM -> LucideIcons.Zap
++    WeatherIconKind.SNOW_SHOWER -> LucideIcons.SunSnow
++    WeatherIconKind.LIGHT_SNOW -> LucideIcons.Snowflake
++    WeatherIconKind.SNOW -> LucideIcons.Snowflake
++    WeatherIconKind.HEAVY_SNOW -> LucideIcons.CloudSnow
++    WeatherIconKind.BLIZZARD -> LucideIcons.CloudSnow
++    WeatherIconKind.FOG -> LucideIcons.CloudFog
++    WeatherIconKind.FREEZING_RAIN -> LucideIcons.CloudSnow
++    WeatherIconKind.DUST_STORM -> LucideIcons.Zap
++    WeatherIconKind.DUST -> LucideIcons.Haze
++    WeatherIconKind.SAND -> LucideIcons.Haze
++    WeatherIconKind.SQUALL -> LucideIcons.Tornado
++    WeatherIconKind.TORNADO -> LucideIcons.Tornado
++    WeatherIconKind.HAZE -> LucideIcons.Wind
++    WeatherIconKind.UNKNOWN -> LucideIcons.QuestionMark
 +}
 +
 +@StringRes

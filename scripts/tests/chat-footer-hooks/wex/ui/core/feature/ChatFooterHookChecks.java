@@ -20,7 +20,7 @@ import com.tencent.mm.pluginsdk.ui.chat.ChattingScrollLayout;
 import com.tencent.mm.pluginsdk.ui.chat.ChattingUILayout;
 import com.tencent.mm.ui.LauncherUI;
 import com.tencent.mm.ui.chatting.ChattingUI;
-import de.robv.android.xposed.XposedBridge;
+import dev.mindlink.xposed.XposedBridge;
 import wex.ui.core.WexStore;
 
 import java.lang.reflect.Field;
@@ -306,6 +306,19 @@ public final class ChatFooterHookChecks {
         enable(true); LauncherUI exhausted = new LauncherUI(); root(exhausted).attach(); resume(exhausted); Handler.finish();
         check(Handler.pending() == 0, "discovery stops after finite attempts");
         check(XposedBridge.logs.stream().anyMatch(s->s.contains("stage=discover exhausted")), "bounded exhaustion diagnosed"); stop(exhausted);
+
+        // Notification entry: the chat tree arrives after this feature's bounded discovery gave up.
+        enable(true); LauncherUI notified = new LauncherUI(); ViewGroup notifiedRoot = root(notified); notifiedRoot.attach();
+        resume(notified); Handler.finish();
+        ChatFooter missed = new ChatFooter(notified); notifiedRoot.addView(missed, margins(0,0,0,0)); Handler.drain();
+        check(missed.attachListeners.isEmpty(), "exhausted discovery misses a chat tree delivered late");
+        FloatingChatFooterFeature.adopt(missed); Handler.drain();
+        check(missed.attachListeners.size() == 1 && missed.getViewTreeObserver().listeners.size() == 1,
+                "header hand-off observes and watches the missed footer");
+        FloatingChatFooterFeature.adopt(missed); FloatingChatFooterFeature.adopt(missed); Handler.drain();
+        check(missed.attachListeners.size() == 1 && missed.getViewTreeObserver().listeners.size() == 1,
+                "repeated hand-off every header frame stays idempotent");
+        stop(notified);
     }
 
     private static void discoveryBoundaries() throws Throwable {

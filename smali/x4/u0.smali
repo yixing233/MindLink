@@ -2536,7 +2536,7 @@
     # --- Tabler 矢量图标：命中即用，未命中回退旧 assets 逻辑 ---
     # 音乐卡按钮最大约 80px（0.08 × 卡宽），这里固定按 96px 渲染，
     # ImageView 用 FIT_CENTER 缩放，取到的始终是矢量级清晰度。
-    invoke-static {p0}, Lwex/ui/core/feature/TablerIcons;->has(Ljava/lang/String;)Z
+    invoke-static {p0}, Lwex/ui/core/feature/LucideIcons;->has(Ljava/lang/String;)Z
 
     move-result v0
 
@@ -2555,13 +2555,13 @@
     return-object v1
 
     :cond_tabler_render
-    invoke-static {p0}, Lwex/ui/core/feature/TablerIcons;->colorOf(Ljava/lang/String;)I
+    invoke-static {p0}, Lwex/ui/core/feature/LucideIcons;->colorOf(Ljava/lang/String;)I
 
     move-result v2
 
     const/16 v1, 0x60
 
-    invoke-static {p0, v1, v2}, Lwex/ui/core/feature/TablerIcons;->bitmap(Ljava/lang/String;II)Landroid/graphics/Bitmap;
+    invoke-static {p0, v1, v2}, Lwex/ui/core/feature/LucideIcons;->bitmap(Ljava/lang/String;II)Landroid/graphics/Bitmap;
 
     move-result-object v1
 
@@ -2712,7 +2712,7 @@
 
     move-result-object v0
 
-    invoke-static {v0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
+    invoke-static {v0}, Ldev/mindlink/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
     :try_start_0
     sget-object v0, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;

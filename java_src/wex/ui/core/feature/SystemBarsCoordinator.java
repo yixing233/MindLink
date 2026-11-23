@@ -14,8 +14,8 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayDeque;
 import java.util.WeakHashMap;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
+import dev.mindlink.xposed.XC_MethodHook;
+import dev.mindlink.xposed.XposedBridge;
 import wex.ui.core.WexStore;
 
 /** Window colors and inset measurements; only module-owned layouts consume insets. */

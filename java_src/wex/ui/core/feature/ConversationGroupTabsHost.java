@@ -19,6 +19,7 @@ final class ConversationGroupTabsHost extends FrameLayout implements ViewTreeObs
     private final FrameLayout header;
     private final View spacer;
     private final ConversationGroupBar bar;
+    private final View card;
     private final int[] parentPosition = new int[2], listPosition = new int[2], headerPosition = new int[2];
     private final Rect visible = new Rect();
     private ViewTreeObserver observer;
@@ -51,7 +52,8 @@ final class ConversationGroupTabsHost extends FrameLayout implements ViewTreeObs
         header.addView(spacer, new LayoutParams(LayoutParams.MATCH_PARENT, 0));
         header.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
         bar = new ConversationGroupBar(getContext());
-        addView(bar, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+        // Floating card: inset, capsule outline, shadow and the shared card material.
+        card = ConversationGroupCard.wrap(this, bar);
         slop = ViewConfiguration.get(getContext()).getScaledTouchSlop();
         setVisibility(INVISIBLE);
         setElevation(1f);
@@ -76,7 +78,11 @@ final class ConversationGroupTabsHost extends FrameLayout implements ViewTreeObs
         refresh();
     }
 
-    void refresh() { if (!disposed) bar.rebuild(); }
+    void refresh() {
+        if (disposed) return;
+        bar.rebuild();
+        ConversationGroupCard.apply(card);
+    }
 
     @Override protected void onAttachedToWindow() {
         super.onAttachedToWindow();
@@ -130,7 +136,12 @@ final class ConversationGroupTabsHost extends FrameLayout implements ViewTreeObs
         visible.set(0, clipTop, width, clipBottom);
         setClipBounds(visible);
         if (clipBottom <= clipTop) hideTabs();
-        else { setAlpha(actionBar == null ? 1f : actionBar.getAlpha()); setVisibility(VISIBLE); }
+        else {
+            // Hidden while the pull-down page was open: its glass must not keep the plain fallback.
+            boolean wasHidden = getVisibility() != VISIBLE || getAlpha() <= 0f;
+            setAlpha(actionBar == null ? 1f : actionBar.getAlpha()); setVisibility(VISIBLE);
+            if (wasHidden) ConversationGroupCard.refreshGlass(card);
+        }
         return true;
     }
 
@@ -178,6 +189,7 @@ final class ConversationGroupTabsHost extends FrameLayout implements ViewTreeObs
     void dispose() {
         if (disposed) return;
         disposed = true;
+        ConversationGroupCard.release(card);
         list.removeOnAttachStateChangeListener(listListener);
         list.removeHeaderView(header);
         if (getParent() instanceof ViewGroup) ((ViewGroup) getParent()).removeView(this);

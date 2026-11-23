@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import de.robv.android.xposed.XposedHelpers;
+import dev.mindlink.xposed.XposedHelpers;
 
 /** Native four-page navigation with a background-only glass layer, adapted from WeKit (GPL-3.0-only). */
 final class NavigationBarViews {
@@ -632,7 +632,7 @@ final class NavigationBarViews {
             float radius = floating ? surface.height() / 2f : 0f;
             if (floating) decoration.dropShadow(canvas, surface, radius, scaledDensity, dark);
             boolean sampled = baseGlass.drawBase(canvas, sampler, surface, radius, px(session.config.blur),
-                    liquid, dark, scaledDensity, session.config.backdrop);
+                    liquid, dark, scaledDensity, session.config.backdrop, session.config.opacity);
             if (session.config.backdrop && !sampled && !fallbackLogged) {
                 fallbackLogged = true;
                 NavigationBarFeature.log("当前背景不可采样，使用中性表面（不含实时模糊）");
@@ -1017,9 +1017,14 @@ final class NavigationBarViews {
                     Bitmap bitmap = highlighted ? nativeIcons.filled : nativeIcons.outlined;
                     ink.setColor(Color.WHITE); ink.setAlpha(255); canvas.drawBitmap(bitmap, null, iconRect, ink);
                 } else {
-                    ink.setColor(color); ink.setStyle(Paint.Style.FILL);
-                    canvas.translate(iconRect.left, iconRect.top); canvas.scale(size / 960f, size / 960f);
+                    // Lucide outlines (24 grid, round 2-unit stroke); the selected tab gets a heavier stroke.
+                    ink.setColor(color); ink.setStyle(Paint.Style.STROKE);
+                    ink.setStrokeCap(Paint.Cap.ROUND); ink.setStrokeJoin(Paint.Join.ROUND);
+                    ink.setStrokeWidth(highlighted ? 2.5f : 2f);
+                    canvas.translate(iconRect.left, iconRect.top);
+                    canvas.scale(size / NavigationIcons.GRID, size / NavigationIcons.GRID);
                     canvas.drawPath(highlighted ? filled : outlined, ink);
+                    ink.setStyle(Paint.Style.FILL);
                 }
                 canvas.restoreToCount(save);
                 if (!session.config.hideLabels) {

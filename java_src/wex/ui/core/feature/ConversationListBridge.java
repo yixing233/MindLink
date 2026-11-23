@@ -20,9 +20,9 @@ import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BooleanSupplier;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import dev.mindlink.xposed.XC_MethodHook;
+import dev.mindlink.xposed.XposedBridge;
+import dev.mindlink.xposed.callbacks.XC_LoadPackage;
 
 /** Host ListView binding with one raw/visible index contract. Resolver misses leave the host untouched. */
 public final class ConversationListBridge {
@@ -134,7 +134,10 @@ public final class ConversationListBridge {
         }
         Object adapter = latestAdapter.get();
         ListView list = latestList.get();
-        if (adapter == null || list == null || unwrapAdapter(list.getAdapter()) != adapter) return;
+        if (adapter == null || list == null || unwrapAdapter(list.getAdapter()) != adapter) {
+            reportOnce("切换分组未刷新：" + (adapter == null ? "尚无已绑定的适配器" : list == null ? "尚无会话列表" : "列表适配器已更换"));
+            return;
+        }
         try {
             traceList(list, scrollToTop ? "refresh-top" : "refresh-data");
             method(adapter.getClass(), "notifyDataSetChanged").invoke(adapter);
@@ -328,7 +331,10 @@ public final class ConversationListBridge {
                 rows = Collections.unmodifiableList(new ArrayList<Object>(rows));
                 ConversationPositions positions = ConversationPositions.build(rows, ConversationGroupingFeature::matches);
                 if (state.dataEpoch != epoch || ConversationGroupingFeature.generation() != generation
-                        || rows.size() != count || rawCount(adapter, target) != count) return null;
+                        || rows.size() != count || rawCount(adapter, target) != count) {
+                    reportOnce("快照与适配器条数不一致 rows=" + rows.size() + " count=" + count);
+                    return null;
+                }
                 Snapshot next = new Snapshot(rows, positions, epoch, generation, count);
                 state.snapshot = next;
                 state.failed = false;
@@ -337,6 +343,9 @@ public final class ConversationListBridge {
                 state.failed = true;
                 state.failedEpoch = epoch; state.failedGeneration = generation; state.failedCount = count;
                 status = "MVVM backing list 未识别，保留原列表";
+                Throwable cause = error.getCause() != null ? error.getCause() : error;
+                // Host messages can contain user data; record failure types only.
+                reportOnce("分组快照失败 " + error.getClass().getSimpleName() + " / " + cause.getClass().getName());
                 return null;
             } finally { state.building = false; }
         }
@@ -362,9 +371,30 @@ public final class ConversationListBridge {
     private static Object original(Method method, Object receiver, Object[] args) throws Throwable {
         Integer before = RAW_DEPTH.get();
         RAW_DEPTH.set(before == null ? 1 : before + 1);
-        try { return XposedBridge.invokeOriginalMethod(method, receiver, args); }
+        try {
+            if (!originBroken) {
+                try { return XposedBridge.invokeOriginalMethod(method, receiver, args); }
+                catch (XposedBridge.OriginalUnavailable unavailable) {
+                    originBroken = true;
+                    log("原方法调用不可用，改为直接调用 " + unavailable.getCause());
+                }
+            }
+            // RAW_DEPTH is set, so every grouping hook on this method passes through untouched:
+            // a plain call returns exactly the host's own result.
+            try { method.setAccessible(true); return method.invoke(receiver, args); }
+            catch (java.lang.reflect.InvocationTargetException error) {
+                throw error.getCause() != null ? error.getCause() : error;
+            }
+        }
         finally { if (before == null) RAW_DEPTH.remove(); else RAW_DEPTH.set(before); }
     }
+
+    /** Set once the framework's ORIGIN invoker failed; later calls go straight to the plain path. */
+    private static volatile boolean originBroken;
+    private static final java.util.Set<String> REPORTED = java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>());
+
+    /** One log line per distinct reason: these paths run per row and per frame. */
+    private static void reportOnce(String reason) { if (REPORTED.add(reason)) log(reason); }
 
     private static boolean rawMode() { Integer depth = RAW_DEPTH.get(); return depth != null && depth > 0; }
     static Method method(Class<?> type, String name, Class<?>... args) throws NoSuchMethodException {

@@ -20,11 +20,11 @@
         "",
         "<init>",
         "()V",
-        "Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;",
+        "Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;",
         "lpparam",
         "Lj3/x;",
         "init",
-        "(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V",
+        "(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V",
         "",
         "msg",
         "log",
@@ -34,10 +34,10 @@
         "",
         "isTopBarLike",
         "(Landroid/view/View;)Z",
-        "Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;",
+        "Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;",
         "param",
         "onAvatarLoaded",
-        "(Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;)V",
+        "(Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;)V",
         "Landroid/graphics/drawable/Drawable;",
         "d",
         "Landroid/graphics/Bitmap;",
@@ -375,10 +375,10 @@
     return-void
 .end method
 
-.method public static final synthetic access$onAvatarLoaded(Lwex/ui/core/feature/ChatTopBarTransparent;Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;)V
+.method public static final synthetic access$onAvatarLoaded(Lwex/ui/core/feature/ChatTopBarTransparent;Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;)V
     .locals 0
 
-    invoke-direct {p0, p1}, Lwex/ui/core/feature/ChatTopBarTransparent;->onAvatarLoaded(Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;)V
+    invoke-direct {p0, p1}, Lwex/ui/core/feature/ChatTopBarTransparent;->onAvatarLoaded(Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;)V
 
     return-void
 .end method
@@ -2032,7 +2032,7 @@
 
     new-array v3, v1, [Ljava/lang/Object;
 
-    invoke-static {p1, v2, v3}, Lde/robv/android/xposed/XposedHelpers;->callMethod(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;
+    invoke-static {p1, v2, v3}, Ldev/mindlink/xposed/XposedHelpers;->callMethod(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;
 
     move-result-object v2
 
@@ -2044,7 +2044,7 @@
 
     move-result-object p1
 
-    invoke-static {v2, v3, p1}, Lde/robv/android/xposed/XposedHelpers;->callMethod(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;
+    invoke-static {v2, v3, p1}, Ldev/mindlink/xposed/XposedHelpers;->callMethod(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;
 
     new-instance p1, Ljava/lang/StringBuilder;
 
@@ -2581,7 +2581,7 @@
     :try_start_0
     const-string v1, "com.tencent.mm.pluginsdk.ui.u"
 
-    invoke-static {v1, v0}, Lde/robv/android/xposed/XposedHelpers;->findClass(Ljava/lang/String;Ljava/lang/ClassLoader;)Ljava/lang/Class;
+    invoke-static {v1, v0}, Ldev/mindlink/xposed/XposedHelpers;->findClass(Ljava/lang/String;Ljava/lang/ClassLoader;)Ljava/lang/Class;
 
     move-result-object v0
 
@@ -2591,7 +2591,7 @@
 
     move-result-object p1
 
-    invoke-static {v0, v1, p1}, Lde/robv/android/xposed/XposedHelpers;->callStaticMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;
+    invoke-static {v0, v1, p1}, Ldev/mindlink/xposed/XposedHelpers;->callStaticMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;
     :try_end_0
     .catchall {:try_start_0 .. :try_end_0} :catchall_0
 
@@ -2632,7 +2632,7 @@
 
     move-result-object p0
 
-    invoke-static {p0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
+    invoke-static {p0}, Ldev/mindlink/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
     :try_start_0
     sget-object p0, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
@@ -2645,7 +2645,7 @@
     return-void
 .end method
 
-.method private final onAvatarLoaded(Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;)V
+.method private final onAvatarLoaded(Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;)V
     .locals 6
 
     const-string v0, "\u4e8b\u4ef6\u2467: \u81ea\u5df1username="
@@ -2660,7 +2660,7 @@
     goto/16 :goto_1
 
     :cond_0
-    iget-object p1, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
+    iget-object p1, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
 
     const/4 v2, 0x0
 
@@ -3781,7 +3781,7 @@
 
 
 # virtual methods
-.method public final init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+.method public final init(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
     .locals 11
 
     const-class v0, Ljava/lang/String;
@@ -3802,7 +3802,7 @@
 
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
-    iget-object p1, p1, Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->classLoader:Ljava/lang/ClassLoader;
+    iget-object p1, p1, Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->classLoader:Ljava/lang/ClassLoader;
 
     sput-object p1, Lwex/ui/core/feature/ChatTopBarTransparent;->cl:Ljava/lang/ClassLoader;
 
@@ -3842,7 +3842,7 @@
 
     invoke-direct {p1, v8}, Lx4/f;-><init>(I)V
 
-    invoke-static {v5, v1, p1}, Lde/robv/android/xposed/XposedBridge;->hookAllMethods(Ljava/lang/Class;Ljava/lang/String;Lde/robv/android/xposed/XC_MethodHook;)Ljava/util/Set;
+    invoke-static {v5, v1, p1}, Ldev/mindlink/xposed/XposedBridge;->hookAllMethods(Ljava/lang/Class;Ljava/lang/String;Ldev/mindlink/xposed/XC_MethodHook;)Ljava/util/Set;
 
     const-string p1, "\u4e8b\u4ef6\u2460 addView hook \u5df2\u6ce8\u518c"
 
@@ -3887,7 +3887,7 @@
 
     move-result-object v10
 
-    invoke-static {v4, v9, v10}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v4, v9, v10}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string v9, "setBackgroundDrawable"
 
@@ -3895,7 +3895,7 @@
 
     move-result-object p1
 
-    invoke-static {v4, v9, p1}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v4, v9, p1}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string p1, "setBackgroundColor"
 
@@ -3905,7 +3905,7 @@
 
     move-result-object v8
 
-    invoke-static {v4, p1, v8}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v4, p1, v8}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string p1, "\u4e8b\u4ef6\u2461 \u9876\u680f\u80cc\u666f\u62e6\u622a\u5df2\u6ce8\u518c"
 
@@ -3946,7 +3946,7 @@
 
     move-result-object v8
 
-    invoke-static {v3, p1, v8}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v3, p1, v8}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string p1, "\u4e8b\u4ef6\u2462 setImageBitmap hook \u5df2\u6ce8\u518c"
 
@@ -3981,7 +3981,7 @@
 
     invoke-direct {v8, v9}, Lx4/f;-><init>(I)V
 
-    invoke-static {v5, p1, v8}, Lde/robv/android/xposed/XposedBridge;->hookAllMethods(Ljava/lang/Class;Ljava/lang/String;Lde/robv/android/xposed/XC_MethodHook;)Ljava/util/Set;
+    invoke-static {v5, p1, v8}, Ldev/mindlink/xposed/XposedBridge;->hookAllMethods(Ljava/lang/Class;Ljava/lang/String;Ldev/mindlink/xposed/XC_MethodHook;)Ljava/util/Set;
 
     const-string p1, "removeViewAt"
 
@@ -3991,7 +3991,7 @@
 
     invoke-direct {v8, v9}, Lx4/f;-><init>(I)V
 
-    invoke-static {v5, p1, v8}, Lde/robv/android/xposed/XposedBridge;->hookAllMethods(Ljava/lang/Class;Ljava/lang/String;Lde/robv/android/xposed/XC_MethodHook;)Ljava/util/Set;
+    invoke-static {v5, p1, v8}, Ldev/mindlink/xposed/XposedBridge;->hookAllMethods(Ljava/lang/Class;Ljava/lang/String;Ldev/mindlink/xposed/XC_MethodHook;)Ljava/util/Set;
 
     const-string p1, "\u4e8b\u4ef6\u2463 \u79bb\u5f00\u804a\u5929\u9875\u9690\u85cf\u5df2\u6ce8\u518c"
 
@@ -4032,7 +4032,7 @@
 
     move-result-object v8
 
-    invoke-static {v4, p1, v8}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v4, p1, v8}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string p1, "\u4e8b\u4ef6\u2464 \u4e09\u70b9\u76d1\u542c\u6355\u83b7\u5df2\u6ce8\u518c"
 
@@ -4080,7 +4080,7 @@
 
     move-result-object v9
 
-    invoke-static {v4, p1, v8, v9}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v4, p1, v8, v9}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string p1, "\u4e8b\u4ef6\u2465 qe.t0 hook \u5df2\u6ce8\u518c"
 
@@ -4128,7 +4128,7 @@
 
     move-result-object v9
 
-    invoke-static {v4, p1, v8, v9}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v4, p1, v8, v9}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string v4, "e01.z1"
 
@@ -4144,7 +4144,7 @@
 
     move-result-object v9
 
-    invoke-static {v4, p1, v8, v9}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v4, p1, v8, v9}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string p1, "\u4e8b\u4ef6\u2466 fd5/d.x + e01/z1.r hook \u5df2\u6ce8\u518c"
 
@@ -4195,7 +4195,7 @@
 
     move-result-object v10
 
-    invoke-static {v8, p1, v9, v10}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v8, p1, v9, v10}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string v8, "\u4e8b\u4ef6\u2467: \u5934\u50cf\u52a0\u8f7d\u5668 u.a \u5df2\u6ce8\u518c"
 
@@ -4237,7 +4237,7 @@
 
     move-result-object v0
 
-    invoke-static {v7, p1, v8, v0}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v7, p1, v8, v0}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string p1, "\u4e8b\u4ef6\u2467: \u5934\u50cf\u52a0\u8f7d\u5668 sn1.s.lj \u5df2\u6ce8\u518c"
 
@@ -4311,7 +4311,7 @@
 
     move-result-object v6
 
-    invoke-static {v0, p1, v4, v6}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v0, p1, v4, v6}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string p1, "\u4e8b\u4ef6\u2468 setTitle hook \u5df2\u6ce8\u518c"
 
@@ -4350,7 +4350,7 @@
 
     move-result-object v0
 
-    invoke-static {v3, p1, v0}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v3, p1, v0}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string p1, "\u4e8b\u4ef6\u2469 setImageDrawable hook \u5df2\u6ce8\u518c"
 
@@ -4400,7 +4400,7 @@
 
     move-result-object v3
 
-    invoke-static {v0, p1, v2, v3}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v0, p1, v2, v3}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/String;Ljava/lang/ClassLoader;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string p1, "\u4e8b\u4ef6\u246a ChattingUI.onCreate hook \u5df2\u6ce8\u518c"
 
@@ -4433,7 +4433,7 @@
 
     invoke-direct {p1, v0}, Lx4/f;-><init>(I)V
 
-    invoke-static {v5, v1, p1}, Lde/robv/android/xposed/XposedBridge;->hookAllMethods(Ljava/lang/Class;Ljava/lang/String;Lde/robv/android/xposed/XC_MethodHook;)Ljava/util/Set;
+    invoke-static {v5, v1, p1}, Ldev/mindlink/xposed/XposedBridge;->hookAllMethods(Ljava/lang/Class;Ljava/lang/String;Ldev/mindlink/xposed/XC_MethodHook;)Ljava/util/Set;
 
     const-string p1, "\u4e8b\u4ef6\u246b: \u9876\u680f\u9e70\u722a\u9501\u5b9a\u5df2\u6ce8\u518c"
 

@@ -17,11 +17,11 @@
         "",
         "<init>",
         "()V",
-        "Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;",
+        "Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;",
         "lpparam",
         "Lj3/x;",
         "hookBubble",
-        "(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V",
+        "(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V",
         "migrateOldSetting",
         "",
         "getBlurRadius",
@@ -177,11 +177,11 @@
     return p0
 .end method
 
-.method private final hookBubble(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+.method private final hookBubble(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
     .locals 2
 
     :try_start_0
-    iget-object p1, p1, Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->classLoader:Ljava/lang/ClassLoader;
+    iget-object p1, p1, Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->classLoader:Ljava/lang/ClassLoader;
 
     const-string v0, "android.view.View"
 
@@ -197,7 +197,7 @@
 
     move-result-object v1
 
-    invoke-static {p1, v0, v1}, Lde/robv/android/xposed/XposedHelpers;->findMethodExact(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;
+    invoke-static {p1, v0, v1}, Ldev/mindlink/xposed/XposedHelpers;->findMethodExact(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;
 
     move-result-object p1
 
@@ -207,7 +207,7 @@
 
     invoke-direct {v0, v1}, Lx4/f;-><init>(I)V
 
-    invoke-static {p1, v0}, Lde/robv/android/xposed/XposedBridge;->hookMethod(Ljava/lang/reflect/Member;Lde/robv/android/xposed/XC_MethodHook;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {p1, v0}, Ldev/mindlink/xposed/XposedBridge;->hookMethod(Ljava/lang/reflect/Member;Ldev/mindlink/xposed/XC_MethodHook;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const/4 v0, 0x1
 
@@ -250,7 +250,7 @@
 
     move-result-object p0
 
-    invoke-static {p0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
+    invoke-static {p0}, Ldev/mindlink/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
     :try_start_0
     sget-object p0, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
@@ -335,7 +335,7 @@
 
 
 # virtual methods
-.method public final declared-synchronized init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+.method public final declared-synchronized init(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
     .locals 1
 
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
@@ -346,7 +346,7 @@
 
     if-nez v0, :done
 
-    invoke-direct {p0, p1}, Lwex/ui/core/feature/BubbleFeature;->hookBubble(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+    invoke-direct {p0, p1}, Lwex/ui/core/feature/BubbleFeature;->hookBubble(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
 
     :done
     return-void

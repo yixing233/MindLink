@@ -17,7 +17,7 @@
 
     move-result-object v1
 
-    invoke-static {v1}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
+    invoke-static {v1}, Ldev/mindlink/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
     :try_start_0
     new-instance v1, Ljava/text/SimpleDateFormat;

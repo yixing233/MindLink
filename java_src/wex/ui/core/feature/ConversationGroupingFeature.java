@@ -19,9 +19,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import dev.mindlink.xposed.XC_MethodHook;
+import dev.mindlink.xposed.XposedBridge;
+import dev.mindlink.xposed.callbacks.XC_LoadPackage;
 import wex.ui.core.WexStore;
 
 /** Editable, local-only conversation groups. Only a successful save replaces the live snapshot. */

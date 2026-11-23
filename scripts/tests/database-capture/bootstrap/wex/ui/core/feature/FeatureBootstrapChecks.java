@@ -1,8 +1,8 @@
 package wex.ui.core.feature;
 
 import android.content.Context;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import dev.mindlink.xposed.XposedBridge;
+import dev.mindlink.xposed.callbacks.XC_LoadPackage;
 
 import static wex.ui.core.feature.CheckSupport.*;
 

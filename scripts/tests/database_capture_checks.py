@@ -44,13 +44,13 @@ def check_loader_smali():
                               capture_output=True, text=True, encoding="utf-8", check=True).stdout
     attached = """    const/4 v2, 0x0
 
-    invoke-virtual {p1}, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->hasThrowable()Z
+    invoke-virtual {p1}, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->hasThrowable()Z
 
     move-result v3
 
     if-nez v3, :attached_context_done
 
-    iget-object v3, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
+    iget-object v3, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
 
     instance-of v0, v3, Landroid/content/Context;
 
@@ -65,7 +65,7 @@ def check_loader_smali():
     bootstrap = """    if-eqz v2, :legacy_init
 
     :bootstrap_try_start
-    invoke-static {p1, v2}, Lwex/ui/core/feature/FeatureBootstrap;->init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Landroid/content/Context;)V
+    invoke-static {p1, v2}, Lwex/ui/core/feature/FeatureBootstrap;->init(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Landroid/content/Context;)V
     :bootstrap_try_end
     .catch Ljava/lang/Throwable; {:bootstrap_try_start .. :bootstrap_try_end} :bootstrap_failed
 

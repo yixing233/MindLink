@@ -81,14 +81,23 @@ MindLink 是 [Wex](https://github.com/Ql1121/Wex) 的反编译修改工程，并
 
 ## 三、第三方库
 
-### 3. Tabler Icons
+### 3. Lucide
 
-- 项目：https://github.com/tabler/tabler-icons
-- 许可：MIT License
-- Copyright (c) 2020-2024 Paweł Kuna
-- 使用范围：界面图标。35 个图标的 pathData 以字符串常量内联在
-  `java_src/wex/ui/core/feature/TablerIcons.java` 中，运行期用 `Path` + `Canvas.drawPath` 矢量渲染。
-- 完整许可文本：https://github.com/tabler/tabler-icons/blob/main/LICENSE
+- 项目：https://lucide.dev （https://github.com/lucide-icons/lucide）
+- 许可：ISC License；其中源自 Feather 的图标另附 MIT 许可（Copyright (c) 2013-present Cole Bemis），
+  两段许可原文均随 APK 分发于 `assets/mindlink/licenses/LUCIDE-ISC.txt`
+- Copyright (c) 2026 Lucide Icons and Contributors
+- 版本：lucide-static 1.77.0 的 `icon-nodes.json`
+- 使用范围：全模块唯一的线性矢量图标来源，共 86 个不同图标。由 `scripts/import_lucide_icons.py`
+  把 SVG 元素（path/circle/rect/line/polyline 等，含弧线）统一转换为绝对坐标的 M/L/C/Z，生成：
+  - `java_src/wex/ui/core/feature/LucideIcons.java`：View 侧 49 个键（聊天工具栏、「+」菜单、顶栏、
+    音乐播放器、旧设置面板、Java 侧栏），运行期用 `Path` + `Canvas.drawPath` 描边渲染；
+    播放/暂停/收藏等实心态为同一轮廓的填充 + 同色描边（Lucide 无官方实心套）。
+  - `java_src/wex/ui/core/feature/NavigationIcons.java`：首页底栏 4 个页签（house、book-user、compass、user）。
+  - `ui-compose/sidepanel/src/main/java/dev/mindlink/ui/LucideIcons.kt`：侧栏与「Mdl 设置」Compose 界面的
+    56 个 `ImageVector`。
+  生成时逐图与原 SVG 光栅化比对，像素一致（仅抗锯齿边缘差异）。
+- 完整许可文本：https://github.com/lucide-icons/lucide/blob/main/LICENSE
 
 ### 4. Backdrop (AndroidLiquidGlass)
 
@@ -113,19 +122,11 @@ MindLink 是 [Wex](https://github.com/Ql1121/Wex) 的反编译修改工程，并
 - 使用范围：`LiquidGlassShaders.java` 的圆角矩形折射与七点色散 AGSL、`LiquidGlassDecoration.java` 的交互高光和内阴影。源码经 WeKit `ui/content/liquid/` 搬入，生成脚本记录每段着色器 SHA-256。
 - 完整许可文本：https://www.apache.org/licenses/LICENSE-2.0.txt
 
-### 7. Google Material Symbols
+### 7. 已移除的图标来源（2026-11-22）
 
-- 项目：https://fonts.google.com/icons
-- 许可：Apache License 2.0
-- 使用范围：`NavigationIcons.java` 中的首页、通讯录、发现和我的线框/实心 path，几何来自 WeKit 使用的 `com.composables` 2.2.1 依赖；生成脚本记录每个图标命令 SHA-256。
-  新侧栏沿用 WeKit 原组件引用的 47 个 Material Symbols outlined/outlined-filled 图标，
-  `ui-compose/sidepanel/thirdparty/material-symbols-selected-2.2.1.jar` 仅从本机已缓存 AAR
-  选取原 vector class 的原始字节，不另画近似图标、不包含其他 Compose/Kotlin runtime；
-  来源 AAR 与每个 class SHA-256 记录在侧栏 sourceprovenance。
-- Compose 图标包装代码：Composable Horizons `composeicons` 2.2.1，MIT License
-  （https://github.com/composablehorizons/composeicons）；许可来源为本地缓存的发布 POM。
-  Google Material Symbols 的图标几何仍为 Apache-2.0，二者不混同。
-- 完整许可文本：https://www.apache.org/licenses/LICENSE-2.0.txt
+- Tabler Icons（MIT）、Google Material Symbols（Apache-2.0）及其 Compose 包装 composeicons 2.2.1（MIT）
+  此前分别用于 View 侧、首页底栏与侧栏，现已全部替换为 Lucide，不再随 APK 分发其图标数据。
+  `ui-compose/sidepanel/thirdparty/material-symbols-selected-2.2.1.jar` 不再是构建依赖，仅为历史记录保留。
 
 ### 8. DexKit
 
@@ -152,6 +153,6 @@ MindLink 是 [Wex](https://github.com/Ql1121/Wex) 的反编译修改工程，并
 ## 四、免责与合规说明
 
 - 本项目不含任何来自微信（腾讯）的源代码；所有针对宿主的行为均通过 Xposed hook 在运行时完成。
-- 本项目不包含上述第三方项目的商标。Tabler Icons 与 Google Material Symbols 的矢量路径按各自许可随源码分发。
+- 本项目不包含上述第三方项目的商标。Lucide 的矢量路径按其 ISC 许可随源码分发。
 - 若您是上述作品的权利人，认为本项目的署名方式不准确，请通过
   https://github.com/lanqin-mimi/MindLink/issues 联系，我们会在核实后更正。

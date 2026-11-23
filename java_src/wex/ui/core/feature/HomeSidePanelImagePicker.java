@@ -11,8 +11,8 @@ import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.util.UUID;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
+import dev.mindlink.xposed.XC_MethodHook;
+import dev.mindlink.xposed.XposedBridge;
 import wex.ui.core.WexCallback;
 
 /** Imports a system-document result directly into side-panel managed storage. */

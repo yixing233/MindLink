@@ -272,7 +272,7 @@ if ($code -ne 0) { throw "stub 编译失败（退出码 $code）" }
 Write-Host '[2/7] 编译 java_src'
 if (Test-Path $OUT) { Remove-Item $OUT -Recurse -Force }
 New-Item -ItemType Directory $OUT | Out-Null
-$srcFiles = @(Get-ChildItem "$root\java_src", "$root\shared-ui\src\main\java" -Recurse -Filter *.java | ForEach-Object { $_.FullName })
+$srcFiles = @(Get-ChildItem "$root\java_src", "$root\xposed_compat", "$root\shared-ui\src\main\java" -Recurse -Filter *.java | ForEach-Object { $_.FullName })
 Write-ArgFile "$BUILD\src-args.txt" $srcFiles -Quote
 $code = Invoke-Tool -Exe $JAVAC -Arguments @(
   "-nowarn", "-source", "11", "-target", "11",

@@ -1,5 +1,12 @@
 package dev.mindlink.compose
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -8,127 +15,108 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.PrimaryTabRow
-import androidx.compose.material3.Tab
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.draw.rotate
-import com.composables.icons.materialsymbols.MaterialSymbols
-import com.composables.icons.materialsymbols.outlined.Refresh
-import com.composables.icons.materialsymbols.outlined.Chevron_right
+import dev.mindlink.ui.LucideIcons
 import dev.mindlink.ui.MindLinkCard
+import dev.mindlink.ui.MindLinkIconButton
+import dev.mindlink.ui.MindLinkListRow
 import dev.mindlink.ui.MindLinkPage
 import dev.mindlink.ui.MindLinkSectionHeader
 import dev.mindlink.ui.MindLinkSwitchRow
 import dev.mindlink.ui.MindLinkTheme
-import dev.mindlink.ui.MindLinkIconButton
 import dev.mindlink.ui.MindLinkTopBar
-import dev.mindlink.ui.MindLinkListRow
 
+/** Callbacks every row needs; dialogs stay owned by [SettingsScreen]. */
+private class RowActions(
+    val flag: (Setting.Flag, Boolean) -> Unit,
+    val edit: (Setting.Text) -> Unit,
+    val button: (String) -> Unit,
+)
+
+/**
+ * Two levels: an overview grouped by where each feature lives (首页 / 聊天 / 外观 / 隐私与诊断),
+ * and one detail page per feature. A feature switch sits on its overview row and again at the top
+ * of its detail page; switching it off greys the configuration out instead of hiding it.
+ */
 @Composable
 internal fun SettingsScreen(state: SettingsState) {
     val dark = state.dark || isSystemInDarkTheme()
     MindLinkTheme(dark = dark) {
-        val colors = MaterialTheme.colorScheme
         var editing by remember { mutableStateOf<Setting.Text?>(null) }
         var consent by remember { mutableStateOf<Setting.Flag?>(null) }
         var logOpen by remember { mutableStateOf(false) }
         var restarting by remember { mutableStateOf(false) }
-        val listStates = settingsTabs.map { rememberLazyListState() }
+        val overviewList = rememberLazyListState()
+        val actions = remember(state) {
+            RowActions(
+                flag = { row, checked ->
+                    if (row.confirm != null && checked) consent = row else state.toggle(row.key, checked)
+                },
+                edit = { editing = it },
+                button = { id -> if (id == "log") logOpen = true else state.action(id) },
+            )
+        }
 
         MindLinkPage {
-                Header { restarting = true }
-                Tabs(state)
-                if (state.pending) {
-                    PendingBar { restarting = true }
-                }
-                val sections = sectionsFor(state.tabIndex, state)
-                LazyColumn(
-                    Modifier.fillMaxWidth().weight(1f),
-                    state = listStates[state.tabIndex],
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 28.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    item(key = "page-intro:${state.tabIndex}") {
-                        Text(
-                            when (state.tabIndex) {
-                                0 -> "管理首页入口与导航，展开配置调整细节。"
-                                1 -> "按需开启聊天组件，分别调整布局与外观。"
-                                else -> "统一外观材质，管理联网数据与诊断。"
-                            },
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = colors.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
-                        )
-                    }
-                    items(sections, key = { it.id }) { section ->
-                        SectionBlock(section, section.master?.let { state.flag(it.key) } ?: true) { row ->
-                            when (row) {
-                                is Setting.Flag -> FlagRow(row, state.flag(row.key)) { checked ->
-                                    if (row.confirm != null && checked) consent = row
-                                    else state.toggle(row.key, checked)
-                                }
-                                is Setting.Range -> RangeRow(row, state.number(row.key, row.min), state)
-                                is Setting.Pick -> PickRow(row, state.value(row.key)) { state.write(row.key, it) }
-                                is Setting.Text -> TextRow(row, state.value(row.key)) { editing = row }
-                                is Setting.Photo -> PhotoRow(row) { state.pick(row.key) }
-                                is Setting.Button -> ButtonRow(row) {
-                                    if (row.id == "log") logOpen = true else state.action(row.id)
-                                }
-                                is Setting.Note -> Text(
-                                    row.text,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = colors.onSurfaceVariant,
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                                )
-                                is Setting.Tools -> ToolsRow(row, state)
-                            }
-                        }
-                    }
-                }
+            val page = state.currentPage?.let { state.pageOf(it) }
+            Header(page?.title ?: "设置", onBack = if (page != null) ({ state.back(); Unit }) else null) { restarting = true }
+            if (state.pending) {
+                PendingBar { restarting = true }
+            }
+            AnimatedContent(
+                targetState = page?.id,
+                modifier = Modifier.fillMaxWidth().weight(1f),
+                transitionSpec = {
+                    val direction = if (state.forward) 1 else -1
+                    (slideInHorizontally(tween(240)) { width -> direction * width / 5 } + fadeIn(tween(240))) togetherWith
+                        (slideOutHorizontally(tween(200)) { width -> -direction * width / 5 } + fadeOut(tween(160)))
+                },
+                label = "settings-page",
+            ) { id ->
+                val target = id?.let { state.pageOf(it) }
+                if (target == null) Overview(state, overviewList, actions) else DetailPage(target, state, actions)
+            }
         }
 
         editing?.let { row ->
@@ -159,7 +147,7 @@ internal fun SettingsScreen(state: SettingsState) {
         if (logOpen) {
             AlertDialog(
                 onDismissRequest = { logOpen = false },
-                title = { Text("日志与脱敏诊断") },
+                title = { Text("日志") },
                 text = {
                     Text(
                         state.read("logText").ifBlank { "暂无日志" },
@@ -168,9 +156,6 @@ internal fun SettingsScreen(state: SettingsState) {
                     )
                 },
                 confirmButton = { TextButton(onClick = { logOpen = false }) { Text("关闭") } },
-                dismissButton = {
-                    TextButton(onClick = { state.action("copyDiagnostic"); logOpen = false }) { Text("复制诊断") }
-                },
             )
         }
         if (restarting) {
@@ -191,22 +176,12 @@ internal fun SettingsScreen(state: SettingsState) {
 }
 
 @Composable
-private fun Header(onRestart: () -> Unit) {
-    MindLinkTopBar("设置") {
-        MindLinkIconButton(MaterialSymbols.Outlined.Refresh, "重启微信", onRestart)
-    }
-}
-
-@Composable
-private fun Tabs(state: SettingsState) {
-    PrimaryTabRow(
-        selectedTabIndex = state.tabIndex,
-        containerColor = MaterialTheme.colorScheme.surface,
-        modifier = Modifier.fillMaxWidth(),
+private fun Header(title: String, onBack: (() -> Unit)?, onRestart: () -> Unit) {
+    MindLinkTopBar(
+        title,
+        navigation = { if (onBack != null) MindLinkIconButton(LucideIcons.ArrowLeft, "返回", onBack) },
     ) {
-        settingsTabs.forEachIndexed { index, label ->
-            Tab(selected = state.tabIndex == index, onClick = { state.selectTab(index) }, text = { Text(label) })
-        }
+        MindLinkIconButton(LucideIcons.RefreshCw, "重启微信", onRestart)
     }
 }
 
@@ -228,45 +203,25 @@ private fun PendingBar(onRestart: () -> Unit) {
     }
 }
 
+// ---------------------------------------------------------------- 总览
+
 @Composable
-private fun SectionBlock(section: Section, enabled: Boolean, row: @Composable (Setting) -> Unit) {
-    var expanded by rememberSaveable(section.id, enabled) { mutableStateOf(false) }
-    Column(Modifier.fillMaxWidth()) {
-        MindLinkCard(modifier = Modifier.fillMaxWidth()) {
-            Column {
-                if (section.master != null) {
-                    row(section.master.copy(title = section.title, summary = section.summary))
-                    if (section.rows.isNotEmpty()) {
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .5f))
-                        MindLinkListRow(
-                            title = if (expanded && enabled) "收起配置" else "功能配置",
-                            summary = if (enabled) "${section.rows.count { it !is Setting.Note }} 项设置" else "开启后可调整配置，已保存的参数会保留",
-                            modifier = Modifier.clickable(enabled = enabled) { expanded = !expanded },
-                            trailing = {
-                                Icon(MaterialSymbols.Outlined.Chevron_right, contentDescription = null,
-                                    modifier = Modifier.rotate(if (expanded && enabled) -90f else 90f),
-                                    tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
-                            },
-                        )
-                    }
-                } else {
-                    Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 6.dp)) {
-                        Text(section.title, style = MaterialTheme.typography.titleMedium)
-                        section.summary?.let {
-                            Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(top = 4.dp))
-                        }
-                    }
-                }
-                AnimatedVisibility(visible = section.master == null || (enabled && expanded)) {
-                    Column(Modifier.background(MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = .45f))) {
-                        section.rows.forEachIndexed { index, entry ->
-                            if (index > 0) HorizontalDivider(
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .4f),
-                                modifier = Modifier.padding(horizontal = 16.dp),
-                            )
-                            row(entry)
-                        }
+private fun Overview(state: SettingsState, list: LazyListState, actions: RowActions) {
+    val groups = settingsGroups(state)
+    LazyColumn(
+        Modifier.fillMaxSize(),
+        state = list,
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+    ) {
+        item(key = "status") { StatusCard(state) }
+        itemsIndexed(groups, key = { _, group -> "group:" + group.title }) { _, group ->
+            Column(Modifier.fillMaxWidth()) {
+                MindLinkSectionHeader(group.title)
+                MindLinkCard(modifier = Modifier.fillMaxWidth()) {
+                    group.pages.forEachIndexed { index, page ->
+                        if (index > 0) RowDivider()
+                        OverviewRow(page, state, actions)
                     }
                 }
             }
@@ -275,18 +230,236 @@ private fun SectionBlock(section: Section, enabled: Boolean, row: @Composable (S
 }
 
 @Composable
-private fun FlagRow(row: Setting.Flag, checked: Boolean, onChange: (Boolean) -> Unit) {
-    MindLinkSwitchRow(row.title, checked, row.summary, onChange)
+private fun StatusCard(state: SettingsState) {
+    val version = state.read("version")
+    val activation = state.read("activation")
+    MindLinkCard(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+    ) {
+        Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
+            Text(
+                if (version.isBlank()) "MindLink" else "MindLink $version",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
+            if (activation.isNotBlank()) {
+                Text(
+                    activation,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+        }
+    }
+}
+
+/** Overview icon per feature page (Lucide, ISC). Unknown ids simply render without an icon. */
+private fun pageIcon(id: String): ImageVector? = when (id) {
+    "top_bar" -> LucideIcons.PanelTop
+    "bottom_bar" -> LucideIcons.PanelBottom
+    "conversation_filter" -> LucideIcons.Folders
+    "home_side_panel" -> LucideIcons.PanelLeft
+    "mark_all_read" -> LucideIcons.CheckCheck
+    "chat_header" -> LucideIcons.AppWindow
+    "chat_toolbar" -> LucideIcons.Toolbox
+    "chat_footer" -> LucideIcons.Keyboard
+    "bubble" -> LucideIcons.MessageCircle
+    MATERIAL_PAGE -> LucideIcons.Layers
+    "background" -> LucideIcons.Wallpaper
+    "network" -> LucideIcons.Globe
+    "diagnostics" -> LucideIcons.Bug
+    else -> null
+}
+
+/** Tonal rounded tile, the usual settings-list leading icon. */
+@Composable
+private fun PageIcon(icon: ImageVector) {
+    Surface(
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.size(40.dp),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.size(22.dp))
+        }
+    }
+}
+
+/**
+ * Plain switch pages toggle on tap. Pages with configuration open on tap; when they also have a
+ * feature switch it sits behind a divider so tapping the text never flips the feature by accident.
+ */
+@Composable
+private fun OverviewRow(page: SettingsPage, state: SettingsState, actions: RowActions) {
+    val master = page.master
+    val leading: (@Composable () -> Unit)? = pageIcon(page.id)?.let { icon -> { PageIcon(icon) } }
+    if (!page.navigable && master != null) {
+        MindLinkSwitchRow(page.title, state.flag(master.key), page.summary, leading = leading) { actions.flag(master, it) }
+        return
+    }
+    val summary = page.status?.invoke(state) ?: page.summary
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.weight(1f).clickable { state.open(page.id) }) {
+            MindLinkListRow(
+                title = page.title,
+                summary = summary,
+                trailing = if (master == null) chevronTrailing else null,
+                leading = leading,
+            )
+        }
+        if (master != null) {
+            VerticalDivider(
+                Modifier.height(32.dp),
+                color = MaterialTheme.colorScheme.outlineVariant,
+            )
+            Switch(
+                checked = state.flag(master.key),
+                onCheckedChange = { actions.flag(master, it) },
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+        }
+    }
+}
+
+// ---------------------------------------------------------------- 详情页
+
+@Composable
+private fun DetailPage(page: SettingsPage, state: SettingsState, actions: RowActions) {
+    val pageOn = page.master?.let { state.flag(it.key) } ?: true
+    LazyColumn(
+        Modifier.fillMaxSize(),
+        state = rememberLazyListState(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+    ) {
+        item(key = "intro") {
+            Text(
+                page.summary,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 4.dp),
+            )
+        }
+        page.master?.let { master ->
+            item(key = "master") { MasterCard(master, state, actions) }
+        }
+        itemsIndexed(page.sections, key = { index, section -> page.id + ":" + (section.title ?: index.toString()) }) { _, section ->
+            SectionCard(section, pageOn, state, actions)
+        }
+    }
 }
 
 @Composable
-private fun RangeRow(row: Setting.Range, initial: Int, state: SettingsState) {
+private fun MasterCard(master: Setting.Flag, state: SettingsState, actions: RowActions) {
+    val checked = state.flag(master.key)
+    MindLinkCard(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (checked) MaterialTheme.colorScheme.primaryContainer
+            else MaterialTheme.colorScheme.surfaceContainerHigh,
+        ),
+    ) {
+        MindLinkSwitchRow(
+            master.title,
+            checked,
+            master.summary ?: if (checked) null else "开启后才能调整下面的设置，已保存的参数会保留",
+        ) { actions.flag(master, it) }
+    }
+}
+
+@Composable
+private fun SectionCard(section: Section, parentOn: Boolean, state: SettingsState, actions: RowActions) {
+    val sectionOn = section.master?.let { state.flag(it.key) } ?: true
+    val enabled = parentOn && sectionOn
+    Column(Modifier.fillMaxWidth()) {
+        if (section.title != null) MindLinkSectionHeader(section.title, section.summary)
+        MindLinkCard(modifier = Modifier.fillMaxWidth()) {
+            if (section.title == null && section.summary != null) {
+                Text(
+                    section.summary,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp),
+                )
+            }
+            section.master?.let { master ->
+                MindLinkSwitchRow(master.title, sectionOn, master.summary, enabled = parentOn) { actions.flag(master, it) }
+                if (section.rows.isNotEmpty()) RowDivider()
+            }
+            Column(Modifier.alpha(if (enabled) 1f else 0.6f)) {
+                section.rows.forEachIndexed { index, row ->
+                    if (index > 0) RowDivider()
+                    SettingRow(row, enabled, state, actions)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingRow(row: Setting, enabled: Boolean, state: SettingsState, actions: RowActions) {
+    when (row) {
+        is Setting.Flag -> MindLinkSwitchRow(row.title, state.flag(row.key), row.summary, enabled) { actions.flag(row, it) }
+        is Setting.Range -> RangeRow(row, state.number(row.key, row.fallback?.invoke(state) ?: row.min), state, enabled)
+        is Setting.Pick -> PickRow(row, state.value(row.key), enabled) { state.write(row.key, it) }
+        is Setting.Text -> TextRow(row, state.value(row.key), enabled) { actions.edit(row) }
+        is Setting.Photo -> PhotoRow(row, enabled) { state.pick(row.key) }
+        is Setting.Button -> ButtonRow(row, enabled) { actions.button(row.id) }
+        is Setting.Note -> Text(
+            row.text,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+        )
+        is Setting.Tools -> ToolsRow(row, state, enabled)
+        is Setting.Link -> LinkRow(row, state)
+    }
+}
+
+@Composable
+private fun RowDivider() {
+    HorizontalDivider(
+        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .4f),
+        modifier = Modifier.padding(horizontal = 16.dp),
+    )
+}
+
+@Composable
+private fun Chevron() {
+    Icon(LucideIcons.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+}
+
+private val chevronTrailing: @Composable () -> Unit = { Chevron() }
+
+/** Shared settings stay reachable even when the linking feature is off. */
+@Composable
+private fun LinkRow(row: Setting.Link, state: SettingsState) {
+    val target = state.pageOf(row.target) ?: return
+    MindLinkListRow(
+        title = row.title,
+        summary = target.status?.invoke(state) ?: target.summary,
+        modifier = Modifier.clickable { state.open(row.target) },
+        trailing = chevronTrailing,
+    )
+}
+
+@Composable
+private fun RangeRow(row: Setting.Range, initial: Int, state: SettingsState, enabled: Boolean) {
     var draft by remember(row.key, initial) { mutableStateOf(initial.coerceIn(row.min, row.max)) }
+    // Blank value with a fallback = following the default; dragging stores an explicit value.
+    val followsDefault = row.fallback != null && state.value(row.key).isBlank()
     Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 6.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(row.title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            if (row.fallback != null && !followsDefault) {
+                TextButton(onClick = { state.write(row.key, "") }, enabled = enabled) { Text("恢复默认") }
+            }
             Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = RoundedCornerShape(8.dp)) {
-                Text(row.format(draft), style = MaterialTheme.typography.labelLarge,
+                Text(if (followsDefault) row.format(draft) + " · 默认" else row.format(draft),
+                    style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
             }
@@ -299,12 +472,13 @@ private fun RangeRow(row: Setting.Range, initial: Int, state: SettingsState) {
                 draft = state.number(row.key, draft)
             },
             valueRange = row.min.toFloat()..row.max.toFloat(),
+            enabled = enabled,
         )
     }
 }
 
 @Composable
-private fun PickRow(row: Setting.Pick, current: String, onSelect: (String) -> Unit) {
+private fun PickRow(row: Setting.Pick, current: String, enabled: Boolean, onSelect: (String) -> Unit) {
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
         Text(row.title, style = MaterialTheme.typography.bodyLarge)
         SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth().padding(top = 8.dp)) {
@@ -312,6 +486,7 @@ private fun PickRow(row: Setting.Pick, current: String, onSelect: (String) -> Un
                 SegmentedButton(
                     selected = value == current,
                     onClick = { onSelect(value) },
+                    enabled = enabled,
                     shape = SegmentedButtonDefaults.itemShape(index, row.options.size),
                 ) { Text(label) }
             }
@@ -320,9 +495,9 @@ private fun PickRow(row: Setting.Pick, current: String, onSelect: (String) -> Un
 }
 
 @Composable
-private fun TextRow(row: Setting.Text, current: String, onClick: () -> Unit) {
+private fun TextRow(row: Setting.Text, current: String, enabled: Boolean, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 14.dp),
+        Modifier.fillMaxWidth().clickable(enabled = enabled, onClick = onClick).padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(row.title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
@@ -333,29 +508,29 @@ private fun TextRow(row: Setting.Text, current: String, onClick: () -> Unit) {
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f).padding(start = 12.dp),
-            textAlign = androidx.compose.ui.text.style.TextAlign.End,
+            textAlign = TextAlign.End,
         )
     }
 }
 
 @Composable
-private fun PhotoRow(row: Setting.Photo, onClick: () -> Unit) {
+private fun PhotoRow(row: Setting.Photo, enabled: Boolean, onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(row.title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-        FilledTonalButton(onClick = onClick) { Text("选择图片") }
+        FilledTonalButton(onClick = onClick, enabled = enabled) { Text("选择图片") }
     }
 }
 
 @Composable
-private fun ButtonRow(row: Setting.Button, onClick: () -> Unit) {
+private fun ButtonRow(row: Setting.Button, enabled: Boolean, onClick: () -> Unit) {
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
         if (row.primary) {
-            Button(onClick = onClick, modifier = Modifier.fillMaxWidth()) { Text(row.title) }
+            Button(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth()) { Text(row.title) }
         } else {
-            FilledTonalButton(onClick = onClick, modifier = Modifier.fillMaxWidth()) { Text(row.title) }
+            FilledTonalButton(onClick = onClick, enabled = enabled, modifier = Modifier.fillMaxWidth()) { Text(row.title) }
         }
         if (row.summary != null) {
             Text(
@@ -369,35 +544,30 @@ private fun ButtonRow(row: Setting.Button, onClick: () -> Unit) {
 }
 
 @Composable
-private fun ToolsRow(row: Setting.Tools, state: SettingsState) {
+private fun ToolsRow(row: Setting.Tools, state: SettingsState, enabled: Boolean) {
     val names = remember(state.data, state.actionRevision) { state.read("tools").split(",").filter { it.isNotBlank() } }
     val csv = state.value(row.key)
-    val enabled = if (csv.isBlank()) names.toSet() else csv.split(",").filter { it.isNotBlank() }.toSet()
-    Column(Modifier.fillMaxWidth()) {
-        Text(
-            "长按工具栏图标也可拖动换位",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-        )
-        names.forEach { name ->
+    val selected = if (csv.isBlank()) names.toSet() else csv.split(",").filter { it.isNotBlank() }.toSet()
+    Column(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        names.forEachIndexed { index, name ->
             Row(
                 Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 2.dp, bottom = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                 MindLinkIconButton(
-                    MaterialSymbols.Outlined.Chevron_right, "上移",
-                    { state.action("toolUp:$name") }, Modifier.rotate(-90f),
+                    LucideIcons.ChevronRight, "上移",
+                    { if (enabled && index > 0) state.action("toolUp:$name") }, Modifier.rotate(-90f),
                 )
                 MindLinkIconButton(
-                    MaterialSymbols.Outlined.Chevron_right, "下移",
-                    { state.action("toolDown:$name") }, Modifier.rotate(90f),
+                    LucideIcons.ChevronRight, "下移",
+                    { if (enabled && index < names.lastIndex) state.action("toolDown:$name") }, Modifier.rotate(90f),
                 )
                 Switch(
-                    checked = name in enabled,
+                    checked = name in selected,
+                    enabled = enabled,
                     onCheckedChange = { checked ->
-                        val next = if (checked) enabled + name else enabled - name
+                        val next = if (checked) selected + name else selected - name
                         state.write(row.key, names.filter { it in next }.joinToString(",").ifEmpty { "__none__" })
                     },
                 )

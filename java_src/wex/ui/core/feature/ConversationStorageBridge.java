@@ -6,8 +6,8 @@ import android.content.Context;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import dev.mindlink.xposed.XposedBridge;
+import dev.mindlink.xposed.callbacks.XC_LoadPackage;
 
 /** Shared access to WeChat's conversation storage. */
 public final class ConversationStorageBridge {

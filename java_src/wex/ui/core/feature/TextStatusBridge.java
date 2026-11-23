@@ -18,8 +18,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
+import dev.mindlink.xposed.XC_MethodHook;
+import dev.mindlink.xposed.XposedBridge;
 import wex.ui.core.WexStore;
 
 /** WeChat status service, following WeKit WeTextStatusApi (GPL-3.0). No status text is inferred from views. */

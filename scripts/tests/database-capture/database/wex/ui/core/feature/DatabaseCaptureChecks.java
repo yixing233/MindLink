@@ -2,7 +2,7 @@ package wex.ui.core.feature;
 
 import android.content.Context;
 import android.database.Cursor;
-import de.robv.android.xposed.XposedBridge;
+import dev.mindlink.xposed.XposedBridge;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;

@@ -200,7 +200,7 @@ public final class PlusMenuExtra {
         if (warned) return;
         warned = true;
         try {
-            de.robv.android.xposed.XposedBridge.log("WEX: +面板: " + message);
+            dev.mindlink.xposed.XposedBridge.log("WEX: +面板: " + message);
         } catch (Throwable ignored) {
         }
     }
@@ -254,11 +254,14 @@ public final class PlusMenuExtra {
         final int dividerHeight;
         final int dividerPadding;
         final ViewGroup.MarginLayoutParams margins;
+        /** 同一菜单里的原生图标，用来按其实际墨迹大小对齐模块图标。 */
+        final ImageView nativeIcon;
 
         Style(Context context, Target target) {
             ViewGroup row = target.row;
             TextView text = target.parts.text;
             ImageView icon = target.parts.icon;
+            nativeIcon = icon;
             height = Math.max(dp(context, 48), Math.max(row.getMinimumHeight(), size(row, false, dp(context, 56))));
             padding = padding(row);
             iconPadding = padding(icon);
@@ -409,10 +412,18 @@ public final class PlusMenuExtra {
             setPadding(style.padding[0], style.padding[1], style.padding[2], style.padding[3]);
             setMinimumHeight(style.height);
             setLayoutParams(style.rowParams());
-            icon.setPadding(style.iconPadding[0], style.iconPadding[1], style.iconPadding[2], style.iconPadding[3]);
-            int iconSize = Math.max(1, Math.min(style.iconWidth - style.iconPadding[0] - style.iconPadding[2],
-                    style.iconHeight - style.iconPadding[1] - style.iconPadding[3]));
-            icon.setImageDrawable(TablerIcons.drawable(iconName, iconSize, style.iconColors.getDefaultColor()));
+            // 优先按原生图标实际画出的墨迹对齐大小与中心；量不到时退回铺满原生图标框。
+            int[] fit = LucideIcons.matchNative(style.nativeIcon, iconName, style.iconWidth, style.iconHeight);
+            int iconSize;
+            if (fit != null) {
+                iconSize = fit[0];
+                icon.setPadding(fit[1], fit[2], fit[3], fit[4]);
+            } else {
+                icon.setPadding(style.iconPadding[0], style.iconPadding[1], style.iconPadding[2], style.iconPadding[3]);
+                iconSize = Math.max(1, Math.min(style.iconWidth - style.iconPadding[0] - style.iconPadding[2],
+                        style.iconHeight - style.iconPadding[1] - style.iconPadding[3]));
+            }
+            icon.setImageDrawable(LucideIcons.drawable(iconName, iconSize, style.iconColors.getDefaultColor()));
             icon.setImageTintList(style.iconColors);
             LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(style.iconWidth, style.iconHeight);
             iconParams.setMarginStart(style.iconInset);

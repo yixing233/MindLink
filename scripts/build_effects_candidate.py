@@ -196,7 +196,7 @@ def build(args):
     require(not non_target_failures, "Non-target code changed; no encoding exceptions permitted")
     require(not patch_failures, "Effect code differs from accepted patch")
     require(not set(primary) & set(candidate), "Cross-DEX duplicate class")
-    require(not any(desc.startswith(("Landroid/", "Landroidx/", "Lcom/tencent/mm/", "Lde/robv/android/xposed/")) for desc in candidate), "Runtime or compile stubs leaked into feature DEX")
+    require(not any(desc.startswith(("Landroid/", "Landroidx/", "Lcom/tencent/mm/", "Lde/robv/android/xposed/", "Lio/github/libxposed/")) for desc in candidate), "Runtime or compile stubs leaked into feature DEX")
     h.WORK, h.PREP, h.ANDROID = work, work, args.android_jar
     h.verify_abi(old, candidate, primary)
     guard()

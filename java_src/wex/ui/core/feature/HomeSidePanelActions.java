@@ -6,7 +6,7 @@ import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
 
-import de.robv.android.xposed.XposedBridge;
+import dev.mindlink.xposed.XposedBridge;
 
 /** Side-panel action executor (ported from WeKit HomeSidePanelActions.kt). */
 final class HomeSidePanelActions {

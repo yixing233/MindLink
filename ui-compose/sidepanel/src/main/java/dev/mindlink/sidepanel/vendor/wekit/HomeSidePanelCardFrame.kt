@@ -2,10 +2,12 @@
 // Copied and modified from WeKit, Ujhhgtg and upstream contributors.
 // Source: app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelCardFrame.kt
 // MindLink adaptations (2026-11-14): package and resource names only; badge/card/animation bodies unchanged
-// Original component geometry/typography/icons are retained; host hooks are not copied.
+// 2026-11-22: icons switched to Lucide (dev.mindlink.ui.LucideIcons, ISC); see THIRD-PARTY-NOTICES.md.
+// Original component geometry/typography are retained (icons are now Lucide); host hooks are not copied.
 // See thirdparty/sourceprovenance/wekit-sidepanel.json and matching .patch files.
 package dev.mindlink.sidepanel.vendor.wekit
 
+import dev.mindlink.ui.LucideIcons
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
@@ -41,9 +43,6 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.composables.icons.materialsymbols.MaterialSymbols
-import com.composables.icons.materialsymbols.outlined.Close
-import com.composables.icons.materialsymbols.outlined.Edit
 import dev.mindlink.sidepanel.R
 import dev.mindlink.ui.MindLinkCard
 
@@ -127,14 +126,14 @@ fun HomeSidePanelCardBadge(
                     HomeSidePanelBadgeButton(
                         onClick = onEdit.takeIf { visible },
                         contentDescription = stringResource(editDescriptionRes),
-                        icon = MaterialSymbols.Outlined.Edit,
+                        icon = LucideIcons.Pencil,
                     )
                 }
                 if (retainedDelete) {
                     HomeSidePanelBadgeButton(
                         onClick = onDelete.takeIf { visible },
                         contentDescription = stringResource(deleteDescriptionRes),
-                        icon = MaterialSymbols.Outlined.Close,
+                        icon = LucideIcons.X,
                         tint = MaterialTheme.colorScheme.error,
                     )
                 }

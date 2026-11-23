@@ -25,9 +25,6 @@ public final class SettingsShell {
     private static final String TAG = "WEX: SettingsShell: ";
     private static final String HELPER = "wex.ui.core.xposed.SettingsPanelHelper";
 
-    /** 当前选中的标签下标，由 Compose 侧通过 panel_tab 写入并持久化。 */
-    static int currentTab = 0;
-
     private SettingsShell() {
     }
 
@@ -46,12 +43,16 @@ public final class SettingsShell {
             SettingsPanelModel model = SettingsPanelModel.build(activity);
             root = SettingsComposeBridge.build(activity, new android.os.Bundle(), model.values,
                     model.writers, model.actions, model.readers, dark);
+            // 总览 → 详情两级页面：系统返回先退出详情页，在总览时才关闭面板。
+            SettingsBack.bind(dialog, root);
         } catch (Throwable error) {
             log("Material3 设置面板加载失败 " + error);
             root = failureView(activity, error);
         }
         root.setBackgroundColor(windowBackground(dark));
         bindSettingsBars(activity, dialog, root, dark);
+        // Page-style entry from the right, for every caller of SettingsPanelHelper.show.
+        SettingsTransition.prepare(dialog, root, windowBackground(dark));
         // Dialog dismissal does not resume the underlying Activity. Keep its existing
         // dismiss callback and refresh only when this settings root is detached.
         root.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
@@ -335,7 +336,7 @@ public final class SettingsShell {
 
     private static void log(String msg) {
         try {
-            de.robv.android.xposed.XposedBridge.log(TAG + msg);
+            dev.mindlink.xposed.XposedBridge.log(TAG + msg);
         } catch (Throwable ignore) {
         }
     }

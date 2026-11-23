@@ -165,7 +165,7 @@ def merge(args):
         primary_dex = CHECK.inspect_dex(entries["classes.dex"][1])
         feature_dex = CHECK.inspect_dex(java_paths[0].read_bytes())
         CHECK.require(not primary_dex["classes"] & feature_dex["classes"], "Duplicate classes across primary/feature root DEX")
-        forbidden = ("Landroidx/", "Lorg/jetbrains/compose/", "Ltop/yukonga/miuix/", "Landroid/", "Lde/robv/android/xposed/", "Lcom/tencent/mm/")
+        forbidden = ("Landroidx/", "Lorg/jetbrains/compose/", "Ltop/yukonga/miuix/", "Landroid/", "Lde/robv/android/xposed/", "Lio/github/libxposed/", "Lcom/tencent/mm/")
         CHECK.require(not any(name.startswith(forbidden) for name in feature_dex["classes"]), "Runtime AndroidX/Compose or compile/host stubs leaked into feature root DEX")
         CHECK.validate_dex_resources(primary_dex, primary_table, final_table, "Primary")
         CHECK.validate_dex_resources(feature_dex, final_table, final_table, "Feature",

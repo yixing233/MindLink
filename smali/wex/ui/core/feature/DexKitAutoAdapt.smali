@@ -23,14 +23,14 @@
         "",
         "loadNative",
         "()Z",
-        "Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;",
+        "Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;",
         "lpparam",
         "",
         "fp",
         "last",
         "Lj3/x;",
         "startAdapt",
-        "(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;Ljava/lang/String;)V",
+        "(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;Ljava/lang/String;)V",
         "Lorg/luckypray/dexkit/DexKitBridge;",
         "bridge",
         "Ljava/lang/ClassLoader;",
@@ -41,7 +41,7 @@
         "fingerprint",
         "()Ljava/lang/String;",
         "init",
-        "(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V",
+        "(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V",
         "KEY_FP",
         "Ljava/lang/String;",
         "KEY_CLASS",
@@ -198,10 +198,10 @@
     return-object p0
 .end method
 
-.method public static synthetic f(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V
+.method public static synthetic f(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V
     .locals 0
 
-    invoke-static {p0, p1}, Lwex/ui/core/feature/DexKitAutoAdapt;->startAdapt$lambda$1(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V
+    invoke-static {p0, p1}, Lwex/ui/core/feature/DexKitAutoAdapt;->startAdapt$lambda$1(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V
 
     return-void
 .end method
@@ -696,7 +696,7 @@
     throw v0
 .end method
 
-.method private final startAdapt(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;Ljava/lang/String;)V
+.method private final startAdapt(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;Ljava/lang/String;)V
     .locals 2
 
     sget-boolean p0, Lwex/ui/core/feature/DexKitAutoAdapt;->adapting:Z
@@ -739,7 +739,7 @@
 
     move-result-object p3
 
-    invoke-virtual {p0, p1, p3}, Lwex/ui/core/feature/AdaptProgressCard;->show(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V
+    invoke-virtual {p0, p1, p3}, Lwex/ui/core/feature/AdaptProgressCard;->show(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V
 
     sget-object p0, Lwex/ui/core/feature/DexKitAutoAdapt;->executor:Ljava/util/concurrent/ExecutorService;
 
@@ -760,7 +760,7 @@
     return-void
 .end method
 
-.method private static final startAdapt$lambda$1(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V
+.method private static final startAdapt$lambda$1(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V
     .locals 8
 
     const-string v0, "\u9002\u914d\u5931\u8d25\uff0c\u529f\u80fd\u672a\u542f\u7528"
@@ -805,7 +805,7 @@
     :try_start_1
     sget-object v5, Lorg/luckypray/dexkit/DexKitBridge;->Companion:Lorg/luckypray/dexkit/DexKitBridge$Companion;
 
-    iget-object v6, p0, Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->classLoader:Ljava/lang/ClassLoader;
+    iget-object v6, p0, Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->classLoader:Ljava/lang/ClassLoader;
 
     invoke-virtual {v6}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
@@ -819,7 +819,7 @@
 
     invoke-virtual {v3, v6}, Lwex/ui/core/feature/AdaptProgressCard;->logLine(Ljava/lang/String;)V
 
-    iget-object p0, p0, Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->classLoader:Ljava/lang/ClassLoader;
+    iget-object p0, p0, Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;->classLoader:Ljava/lang/ClassLoader;
 
     invoke-virtual {p0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
@@ -1010,7 +1010,7 @@
     return-object p0
 .end method
 
-.method public final init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+.method public final init(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
     .locals 5
 
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
@@ -1068,7 +1068,7 @@
     return-void
 
     :cond_1
-    invoke-direct {p0, p1, v0, v2}, Lwex/ui/core/feature/DexKitAutoAdapt;->startAdapt(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;Ljava/lang/String;)V
+    invoke-direct {p0, p1, v0, v2}, Lwex/ui/core/feature/DexKitAutoAdapt;->startAdapt(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;Ljava/lang/String;)V
 
     return-void
 .end method

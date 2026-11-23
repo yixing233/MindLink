@@ -2,7 +2,7 @@ package android.widget;
 
 import android.view.View;
 import android.view.ViewGroup;
-import de.robv.android.xposed.XposedBridge;
+import dev.mindlink.xposed.XposedBridge;
 import java.util.ArrayList;
 import java.util.List;
 

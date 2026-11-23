@@ -10,9 +10,9 @@ import com.tencent.mm.ui.LauncherUI;
 import com.tencent.mm.ui.LauncherUIBottomTabView;
 import com.tencent.mm.ui.MainTabUI;
 import com.tencent.mm.ui.mogic.WxViewPager;
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import dev.mindlink.xposed.XC_MethodHook;
+import dev.mindlink.xposed.XposedBridge;
+import dev.mindlink.xposed.callbacks.XC_LoadPackage;
 import java.lang.reflect.Method;
 
 /** Runs real Feature + Views + Session + NativeTabBridge + motion/controller, not a Views double. */

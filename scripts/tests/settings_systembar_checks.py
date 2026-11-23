@@ -67,7 +67,7 @@ public void setContentView(View v){root=v;((ViewGroup)window.getDecorView()).add
 public void show(){showing=true;window.ready=true;root.getRootView().attachRootForTest(new Object());root.attachForTest();root.focusForTest(true);}
 public void dismiss(){showing=false;dismisses++;root.getRootView().attachRootForTest(null);root.detachForTest();}}
 """
-    sources["de/robv/android/xposed/XposedBridge.java"] = "package de.robv.android.xposed;public class XposedBridge {public static void log(String s){}}"
+    sources["dev/mindlink/xposed/XposedBridge.java"] = "package dev.mindlink.xposed;public class XposedBridge {public static void log(String s){}}"
     sources["wex/ui/core/WexStore.java"] = "package wex.ui.core;public class WexStore {public static final WexStore INSTANCE=new WexStore();}"
     sources["wex/ui/core/feature/SettingsChanges.java"] = """package wex.ui.core.feature;public class SettingsChanges {
 public interface Listener{void onChanged();void onFailure(String message);}public static boolean hasPending(){return false;}
@@ -90,6 +90,10 @@ java.util.Map<String,java.util.function.Function<String,String>> w, java.util.Ma
 java.util.Map<String,java.util.function.Function<String,String>> r, boolean d){return new android.view.View(a);}
 public static void dispose(android.view.View v){}}
 """
+    # Back navigation needs the platform OnBackInvokedDispatcher; this suite only checks bars.
+    sources["wex/ui/core/feature/SettingsBack.java"] = "package wex.ui.core.feature;final class SettingsBack{static void bind(android.app.Dialog d,android.view.View v){}}"
+    # The slide transition needs the platform animator; this suite only checks bars.
+    sources["wex/ui/core/feature/SettingsTransition.java"] = "package wex.ui.core.feature;final class SettingsTransition{static void prepare(android.app.Dialog d,android.view.View v,int b){}}"
     sources["wex/ui/core/feature/SettingsPanelModel.java"] = """package wex.ui.core.feature;
 public class SettingsPanelModel {
 public final android.os.Bundle values=new android.os.Bundle();

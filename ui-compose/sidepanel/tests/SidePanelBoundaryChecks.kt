@@ -31,7 +31,9 @@ import dev.mindlink.sidepanel.vendor.wekit.homeSidePanelPointerLifecycleDecision
 import dev.mindlink.sidepanel.vendor.wekit.HomeSidePanelPointerLifecycleDecision
 import dev.mindlink.compose.SettingsState
 import dev.mindlink.compose.Setting
-import dev.mindlink.compose.sectionsFor
+import dev.mindlink.compose.MATERIAL_PAGE
+import dev.mindlink.compose.pageOf
+import dev.mindlink.compose.settingsGroups
 import java.util.function.Function
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -215,22 +217,58 @@ object SidePanelBoundaryChecks {
             "Final pointer-up displacement can cross another midpoint")
         verify(homeSidePanelPointerLifecycleDecision(true, false, true) == HomeSidePanelPointerLifecycleDecision.Cancel, "Consumed pointer-up cancels")
         verify(weatherIconKind("32") == WeatherIconKind.FOG && weatherIconKind("999") == WeatherIconKind.UNKNOWN, "Native Xiaomi weather codes")
-        val state = SettingsState(bundle("panel_tab" to "0", "top_profile_enabled" to "false"),
+        val state = SettingsState(bundle("top_profile_enabled" to "false"),
             mapOf("top_profile_enabled" to Function<String, String> { "false" }), emptyMap(), emptyMap(), false)
-        val home = sectionsFor(0, state)
-        val top = home.single { it.master?.key == "top_profile_enabled" }
-        verify(top.rows.any { it.key == "top_search_bar" }, "Search stays under its actual top-bar dependency")
-        val bottom = home.single { it.master?.key == "bottom_bar_enabled" }
-        verify(bottom.rows.any { it.key == "nav_bar_scale" }, "Bottom bar switch and configuration share a feature")
-        val more = sectionsFor(2, state)
-        verify(more.single { it.rows.any { row -> row.key == "nav_bar_glass_mode" } }.master == null, "Shared material remains available independently of bottom-bar switch")
+        val topBar = state.pageOf("top_bar")!!
+        verify(topBar.master == null, "Top bar bundles independent features, so it has no page-wide switch")
+        val profile = topBar.sections.single { it.master?.key == "top_profile_enabled" }
+        verify(profile.rows.any { it.key == "top_search_bar" }, "Search stays under its actual top-bar dependency")
+        verify(topBar.sections.single { it.master?.key == "top_scan_enabled" }.rows.any { it.key == "tool_pay" },
+            "Quick entries keep their own switch, independent of the profile card")
+        val bottom = state.pageOf("bottom_bar")!!
+        verify(bottom.master?.key == "bottom_bar_enabled" && bottom.sections.any { s -> s.rows.any { it.key == "nav_bar_scale" } },
+            "Bottom bar switch and configuration share a page")
+        val material = state.pageOf(MATERIAL_PAGE)!!
+        verify(material.master == null && material.sections.all { it.master == null }, "Shared material remains available independently of bottom-bar switch")
+        fun opacityRow() = state.pageOf(MATERIAL_PAGE)!!.sections.flatMap { it.rows }
+            .filterIsInstance<Setting.Range>().firstOrNull { it.key == "nav_bar_surface_opacity" }
+        state.write("nav_bar_glass_mode", "0")
+        verify(opacityRow() == null, "Plain surface offers no opacity")
+        state.write("nav_bar_glass_mode", "1")
+        verify(opacityRow()?.fallback?.invoke(state) == 65, "Frosted default opacity is 65%")
+        state.write("nav_bar_glass_mode", "2")
+        state.write("nav_bar_blur_radius", "8")
+        verify(opacityRow()?.fallback?.invoke(state) == 40, "Liquid default opacity is 40%")
+        state.write("nav_bar_blur_radius", "0")
+        verify(opacityRow()?.fallback?.invoke(state) == 0, "Liquid without blur defaults to clear")
+        state.write("nav_bar_surface_opacity", "70")
+        verify(state.number("nav_bar_surface_opacity", -1) == 70, "Explicit opacity is stored as a plain percent")
+        state.write("nav_bar_surface_opacity", "")
+        for (id in listOf("bottom_bar", "chat_header", "chat_footer")) {
+            verify(state.pageOf(id)!!.sections.any { s -> s.rows.any { it is Setting.Link && it.target == MATERIAL_PAGE } }, "$id links to shared material")
+        }
+        for (removed in listOf("top_nickname", "top_status", "top_dot_color", "panel_tab")) {
+            val keys = settingsGroups(state).flatMap { g -> g.pages.flatMap { p -> p.sections.flatMap { s -> s.rows + listOfNotNull(s.master) } + listOfNotNull(p.master) } }
+            verify(keys.none { it.key == removed }, "$removed is no longer offered")
+        }
         for (mode in listOf("0", "1", "2")) {
             state.write("bubble_mode", mode)
-            val all = (0..2).flatMap { sectionsFor(it, state) }
-            val keys = all.flatMap { section -> (section.rows + listOfNotNull(section.master)).mapNotNull { it.key } }
+            val pages = settingsGroups(state).flatMap { it.pages }
+            val keys = pages.flatMap { page ->
+                listOfNotNull(page.master) + page.sections.flatMap { section -> section.rows + listOfNotNull(section.master) }
+            }.mapNotNull { it.key }
             verify(keys.distinct().size == keys.size, "Every setting appears once in mode $mode")
-            verify(all.map { it.id }.distinct().size == all.size, "Stable unique feature keys")
+            verify(pages.map { it.id }.distinct().size == pages.size, "Stable unique page ids")
+            verify(pages.all { it.navigable || it.master != null }, "Every overview row either opens a page or is a switch")
         }
+        verify(!state.back() && state.currentPage == null, "Back at the overview is left to the host")
+        state.open("bottom_bar")
+        state.open("bottom_bar")
+        state.open(MATERIAL_PAGE)
+        state.open("missing")
+        verify(state.stack == listOf("bottom_bar", MATERIAL_PAGE), "Links push pages; duplicates and unknown ids are ignored")
+        verify(state.back() && state.currentPage == "bottom_bar" && !state.forward, "Back returns to the linking page")
+        verify(state.back() && state.currentPage == null, "Second back returns to the overview")
         state.toggle("top_profile_enabled", true)
         verify(!state.flag("top_profile_enabled"), "Failed writes retain effective stored state")
         val revision = state.actionRevision

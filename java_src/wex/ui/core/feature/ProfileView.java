@@ -22,7 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import de.robv.android.xposed.XposedBridge;
+import dev.mindlink.xposed.XposedBridge;
 
 /** Live home/profile header. Avatar, status and settings have separate click targets, like WeKit. */
 public final class ProfileView {
@@ -221,7 +221,7 @@ public final class ProfileView {
             addView(texts, textParams);
             if (panel) {
                 ImageView gear = new ImageView(activity);
-                gear.setImageDrawable(TablerIcons.drawableDp("wex_setting_icon.png", 22, SettingsTheme.sub(activity)));
+                gear.setImageDrawable(LucideIcons.drawableDp("wex_setting_icon.png", 22, SettingsTheme.sub(activity)));
                 gear.setScaleType(ImageView.ScaleType.CENTER);
                 gear.setContentDescription("Mdl 设置");
                 gear.setFocusable(true);

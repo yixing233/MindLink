@@ -175,4 +175,47 @@
     <string name="wekit_sp_home_side_panel_hitokoto_netease_music">网易云音乐</string>
     <string name="wekit_sp_home_side_panel_hitokoto_philosophy">哲学</string>
     <string name="wekit_sp_home_side_panel_hitokoto_witty">妙语</string>
+    <!-- 2026-11-22 editor page redesign -->
+    <string name="wekit_sp_home_side_panel_back">返回</string>
+    <string name="wekit_sp_home_side_panel_apply">应用</string>
+    <string name="wekit_sp_home_side_panel_apply_and_back">应用并返回</string>
+    <string name="wekit_sp_home_side_panel_discard">放弃</string>
+    <string name="wekit_sp_home_side_panel_unsaved_changes">有未应用的更改，要放弃吗？</string>
+    <string name="wekit_sp_home_side_panel_editor_preview">预览</string>
+    <string name="wekit_sp_home_side_panel_editor_draft_hint">更改会写入正在编辑的布局，回到编辑页保存后生效</string>
+    <string name="wekit_sp_home_side_panel_editor_display">显示</string>
+    <string name="wekit_sp_home_side_panel_hide_balance_summary">打开侧栏时余额显示为 ******，点一下钱包卡片可临时显示</string>
+    <string name="wekit_sp_home_side_panel_current_city">当前城市</string>
+    <string name="wekit_sp_home_side_panel_city_not_set">未设置</string>
+    <string name="wekit_sp_home_side_panel_change_city">更换城市</string>
+    <string name="wekit_sp_home_side_panel_city_code">城市代码</string>
+    <string name="wekit_sp_home_side_panel_city_code_summary">输入 9 位城市代码，例如北京为 101010100</string>
+    <string name="wekit_sp_home_side_panel_categories_selected" formatted="true">已选 %1$d / %2$d</string>
+    <string name="wekit_sp_home_side_panel_select_all">全选</string>
+    <string name="wekit_sp_home_side_panel_clear_all">清空</string>
+    <string name="wekit_sp_home_side_panel_length">字数</string>
+    <string name="wekit_sp_home_side_panel_length_summary">留空表示不限制</string>
+    <string name="wekit_sp_home_side_panel_min_length">最少字数</string>
+    <string name="wekit_sp_home_side_panel_max_length">最多字数</string>
+    <string name="wekit_sp_home_side_panel_no_limit">不限</string>
+    <string name="wekit_sp_home_side_panel_error_no_category">至少选择一个分类</string>
+    <string name="wekit_sp_home_side_panel_error_length_range">最多字数不能小于最少字数</string>
+    <!-- 2026-11-22 image / action editor pages -->
+    <string name="wekit_sp_home_side_panel_editor_image">图片</string>
+    <string name="wekit_sp_home_side_panel_image_importing">正在导入…</string>
+    <string name="wekit_sp_home_side_panel_image_scale_crop_summary">铺满卡片，超出部分会被裁掉</string>
+    <string name="wekit_sp_home_side_panel_image_scale_fit_summary">完整显示整张图，可能留边</string>
+    <string name="wekit_sp_home_side_panel_image_scale_stretch_summary">拉伸铺满，图片可能变形</string>
+    <string name="wekit_sp_home_side_panel_image_scale_auto_ratio_summary">卡片高度按图片原始比例自动决定</string>
+    <string name="wekit_sp_home_side_panel_image_height">高度</string>
+    <string name="wekit_sp_home_side_panel_image_height_value" formatted="true">%1$d dp</string>
+    <string name="wekit_sp_home_side_panel_image_height_auto">此模式下高度跟随图片比例，无需调整</string>
+    <string name="wekit_sp_home_side_panel_actions_added">已添加</string>
+    <string name="wekit_sp_home_side_panel_actions_added_summary" formatted="true">共 %1$d 个，用箭头调整顺序</string>
+    <string name="wekit_sp_home_side_panel_actions_empty">还没有动作，从下方添加</string>
+    <string name="wekit_sp_home_side_panel_actions_available">添加动作</string>
+    <string name="wekit_sp_home_side_panel_actions_available_summary">点一下添加到末尾</string>
+    <string name="wekit_sp_home_side_panel_action_already_added">已添加</string>
+    <string name="wekit_sp_home_side_panel_move_up">上移</string>
+    <string name="wekit_sp_home_side_panel_move_down">下移</string>
 </resources>

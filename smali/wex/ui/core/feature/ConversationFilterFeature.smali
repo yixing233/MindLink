@@ -21,10 +21,10 @@
     return-void
 .end method
 
-.method public final init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+.method public final init(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
     .locals 1
     sget-object v0, Lwex/ui/core/feature/ConversationGroupingFeature;->INSTANCE:Lwex/ui/core/feature/ConversationGroupingFeature;
-    invoke-virtual {v0, p1}, Lwex/ui/core/feature/ConversationGroupingFeature;->init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+    invoke-virtual {v0, p1}, Lwex/ui/core/feature/ConversationGroupingFeature;->init(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
     return-void
 .end method
 

@@ -85,7 +85,7 @@ final class SidebarActions {
 
         ImageView icon = new ImageView(activity);
         int size = dp(density, 24);
-        icon.setImageBitmap(TablerIcons.bitmap(action[1], size,
+        icon.setImageBitmap(LucideIcons.bitmap(action[1], size,
                 dark ? 0xFFE6E6E6 : 0xFF1A1A1A));
         icon.setScaleType(ImageView.ScaleType.CENTER);
         cell.addView(icon, new LinearLayout.LayoutParams(size, size));
@@ -137,7 +137,7 @@ final class SidebarActions {
     private static final class XposedLog {
         static void log(String message) {
             try {
-                de.robv.android.xposed.XposedBridge.log("WEX: 首页侧栏: " + message);
+                dev.mindlink.xposed.XposedBridge.log("WEX: 首页侧栏: " + message);
             } catch (Throwable ignored) {
             }
         }

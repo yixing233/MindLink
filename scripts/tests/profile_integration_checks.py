@@ -59,8 +59,8 @@ def main():
     sources += [TESTS / path for path in (
         "database-capture/common/android/database/Cursor.java",
         "database-capture/common/android/content/pm/ApplicationInfo.java",
-        "database-capture/common/de/robv/android/xposed/XC_MethodHook.java",
-        "database-capture/common/de/robv/android/xposed/callbacks/XC_LoadPackage.java",
+        "database-capture/common/dev/mindlink/xposed/XC_MethodHook.java",
+        "database-capture/common/dev/mindlink/xposed/callbacks/XC_LoadPackage.java",
         "text-status/profile/wex/ui/core/feature/TextStatusBridge.java",
         "text-status/profile/wex/ui/core/feature/ConversationStorageBridge.java",
         "wex/ui/core/WexStore.java",

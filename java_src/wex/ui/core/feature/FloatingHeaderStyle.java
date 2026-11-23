@@ -28,9 +28,12 @@ final class FloatingHeaderStyle {
         final View view; final Drawable background; final ViewOutlineProvider outline;
         final boolean clip; final float elevation, translation; final android.animation.StateListAnimator animator;
         final ViewOutlineProvider owned;
-        CardState(View view, ViewOutlineProvider owned) {
+        /** Card height limit in px read by {@link #owned}; -1 = the whole view. */
+        final int[] heightLimit;
+        CardState(View view, ViewOutlineProvider owned, int[] heightLimit) {
             this.view=view; background=view.getBackground(); outline=view.getOutlineProvider(); clip=view.getClipToOutline();
             elevation=view.getElevation(); translation=view.getTranslationZ(); animator=view.getStateListAnimator(); this.owned=owned;
+            this.heightLimit=heightLimit;
         }
     }
 
@@ -50,12 +53,14 @@ final class FloatingHeaderStyle {
                 ((ChatGlassSurface) view.getBackground()).stop();
                 view.setBackground(null);
             }
+            final int[] limit = {-1};
             ViewOutlineProvider owned = new ViewOutlineProvider() {
                 @Override public void getOutline(View target, Outline outline) {
-                    outline.setRoundRect(0, 0, target.getWidth(), Math.max(1, target.getHeight()), radius);
+                    int height = limit[0] > 0 ? Math.min(limit[0], target.getHeight()) : target.getHeight();
+                    outline.setRoundRect(0, 0, target.getWidth(), Math.max(1, height), radius);
                 }
             };
-            state = new CardState(view, owned);
+            state = new CardState(view, owned, limit);
         }
         int color = sampleColor(view);
         Drawable current = view.getBackground();
@@ -83,10 +88,26 @@ final class FloatingHeaderStyle {
     static void restore(CardState state) {
         if (state == null || state.view == null) return;
         View view = state.view;
+        state.heightLimit[0] = -1;
         if (view.getOutlineProvider() == state.owned) {
             if (view.getBackground() instanceof ChatGlassSurface) ((ChatGlassSurface) view.getBackground()).stop();
             view.setBackground(state.background); view.setOutlineProvider(state.outline); view.setClipToOutline(state.clip);
             view.setElevation(state.elevation); view.setTranslationZ(state.translation); view.setStateListAnimator(state.animator);
+        }
+    }
+
+    /**
+     * Limits the card to its top {@code height} px: the outline (clip and shadow) and the glass
+     * stop there while the host view itself may stay taller. {@code height <= 0} or a height not
+     * below the view's own releases the limit.
+     */
+    static void clampCard(CardState state, int height) {
+        if (state == null || state.view == null) return;
+        View view = state.view;
+        int limit = height > 0 && height < view.getHeight() ? height : -1;
+        if (state.heightLimit[0] != limit) { state.heightLimit[0] = limit; view.invalidateOutline(); }
+        if (view.getBackground() instanceof ChatGlassSurface) {
+            ((ChatGlassSurface) view.getBackground()).visibleHeight(limit > 0 ? limit : view.getHeight());
         }
     }
 
@@ -194,41 +215,459 @@ final class FloatingHeaderStyle {
         void restore() { if(view.getTranslationX()==applied)view.setTranslationX(original); }
     }
 
-    private static final class TitleState {
+    /**
+     * Title text widths under the centred title host.
+     *
+     * <p>WeChat's chat title is not a platform TextView: it is {@code NoMeasuredTextView}
+     * (extends X2CView). Its {@code setText} bakes the ellipsis into the stored text using
+     * {@code min(maxWidth, measuredWidth)} at that moment, and WeChat gives it a maxWidth from the
+     * native header geometry. Inside a floating card that limit can be narrower than the space the
+     * view really has, so even "对方正在输入…" came out truncated next to visible free room. Its
+     * measured width always equals the width its parent offers, so pinning maxWidth to the view's
+     * own laid-out width removes the stale limit without ever letting text overflow.</p>
+     *
+     * <p>The host adds and swaps title views (typing status, subtitles), so the tree is rescanned
+     * on every apply; each view keeps the first original it was seen with.</p>
+     */
+    static final class TitleState {
         final View view;
         ViewGroup.LayoutParams params;
         int originalWidth, appliedWidth=-1;
-        final List<TextWidth> texts=new ArrayList<>();
-        TitleState(View view) {
-            this.view=view;
+        /** Horizontal shift that centres the host in a pill wider on one side; 0 for the centred pill. */
+        float originalShift, appliedShift; boolean shifted;
+        final java.util.Map<View, TextFit> texts=new java.util.WeakHashMap<>();
+        /** Fixed widths inside the title host that capped the text below the pill: {host value}. */
+        final java.util.Map<View, int[]> fixed=new java.util.WeakHashMap<>();
+        /** Host horizontal padding before we cleared it, and the values we wrote (left, right). */
+        int padLeft, padRight; boolean padOwned;
+        int diagnoseLogs; String diagnosed;
+        TitleState(View view) { this.view=view; scan(); }
+        private void scan() {
             ArrayDeque<View> queue=new ArrayDeque<>();queue.add(view);
             for(int count=0;!queue.isEmpty()&&count<64;count++){
                 View child=queue.removeFirst();
-                if(child instanceof android.widget.TextView)texts.add(new TextWidth((android.widget.TextView)child));
+                if(!texts.containsKey(child)){
+                    if(child instanceof android.widget.TextView)texts.put(child,new TextWidth((android.widget.TextView)child));
+                    else if(NoMeasuredWidth.matches(child))texts.put(child,new NoMeasuredWidth(child));
+                }
                 if(child instanceof ViewGroup){ViewGroup group=(ViewGroup)child;for(int i=0;i<group.getChildCount();i++)queue.add(group.getChildAt(i));}
             }
         }
-        void apply(int width) {
+        void apply(int width) { apply(width, 0f); }
+        void apply(int width, float shift) {
             ViewGroup.LayoutParams current=view.getLayoutParams();
             if(current==null||width<=0)return;
             if(params!=current){params=current;originalWidth=current.width;appliedWidth=-1;}
-            if(current.width!=width){current.width=width;view.setLayoutParams(current);}
-            appliedWidth=width;
-            for(TextWidth text:texts)text.apply(Math.max(1,width-view.getPaddingLeft()-view.getPaddingRight()));
+            // The host keeps its own side padding (it re-applies it on every layout, so clearing
+            // it only raced it): the host is made wider by that padding instead, so the content
+            // area between the paddings is exactly the pill, whichever of the two wins a frame.
+            int padL=view.getPaddingLeft(), padR=view.getPaddingRight();
+            int outer=width+padL+padR;
+            if(current.width!=outer){current.width=outer;view.setLayoutParams(current);}
+            appliedWidth=outer;
+            float now=view.getTranslationX();
+            if(!shifted){originalShift=now;shifted=true;}
+            else if(now!=appliedShift)originalShift=now; // the host moved it since
+            // Unequal paddings move the content off the host centre; keep the content on the pill.
+            float next=originalShift+shift-(padL-padR)/2f;
+            if(now!=next)view.setTranslationX(next);
+            appliedShift=next;
+            restorePadding();
+            int inner=Math.max(1,width);
+            liftFixed(inner);
+            lift(inner,true);
+            diagnose(width);
+        }
+        /**
+         * WeChat pads the centred title host on both sides by the width of the native side
+         * buttons (168 px each on this device) and writes that padding again during layout. The
+         * previous build cleared it before each draw; the host restored it in the next measure,
+         * so most opens settled at 342 px content (pill 678 - 2 x 168) and only some at 678.
+         * Padding cleared by that build is given back so the host's own value is used again.
+         */
+        private void restorePadding() {
+            if(!padOwned)return;
+            padOwned=false;
+            if(view.getPaddingLeft()==0&&view.getPaddingRight()==0)
+                view.setPadding(padLeft,view.getPaddingTop(),padRight,view.getPaddingBottom());
+        }
+        /**
+         * WeChat sizes parts of the title (wrapper layouts, the name view) to px computed from the
+         * native header. Inside the wider floating pill those fixed widths became the real limit:
+         * past it the name was cut although the pill had room. Containers and text views with a
+         * fixed width below the pill wrap their content instead; icons keep their size.
+         */
+        private void liftFixed(int width) {
+            ArrayDeque<View> queue=new ArrayDeque<>();queue.add(view);
+            for(int count=0;!queue.isEmpty()&&count<64;count++){
+                View child=queue.removeFirst();
+                if(child!=view&&(child instanceof ViewGroup||texts.containsKey(child))){
+                    ViewGroup.LayoutParams p=child.getLayoutParams();
+                    if(p!=null&&p.width>0&&p.width<width){
+                        if(!fixed.containsKey(child))fixed.put(child,new int[]{p.width});
+                        else fixed.get(child)[0]=p.width; // the host wrote a new fixed width
+                        p.width=ViewGroup.LayoutParams.WRAP_CONTENT;child.setLayoutParams(p);
+                    }
+                }
+                if(child instanceof ViewGroup){ViewGroup group=(ViewGroup)child;for(int i=0;i<group.getChildCount();i++)queue.add(group.getChildAt(i));}
+            }
+        }
+        /** One line per distinct title layout (max 8): widths and limits down the title tree. */
+        private void diagnose(int width) {
+            if(diagnoseLogs>=8)return;
+            StringBuilder out=new StringBuilder("pill=").append(width);
+            ArrayDeque<View> queue=new ArrayDeque<>();queue.add(view);ArrayDeque<Integer> depths=new ArrayDeque<>();depths.add(0);
+            for(int count=0;!queue.isEmpty()&&count<16;count++){
+                View child=queue.removeFirst();int depth=depths.removeFirst();
+                if(!child.isShown())continue;
+                ViewGroup.LayoutParams p=child.getLayoutParams();
+                out.append(" |").append(depth).append(':').append(child.getClass().getSimpleName())
+                        .append(" w=").append(child.getWidth()).append(" lp=").append(p==null?"none":String.valueOf(p.width))
+                        .append(" pad=").append(child.getPaddingLeft()).append(',').append(child.getPaddingRight());
+                TextFit fit=texts.get(child);
+                if(fit!=null)out.append(' ').append(fit.describe());
+                if(child instanceof ViewGroup){ViewGroup group=(ViewGroup)child;for(int i=0;i<group.getChildCount();i++){queue.add(group.getChildAt(i));depths.add(depth+1);}}
+            }
+            String line=out.toString();
+            if(line.equals(diagnosed))return;
+            diagnosed=line;diagnoseLogs++;
+            TitleSource.log("title tree "+line);
+        }
+        /**
+         * True when a shown title text would be cut in a host {@code hostWidth} wide: its whole
+         * text (for WeChat's title the uncut source plus its kept suffix such as "(211)") and what
+         * its siblings in the host take now. Measured against the centred width, never against
+         * the current one, so widening the pill cannot flip the decision back next frame.
+         */
+        boolean overflows(int hostWidth) {
+            if(hostWidth<=0)return false;
+            scan();
+            int host=view.getWidth();
+            for(java.util.Map.Entry<View,TextFit> entry:texts.entrySet()){
+                View text=entry.getKey();
+                if(!text.isShown()||text.getWidth()<=0)continue;
+                float needed=entry.getValue().needed();
+                if(needed<=0f)continue;
+                int others=text==view||host<=0?0:Math.max(0,host-text.getWidth());
+                if(needed+others>hostWidth+0.5f)return true;
+            }
+            return false;
+        }
+        /**
+         * Lifts text limits without resizing the host. {@code textViews} false leaves platform
+         * TextViews to WeChat (integrated card, where the host keeps its native width).
+         */
+        void lift(int width, boolean textViews) {
+            scan();
+            for(TextFit text:texts.values()){
+                if(text instanceof NoMeasuredWidth)text.apply(0);
+                else if(textViews)text.apply(width);
+            }
         }
         void restore() {
             if(params!=null&&view.getLayoutParams()==params&&params.width==appliedWidth){
                 params.width=originalWidth;view.setLayoutParams(params);
             }
-            for(TextWidth text:texts)text.restore();
+            if(shifted&&view.getTranslationX()==appliedShift)view.setTranslationX(originalShift);
+            shifted=false;
+            if(padOwned&&view.getPaddingLeft()==0&&view.getPaddingRight()==0)
+                view.setPadding(padLeft,view.getPaddingTop(),padRight,view.getPaddingBottom());
+            padOwned=false;
+            for(java.util.Map.Entry<View,int[]> entry:fixed.entrySet()){
+                ViewGroup.LayoutParams p=entry.getKey().getLayoutParams();
+                if(p!=null&&p.width==ViewGroup.LayoutParams.WRAP_CONTENT){p.width=entry.getValue()[0];entry.getKey().setLayoutParams(p);}
+            }
+            fixed.clear();
+            for(TextFit text:texts.values())text.restore();
+            texts.clear();
         }
     }
 
-    private static final class TextWidth {
+    interface TextFit {
+        void apply(int width); void restore();
+        /** Width the whole text needs including the view's own horizontal padding; 0 when unknown. */
+        float needed();
+        /** Short diagnostic: limit and shown/source text lengths, no text content. */
+        String describe();
+    }
+
+    private static final class TextWidth implements TextFit {
         final android.widget.TextView view; final int original; int applied=-1;
         TextWidth(android.widget.TextView view){this.view=view;original=view.getMaxWidth();}
-        void apply(int width){if(view.getMaxWidth()!=width)view.setMaxWidth(width);applied=width;}
-        void restore(){if(view.getMaxWidth()==applied)view.setMaxWidth(original);}
+        @Override public void apply(int width){if(view.getMaxWidth()!=width)view.setMaxWidth(width);applied=width;}
+        @Override public void restore(){if(view.getMaxWidth()==applied)view.setMaxWidth(original);}
+        @Override public String describe(){CharSequence t=view.getText();return "max="+view.getMaxWidth()+" len="+(t==null?0:t.length())+" need="+Math.round(needed());}
+        @Override public float needed(){
+            CharSequence text=view.getText();
+            if(text==null||text.length()==0)return 0f;
+            android.text.TextPaint paint=view.getPaint();
+            if(paint==null)return 0f;
+            return paint.measureText(text,0,text.length())+view.getPaddingLeft()+view.getPaddingRight();
+        }
+    }
+
+    /** WeChat's {@code com.tencent.mm.ui.base.NoMeasuredTextView}: public {@code setMaxWidth(int)}, limit in public fields v / w. */
+    private static final class NoMeasuredWidth implements TextFit {
+        private static final String NAME="com.tencent.mm.ui.base.NoMeasuredTextView";
+        private static final java.util.Map<Class<?>, Boolean> TYPES=new java.util.HashMap<>();
+        final View view; final java.lang.reflect.Method setter, setText; final java.lang.reflect.Field max, enabled;
+        final int originalMax; final boolean originalEnabled; int applied=-1;
+        int waits;
+        static boolean matches(View view){
+            Class<?> type=view.getClass(); Boolean known=TYPES.get(type);
+            if(known==null){
+                boolean found=false;
+                for(Class<?> current=type;current!=null&&!found;current=current.getSuperclass())found=NAME.equals(current.getName());
+                TYPES.put(type,known=found);
+            }
+            return known;
+        }
+        NoMeasuredWidth(View view){
+            this.view=view;
+            java.lang.reflect.Method method=null,text=null;java.lang.reflect.Field m=null,e=null;int om=Integer.MAX_VALUE;boolean oe=false;
+            try{method=view.getClass().getMethod("setMaxWidth",int.class);}catch(ReflectiveOperationException ignored){}
+            try{text=view.getClass().getMethod("setText",CharSequence.class);}catch(ReflectiveOperationException ignored){}
+            try{
+                // Fields are optional (obfuscated names may move); they only make restore exact.
+                java.lang.reflect.Field fm=view.getClass().getField("v"),fe=view.getClass().getField("w");
+                if(fm.getType()==int.class&&fe.getType()==boolean.class){m=fm;e=fe;om=fm.getInt(view);oe=fe.getBoolean(view);}
+            }catch(ReflectiveOperationException|RuntimeException ignored){}
+            setter=method;setText=text;max=m;enabled=e;originalMax=om;originalEnabled=oe;
+            TitleSource.install(view.getClass());
+        }
+        private int current(){
+            try{return max!=null&&enabled!=null&&enabled.getBoolean(view)?max.getInt(view):-1;}
+            catch(ReflectiveOperationException ignored){return applied;}
+        }
+        /**
+         * The view's own laid-out width: its parent's offer, never more. Raising the limit is
+         * not enough on its own: the view stores only the text already cut at set time (often
+         * while the floating card was still being laid out, which gave "🏓…(211)"). So once the
+         * laid-out width differs from the one the text was cut for, the host's original text
+         * (and suffix, e.g. the member count) is set again and cut for the real width.
+         */
+        @Override public void apply(int ignored){
+            int width=view.getWidth();
+            if(setter==null||width<=0||!view.isShown())return;
+            int now=max==null?applied:current();
+            if(now!=width){
+                try{setter.invoke(view,width);applied=width;}
+                catch(ReflectiveOperationException ignoredError){return;}
+            }
+            TitleSource source=TitleSource.of(view);
+            if(source==null||setText==null)return;
+            // Re-cut when the stored text was cut for another width, or when it was cut well short
+            // of the room it has now (cut while the card was still laying out, or by the host's
+            // own suffix callback with native widths). Bounded per text and width.
+            boolean stale=source.width!=width||source.underfilled(view,width);
+            if(!stale){waits=0;return;}
+            // A title relaid out every frame must not starve the re-cut forever.
+            if(view.isLayoutRequested()&&++waits<=2)return;
+            waits=0;
+            source.reapply(view,setText,width);
+        }
+        @Override public String describe(){
+            TitleSource source=TitleSource.of(view);
+            CharSequence shown=shown(view);
+            return "max="+(max==null?applied:current())+" len="+(shown==null?0:shown.length())
+                    +" src="+(source==null||source.text==null?"none":String.valueOf(source.text.length()))
+                    +" sfx="+(source==null||source.suffix==null?0:source.suffix.length())
+                    +" cutW="+(source==null?-2:source.width)+" need="+Math.round(needed());
+        }
+        /** The uncut title plus its kept suffix when the source is known, else the shown text. */
+        @Override public float needed(){
+            android.text.TextPaint paint=TitleSource.paint(view);
+            if(paint==null)return 0f;
+            TitleSource source=TitleSource.of(view);
+            CharSequence text=null;
+            if(source!=null&&source.text!=null&&source.text.length()>0)
+                text=source.suffix==null?source.text:android.text.TextUtils.concat(source.text,source.suffix);
+            if(text==null){
+                try{Object value=view.getClass().getMethod("getText").invoke(view);if(value instanceof CharSequence)text=(CharSequence)value;}
+                catch(ReflectiveOperationException|RuntimeException ignored){}
+            }
+            if(text==null||text.length()==0)return 0f;
+            return paint.measureText(text,0,text.length())+TitleSource.horizontalPadding(view);
+        }
+        @Override public void restore(){
+            if(applied<0||max==null||enabled==null)return;
+            try{
+                if(current()!=applied)return; // WeChat set its own limit since; keep it.
+                max.setInt(view,originalMax);enabled.setBoolean(view,originalEnabled);
+                view.requestLayout();view.invalidate();
+            }catch(ReflectiveOperationException ignored){}
+        }
+    }
+
+    private static CharSequence shown(View view){
+        try{Object value=view.getClass().getMethod("getText").invoke(view);return value instanceof CharSequence?(CharSequence)value:null;}
+        catch(ReflectiveOperationException|RuntimeException ignored){return null;}
+    }
+
+    /**
+     * The uncut title WeChat last gave a header {@code NoMeasuredTextView}: its text plus the
+     * keep-at-end suffix set through {@code g(String,int,int)} (public fields L / M / N, used once
+     * by the next set). Recorded by a hook on the view's internal text setter; calls made by the
+     * view itself from {@code onLayout} (its deferred re-cut of the stored text) are not sources.
+     * The hook is installed at header-feature init, before the first chat title is set. Only
+     * views inside an action bar (or not attached yet, as during inflation) are recorded, so the
+     * conversation list's many NoMeasuredTextViews pay one short parent walk and nothing else.
+     */
+    static final class TitleSource {
+        private static final java.util.Map<View, TitleSource> SOURCES=new java.util.WeakHashMap<>();
+        private static final java.util.Set<Class<?>> HOOKED=new java.util.HashSet<>();
+        private static final java.util.Map<View, Boolean> LAYOUT=new java.util.WeakHashMap<>();
+        private static int logs;
+        CharSequence text; String suffix;
+        /** Laid-out width when the text was last cut; -1 = unknown. */
+        int width=-1;
+        /** Re-cuts spent on this source text at {@link #recutWidth}; a host that keeps cutting it wins after 3. */
+        int recuts, recutWidth=-1;
+        private boolean reapplying;
+
+        static TitleSource of(View view){return SOURCES.get(view);}
+
+        private static boolean header(View view){
+            if(!view.isAttachedToWindow())return true;
+            Object parent=view.getParent();
+            for(int depth=0;parent instanceof View&&depth<16;depth++,parent=((View)parent).getParent()){
+                String name=parent.getClass().getName();
+                if("androidx.appcompat.widget.ActionBarContainer".equals(name)||"androidx.appcompat.widget.Toolbar".equals(name))return true;
+            }
+            return false;
+        }
+
+        static void install(Class<?> type){
+            Class<?> owner=null;
+            for(Class<?> current=type;current!=null;current=current.getSuperclass())if(NAME_OF(current))owner=current;
+            if(owner==null||!HOOKED.add(owner))return;
+            java.lang.reflect.Method setter=null;
+            for(java.lang.reflect.Method method:owner.getDeclaredMethods()){
+                Class<?>[] p=method.getParameterTypes();
+                // h(CharSequence, BufferType-like enum): every public setText funnels into it.
+                if(p.length==2&&p[0]==CharSequence.class&&p[1].isEnum()&&method.getReturnType()==void.class){setter=method;break;}
+            }
+            try{
+                if(setter==null)setter=owner.getDeclaredMethod("setText",CharSequence.class);
+                dev.mindlink.xposed.XposedBridge.hookMethod(setter,new dev.mindlink.xposed.XC_MethodHook(){
+                    @Override protected void beforeHookedMethod(MethodHookParam param){record((View)param.thisObject,param.args[0]);}
+                    @Override protected void afterHookedMethod(MethodHookParam param){cut((View)param.thisObject);}
+                });
+                java.lang.reflect.Method layout=owner.getDeclaredMethod("onLayout",boolean.class,int.class,int.class,int.class,int.class);
+                dev.mindlink.xposed.XposedBridge.hookMethod(layout,new dev.mindlink.xposed.XC_MethodHook(){
+                    @Override protected void beforeHookedMethod(MethodHookParam param){if(SOURCES.get(param.thisObject)!=null)LAYOUT.put((View)param.thisObject,Boolean.TRUE);}
+                    @Override protected void afterHookedMethod(MethodHookParam param){LAYOUT.remove(param.thisObject);}
+                });
+            }catch(ReflectiveOperationException|RuntimeException|LinkageError error){
+                log("title source hook unavailable "+error.getClass().getSimpleName());
+            }
+        }
+
+        private static boolean NAME_OF(Class<?> type){return "com.tencent.mm.ui.base.NoMeasuredTextView".equals(type.getName());}
+
+        private static void record(View view,Object value){
+            if(LAYOUT.containsKey(view))return;
+            TitleSource source=SOURCES.get(view);
+            if(source!=null&&source.reapplying)return;
+            if(source==null&&!header(view))return;
+            if(source==null){source=new TitleSource();SOURCES.put(view,source);}
+            source.text=value instanceof CharSequence?(CharSequence)value:""; // spans (emoji) kept as given
+            source.suffix=stringField(view,"L");
+            source.width=-1;
+            source.recuts=0;
+        }
+
+        /**
+         * After WeChat's set: note the width the stored text was cut for. A text that came out
+         * shorter than its source was cut, possibly by WeChat's own narrower limit or callback
+         * widths rather than the view's width; mark it unknown so the next apply re-cuts it once.
+         */
+        private static void cut(View view){
+            TitleSource source=SOURCES.get(view);
+            if(source==null||source.reapplying)return;
+            int full=(source.text==null?0:source.text.length())+(source.suffix==null?0:source.suffix.length());
+            CharSequence shown=null;
+            try{Object value=view.getClass().getMethod("getText").invoke(view);if(value instanceof CharSequence)shown=(CharSequence)value;}
+            catch(ReflectiveOperationException|RuntimeException ignored){}
+            boolean truncated=shown==null||shown.length()<full;
+            source.width=!truncated&&view.getMeasuredWidth()>0?view.getWidth():-1;
+        }
+
+        /**
+         * Cuts the title for {@code target} ourselves rather than through the host's layout
+         * callback, whose width inputs (M / N) come from the native header geometry: the name is
+         * ellipsized to what is left after the suffix, and the suffix ("(211)") always stays whole.
+         * Without a suffix the view's own cut is used; its limit is already {@code target}.
+         */
+        /**
+         * The stored text is a cut of the source although the whole source fits in
+         * {@code width}, or the cut stops more than two characters short of the room.
+         */
+        boolean underfilled(View view,int width){
+            if(text==null||text.length()==0||reapplying)return false;
+            if(recutWidth==width&&recuts>=3)return false;
+            CharSequence shownText=shown(view);
+            if(shownText==null)return false;
+            CharSequence full=suffix==null?text:android.text.TextUtils.concat(text,suffix);
+            if(shownText.toString().equals(full.toString()))return false;
+            android.text.TextPaint paint=paint(view);
+            if(paint==null)return false;
+            float avail=width-horizontalPadding(view);
+            if(paint.measureText(full,0,full.length())<=avail)return true;
+            return paint.measureText(shownText,0,shownText.length())<avail-2f*paint.getTextSize();
+        }
+
+        void reapply(View view,java.lang.reflect.Method setText,int target){
+            if(text==null||text.length()==0)return;
+            if(recutWidth!=target){recutWidth=target;recuts=0;}
+            if(recuts>=3){width=target;return;}
+            recuts++;
+            reapplying=true;
+            try{
+                CharSequence value=text;
+                android.text.TextPaint paint=paint(view);
+                if(suffix!=null&&paint!=null){
+                    float avail=target-horizontalPadding(view);
+                    CharSequence full=android.text.TextUtils.concat(text,suffix);
+                    if(paint.measureText(full,0,full.length())<=avail)value=full;
+                    else{
+                        float room=Math.max(0f,avail-paint.measureText(suffix));
+                        value=android.text.TextUtils.concat(android.text.TextUtils.ellipsize(text,paint,room,android.text.TextUtils.TruncateAt.END),suffix);
+                    }
+                }
+                // No pending suffix: the host callback must not cut the prepared text again.
+                setField(view,"L",null);
+                setText.invoke(view,value);
+                width=target;
+                if(logs<4){logs++;log("title re-cut width="+target+" text="+text.length()+" suffix="+(suffix==null?"none":suffix.length())+" shown="+value.length());}
+            }catch(ReflectiveOperationException|RuntimeException error){
+                width=target; // do not retry every frame
+                log("title re-cut failed "+error.getClass().getSimpleName());
+            }finally{reapplying=false;}
+        }
+
+        private static android.text.TextPaint paint(View view){
+            try{Object p=view.getClass().getMethod("getPaint").invoke(view);return p instanceof android.text.TextPaint?(android.text.TextPaint)p:null;}
+            catch(ReflectiveOperationException|RuntimeException ignored){return null;}
+        }
+        private static int horizontalPadding(View view){
+            try{
+                Object l=view.getClass().getMethod("getCompoundPaddingLeft").invoke(view),r=view.getClass().getMethod("getCompoundPaddingRight").invoke(view);
+                if(l instanceof Integer&&r instanceof Integer)return (Integer)l+(Integer)r;
+            }catch(ReflectiveOperationException|RuntimeException ignored){}
+            return view.getPaddingLeft()+view.getPaddingRight();
+        }
+
+        private static String stringField(View view,String name){
+            try{java.lang.reflect.Field f=view.getClass().getField(name);Object v=f.get(view);return v instanceof String&&!((String)v).isEmpty()?(String)v:null;}
+            catch(ReflectiveOperationException|RuntimeException ignored){return null;}
+        }
+        private static void setField(View view,String name,Object value){
+            try{view.getClass().getField(name).set(view,value);}catch(ReflectiveOperationException|RuntimeException ignored){}
+        }
+        private static void log(String message){
+            try{dev.mindlink.xposed.XposedBridge.log("WEX: 聊天顶栏: "+message);}catch(Throwable ignored){}
+        }
     }
 
     static SeparatedState applySeparated(View header, SeparatedState state, int corner, int gap, int elevation) {
@@ -357,6 +796,17 @@ final class FloatingHeaderStyle {
         if (state.root.getWidth() <= 0 || state.root.getHeight() <= 0) return;
         state.back.apply(state.decoration);
         state.decoration.geometry();
+        // Long titles take the room the centred pill leaves unused on the narrower side; short
+        // ones stay centred. Decided against the centred width (see TitleState.overflows).
+        float inset = gap * density;
+        android.graphics.RectF centred = state.decoration.centred;
+        boolean wide = !centred.isEmpty()
+                && state.title.overflows(Math.max(0, Math.round(centred.width() - 2 * inset)));
+        if (wide != state.decoration.wide) {
+            state.decoration.wide = wide;
+            state.decoration.geometry();
+            state.decoration.invalidate();
+        }
         android.graphics.RectF painted = new android.graphics.RectF(0,0,state.root.getWidth(),state.root.getHeight());
         painted.union(state.decoration.left);
         if(!state.decoration.title.isEmpty())painted.union(state.decoration.title);
@@ -367,7 +817,7 @@ final class FloatingHeaderStyle {
         String signature = left+"x"+top+"x"+right+"x"+bottom;
         if (!signature.equals(state.geometrySignature) && state.geometryLogs++ < 6) {
             state.geometrySignature = signature;
-            de.robv.android.xposed.XposedBridge.log("WEX: 悬浮顶栏: stage=split-geometry"
+            dev.mindlink.xposed.XposedBridge.log("WEX: 悬浮顶栏: stage=split-geometry"
                     + " root=" + state.root.getWidth() + "x" + state.root.getHeight()
                     + " canvas=" + left + "," + top + "," + right + "," + bottom
                     + " shadow=" + shadowPadding
@@ -403,7 +853,9 @@ final class FloatingHeaderStyle {
         state.syncClips();
         for(ClipState clip:state.clips)clip.apply(shadow);
         state.decoration.geometry();
-        state.title.apply(Math.max(0,Math.round(state.decoration.title.width()-2*gap*density)));
+        android.graphics.RectF pill = state.decoration.title;
+        float shift = pill.isEmpty() ? 0f : pill.centerX() - state.root.getWidth() / 2f;
+        state.title.apply(Math.max(0, Math.round(pill.width() - 2 * inset)), shift);
         state.decoration.stroke(density, SettingsTheme.isDark(state.root.getContext()));
     }
 
@@ -423,7 +875,25 @@ final class FloatingHeaderStyle {
         for (ClipState clip : state.clips) clip.restore();
     }
 
-    private static View[] parts(RelativeLayout root) {
+    /**
+     * The header's native RelativeLayout holding back / centred title / menu, or null when the
+     * toolbar is missing or ambiguous. Same discovery as {@link #applySeparated}.
+     */
+    static RelativeLayout headerRoot(View header) {
+        View toolbar = findUnique(header, "androidx.appcompat.widget.Toolbar", 128);
+        if (!(toolbar instanceof ViewGroup)) return null;
+        RelativeLayout root = null;
+        ArrayDeque<View> queue = new ArrayDeque<>(); queue.add(toolbar);
+        for (int visited=0;!queue.isEmpty()&&visited<128;visited++) {
+            View view=queue.removeFirst();
+            if(view instanceof RelativeLayout && parts((RelativeLayout)view)!=null){if(root!=null)return null;root=(RelativeLayout)view;}
+            if(view instanceof ViewGroup){ViewGroup g=(ViewGroup)view;for(int i=0;i<g.getChildCount();i++)queue.addLast(g.getChildAt(i));}
+        }
+        return root;
+    }
+
+    /** {back, title, menu} children of a native header root, or null. */
+    static View[] parts(RelativeLayout root) {
         View title=null,right=null,left=null;
         for(int i=0;i<root.getChildCount();i++){
             View child=root.getChildAt(i); if(!(child.getLayoutParams() instanceof RelativeLayout.LayoutParams))continue;
@@ -440,6 +910,10 @@ final class FloatingHeaderStyle {
         final ChatGlassSurface glass=new ChatGlassSurface(this);
         final LiquidGlassDecoration leftShadow=new LiquidGlassDecoration(), titleShadow=new LiquidGlassDecoration(), rightShadow=new LiquidGlassDecoration();
         final android.graphics.RectF left=new android.graphics.RectF(),title=new android.graphics.RectF(),right=new android.graphics.RectF();
+        /** The symmetric title pill; {@link #title} equals it unless {@link #wide}. */
+        final android.graphics.RectF centred=new android.graphics.RectF();
+        /** The title does not fit the centred pill: span everything between the circles. */
+        boolean wide;
         final View backHost,titleHost,menuHost;
         int corner,gap,elevation,shadowPadding,offsetX,offsetY; float strokeWidth; int strokeColor;
         SeparatedDecoration(android.content.Context context,RelativeLayout root,View[] parts){super(context);this.root=root;setLayerType(LAYER_TYPE_HARDWARE,null);setClickable(false);backHost=parts[0];titleHost=parts[1];menuHost=parts[2];stroke.setStyle(android.graphics.Paint.Style.STROKE);}
@@ -486,7 +960,12 @@ final class FloatingHeaderStyle {
             right.setEmpty();menuActions(menuHost,diameter);
             float leftReserve=left.right+space;
             float rightReserve=right.isEmpty()?leftReserve:root.getWidth()-right.left+space;
-            float reserve=Math.max(leftReserve,rightReserve);title.set(reserve,0,root.getWidth()-reserve,h);
+            float reserve=Math.max(leftReserve,rightReserve);
+            centred.set(reserve,0,root.getWidth()-reserve,h);
+            if(centred.right<=centred.left)centred.setEmpty();
+            // Wide: from the left circle to the right one (or to the edge inset without actions).
+            if(wide)title.set(leftReserve,0,root.getWidth()-(right.isEmpty()?space:rightReserve),h);
+            else title.set(centred);
             if(title.right<=title.left)title.setEmpty();
         }
         /** Bounds of a view in this decoration's coordinate space. */

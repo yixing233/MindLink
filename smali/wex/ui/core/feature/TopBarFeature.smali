@@ -38,11 +38,11 @@
         "msg",
         "log",
         "(Ljava/lang/String;)V",
-        "Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;",
+        "Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;",
         "lpparam",
         "modPath",
         "init",
-        "(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V",
+        "(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V",
         "TAG_SEARCH",
         "Ljava/lang/String;",
         "TAG_PROFILE",
@@ -268,7 +268,7 @@
 
     const-string v0, "WEX: TopBar title refresh failed"
 
-    invoke-static {v0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
+    invoke-static {v0}, Ldev/mindlink/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
     :apply_profile
     :try_start_profile
@@ -304,7 +304,7 @@
 
     const-string v0, "WEX: TopBar profile refresh failed"
 
-    invoke-static {v0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
+    invoke-static {v0}, Ldev/mindlink/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
     :apply_search
     :try_start_search
@@ -321,7 +321,7 @@
 
     const-string v0, "WEX: TopBar search refresh failed"
 
-    invoke-static {v0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
+    invoke-static {v0}, Ldev/mindlink/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
     :apply_sidebar
     # 旧 HomeSidebar Dialog 已由 HomeSidePanelFeature 的 LauncherUI 内抽屉浮层替换。
@@ -340,7 +340,7 @@
 
     const-string v0, "WEX: TopBar configuration unavailable"
 
-    invoke-static {v0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
+    invoke-static {v0}, Ldev/mindlink/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
     return-void
 .end method
@@ -438,7 +438,7 @@
     return v0
 .end method
 
-.method public static onTitleText(Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;)V
+.method public static onTitleText(Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;)V
     .locals 7
 
     :try_start
@@ -446,7 +446,7 @@
 
     if-nez v0, :done
 
-    iget-object v0, p0, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
+    iget-object v0, p0, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
 
     instance-of v1, v0, Landroid/widget/TextView;
 
@@ -460,7 +460,7 @@
 
     if-eqz v1, :done
 
-    iget-object v1, p0, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
+    iget-object v1, p0, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
 
     array-length v2, v1
 
@@ -476,7 +476,7 @@
 
     const-string v4, "wex.top.originalTitle"
 
-    invoke-static {v0, v4}, Lde/robv/android/xposed/XposedHelpers;->getAdditionalInstanceField(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
+    invoke-static {v0, v4}, Ldev/mindlink/xposed/XposedHelpers;->getAdditionalInstanceField(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
 
     move-result-object v5
 
@@ -495,7 +495,7 @@
     if-eqz v5, :done
 
     :known_title
-    invoke-static {v0, v4, v3}, Lde/robv/android/xposed/XposedHelpers;->setAdditionalInstanceField(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;
+    invoke-static {v0, v4, v3}, Ldev/mindlink/xposed/XposedHelpers;->setAdditionalInstanceField(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;
 
     sget-object v3, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
 
@@ -533,7 +533,7 @@
 
     const-string v0, "WEX: TopBar title hook skipped"
 
-    invoke-static {v0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
+    invoke-static {v0}, Ldev/mindlink/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
     return-void
 .end method
@@ -588,7 +588,7 @@
 
     const-string v1, "wex.top.originalTitle"
 
-    invoke-static {v0, v1}, Lde/robv/android/xposed/XposedHelpers;->getAdditionalInstanceField(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
+    invoke-static {v0, v1}, Ldev/mindlink/xposed/XposedHelpers;->getAdditionalInstanceField(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
 
     move-result-object v2
 
@@ -614,7 +614,7 @@
 
     if-eqz v3, :done
 
-    invoke-static {v0, v1, v2}, Lde/robv/android/xposed/XposedHelpers;->setAdditionalInstanceField(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;
+    invoke-static {v0, v1, v2}, Ldev/mindlink/xposed/XposedHelpers;->setAdditionalInstanceField(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;
 
     :have_original
     check-cast v2, Ljava/lang/CharSequence;
@@ -1482,17 +1482,17 @@
     :cond_tabler_render
     const/high16 v1, 0x41900000    # 18.0f
 
-    invoke-static {v1}, Lwex/ui/core/feature/TablerIcons;->toPx(F)I
+    invoke-static {v1}, Lwex/ui/core/feature/LucideIcons;->toPx(F)I
 
     move-result v1
 
     const-string v2, "topbar_search.png"
 
-    invoke-static {v2}, Lwex/ui/core/feature/TablerIcons;->colorOf(Ljava/lang/String;)I
+    invoke-static {v2}, Lwex/ui/core/feature/LucideIcons;->colorOf(Ljava/lang/String;)I
 
     move-result v3
 
-    invoke-static {v2, v1, v3}, Lwex/ui/core/feature/TablerIcons;->bitmap(Ljava/lang/String;II)Landroid/graphics/Bitmap;
+    invoke-static {v2, v1, v3}, Lwex/ui/core/feature/LucideIcons;->bitmap(Ljava/lang/String;II)Landroid/graphics/Bitmap;
 
     move-result-object v1
 
@@ -1635,7 +1635,7 @@
 
     move-result-object p0
 
-    invoke-static {p0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
+    invoke-static {p0}, Ldev/mindlink/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
     :try_start_0
     sget-object p0, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
@@ -1650,7 +1650,7 @@
 
 
 # virtual methods
-.method public final declared-synchronized init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V
+.method public final declared-synchronized init(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;Ljava/lang/String;)V
     .locals 6
 
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
@@ -1674,7 +1674,7 @@
 
     move-result-object v0
 
-    invoke-static {p1, p2, v0}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {p1, p2, v0}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const/4 v0, 0x1
 
@@ -1725,7 +1725,7 @@
 
     move-result-object v0
 
-    invoke-static {p1, p2, v0}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {p1, p2, v0}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const/4 v0, 0x1
 

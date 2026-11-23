@@ -143,7 +143,7 @@ public class View {
 "com/tencent/mm/ui/widget/MMNeat7extView.java": r'''package com.tencent.mm.ui.widget;
 public class MMNeat7extView extends android.view.View {}
 ''',
-"de/robv/android/xposed/XposedBridge.java": r'''package de.robv.android.xposed;
+"dev/mindlink/xposed/XposedBridge.java": r'''package dev.mindlink.xposed;
 public final class XposedBridge {public static void log(String s){}}
 ''',
 "wex/ui/core/feature/BubbleGlass.java": r'''package wex.ui.core.feature;

@@ -1,6 +1,6 @@
 --- WeKit/app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelActionCards.kt
 +++ src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelActionCards.kt
-@@ -1,584 +1,511 @@
+@@ -1,584 +1,510 @@
 -package dev.ujhhgtg.wekit.features.items.beautify.home_screen_panel
 -
 -import androidx.compose.animation.AnimatedVisibility
@@ -589,10 +589,12 @@
 +// Copied and modified from WeKit, Ujhhgtg and upstream contributors.
 +// Source: app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelActionCards.kt
 +// MindLink adaptations (2026-11-14): original FlowRow 3-column tiles/ListItems, shapes, spacing, badges and reflow animation retained; only drag insertion gaps/dragged preview omitted
-+// Original component geometry/typography/icons are retained; host hooks are not copied.
++// 2026-11-22: icons switched to Lucide (dev.mindlink.ui.LucideIcons, ISC); see THIRD-PARTY-NOTICES.md.
++// Original component geometry/typography are retained (icons are now Lucide); host hooks are not copied.
 +// See thirdparty/sourceprovenance/wekit-sidepanel.json and matching .patch files.
 +package dev.mindlink.sidepanel.vendor.wekit
 +
++import dev.mindlink.ui.LucideIcons
 +import androidx.compose.animation.AnimatedVisibility
 +import androidx.compose.animation.animateContentSize
 +import androidx.compose.animation.core.MutableTransitionState
@@ -635,9 +637,6 @@
 +import androidx.compose.ui.res.stringResource
 +import androidx.compose.ui.text.font.FontWeight
 +import androidx.compose.ui.unit.dp
-+import com.composables.icons.materialsymbols.MaterialSymbols
-+import com.composables.icons.materialsymbols.outlined.Add
-+import com.composables.icons.materialsymbols.outlined.Chevron_right
 +import dev.mindlink.sidepanel.R
 +import kotlinx.coroutines.delay
 +
@@ -859,7 +858,7 @@
 +                    verticalArrangement = Arrangement.spacedBy(5.dp),
 +                ) {
 +                    Icon(
-+                        MaterialSymbols.Outlined.Add,
++                        LucideIcons.Plus,
 +                        contentDescription = null,
 +                        tint = MaterialTheme.colorScheme.primary,
 +                    )
@@ -882,7 +881,7 @@
 +            ListItem(
 +                leadingContent = {
 +                    Icon(
-+                        MaterialSymbols.Outlined.Add,
++                        LucideIcons.Plus,
 +                        contentDescription = null,
 +                        tint = MaterialTheme.colorScheme.primary,
 +                    )
@@ -983,7 +982,7 @@
 +                    null
 +                } else {
 +                    {
-+                        Icon(MaterialSymbols.Outlined.Chevron_right, contentDescription = null)
++                        Icon(LucideIcons.ChevronRight, contentDescription = null)
 +                    }
 +                },
 +                modifier = Modifier

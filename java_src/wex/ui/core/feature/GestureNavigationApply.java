@@ -7,7 +7,7 @@ import android.view.View;
 import android.view.ViewParent;
 import android.view.Window;
 
-import de.robv.android.xposed.XposedBridge;
+import dev.mindlink.xposed.XposedBridge;
 
 /**
  * Keeps the gesture-navigation strip transparent for the chat page.

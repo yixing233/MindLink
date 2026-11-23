@@ -341,9 +341,14 @@ final class ChatFooterOverlay {
         footer.getLocationOnScreen(footerAt); list.getLocationOnScreen(listAt);
         // Screen coordinates already include IME translation and viewport resize.
         // Reserving the lift again would leave an extra keyboard-sized blank tail.
+        // A bottom pull-bounce is excluded: it is a transient scroll of the host's pull view,
+        // and following it made the bounce settle behind the card before the tail returned.
         int obstruction = Math.max(0, Math.min(list.getHeight(),
-                listAt[1] + list.getHeight() - footerAt[1]));
+                listAt[1] + ChatTailSpacer.pullOffset(list, parent) + list.getHeight() - footerAt[1]));
         if (!tail.update(obstruction, expansion != null)) retry();
+        // The frame about to draw still shows the stale gap above a new message; skip it,
+        // the decoration relayout redraws on the next frame.
+        if (tail.takeRelayout()) changed = true;
     }
 
     void restore() {
@@ -387,6 +392,6 @@ final class ChatFooterOverlay {
         throw new NoSuchMethodException(name);
     }
     private static void report(String stage, Throwable error) {
-        de.robv.android.xposed.XposedBridge.log("WEX: footer-overlay " + stage + " " + error.getClass().getSimpleName());
+        dev.mindlink.xposed.XposedBridge.log("WEX: footer-overlay " + stage + " " + error.getClass().getSimpleName());
     }
 }

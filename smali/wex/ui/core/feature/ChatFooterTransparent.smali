@@ -41,10 +41,10 @@
         "(Landroid/view/View;)Landroid/widget/EditText;",
         "clearTreeBackgrounds",
         "clearFooterBackgrounds",
-        "Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;",
+        "Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;",
         "lpparam",
         "init",
-        "(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V",
+        "(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V",
         "KEY",
         "Ljava/lang/String;",
         "CLS_FOOTER",
@@ -1033,7 +1033,7 @@
 
     move-result-object p0
 
-    invoke-static {p0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
+    invoke-static {p0}, Ldev/mindlink/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
     :try_start_0
     sget-object p0, Lwex/ui/core/WexStore;->INSTANCE:Lwex/ui/core/WexStore;
@@ -1119,7 +1119,7 @@
 
 
 # virtual methods
-.method public final init(Lde/robv/android/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
+.method public final init(Ldev/mindlink/xposed/callbacks/XC_LoadPackage$LoadPackageParam;)V
     .locals 6
 
     const-class v0, Landroid/graphics/drawable/Drawable;
@@ -1156,7 +1156,7 @@
 
     invoke-direct {v3, v4}, Lx4/f;-><init>(I)V
 
-    invoke-static {p1, v2, v3}, Lde/robv/android/xposed/XposedBridge;->hookAllMethods(Ljava/lang/Class;Ljava/lang/String;Lde/robv/android/xposed/XC_MethodHook;)Ljava/util/Set;
+    invoke-static {p1, v2, v3}, Ldev/mindlink/xposed/XposedBridge;->hookAllMethods(Ljava/lang/Class;Ljava/lang/String;Ldev/mindlink/xposed/XC_MethodHook;)Ljava/util/Set;
 
     const-string p1, "\u5e95\u680f: \u6302\u8f7d\u62e6\u622a\u5df2\u6ce8\u518c"
 
@@ -1209,7 +1209,7 @@
 
     move-result-object p1
 
-    invoke-static {v1, v4, p1}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v1, v4, p1}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string p1, "setBackground"
 
@@ -1217,7 +1217,7 @@
 
     move-result-object v4
 
-    invoke-static {v1, p1, v4}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v1, p1, v4}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string p1, "setBackgroundDrawable"
 
@@ -1225,7 +1225,7 @@
 
     move-result-object v0
 
-    invoke-static {v1, p1, v0}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v1, p1, v0}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string p1, "setBackgroundColor"
 
@@ -1233,7 +1233,7 @@
 
     move-result-object v0
 
-    invoke-static {v1, p1, v0}, Lde/robv/android/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Lde/robv/android/xposed/XC_MethodHook$Unhook;
+    invoke-static {v1, p1, v0}, Ldev/mindlink/xposed/XposedHelpers;->findAndHookMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ldev/mindlink/xposed/XC_MethodHook$Unhook;
 
     const-string p1, "\u5e95\u680f: \u80cc\u666f\u8bbe\u7f6e\u62e6\u622a\u5df2\u6ce8\u518c"
 
@@ -1273,7 +1273,7 @@
 
     move-result-object v3
 
-    invoke-static {v1, v2, v3}, Lde/robv/android/xposed/XposedBridge;->hookAllMethods(Ljava/lang/Class;Ljava/lang/String;Lde/robv/android/xposed/XC_MethodHook;)Ljava/util/Set;
+    invoke-static {v1, v2, v3}, Ldev/mindlink/xposed/XposedBridge;->hookAllMethods(Ljava/lang/Class;Ljava/lang/String;Ldev/mindlink/xposed/XC_MethodHook;)Ljava/util/Set;
 
     const-string v2, "setBackgroundDrawable"
 
@@ -1281,7 +1281,7 @@
 
     move-result-object v3
 
-    invoke-static {v1, v2, v3}, Lde/robv/android/xposed/XposedBridge;->hookAllMethods(Ljava/lang/Class;Ljava/lang/String;Lde/robv/android/xposed/XC_MethodHook;)Ljava/util/Set;
+    invoke-static {v1, v2, v3}, Ldev/mindlink/xposed/XposedBridge;->hookAllMethods(Ljava/lang/Class;Ljava/lang/String;Ldev/mindlink/xposed/XC_MethodHook;)Ljava/util/Set;
 
     const-string v2, "setBackgroundColor"
 
@@ -1289,7 +1289,7 @@
 
     move-result-object v3
 
-    invoke-static {v1, v2, v3}, Lde/robv/android/xposed/XposedBridge;->hookAllMethods(Ljava/lang/Class;Ljava/lang/String;Lde/robv/android/xposed/XC_MethodHook;)Ljava/util/Set;
+    invoke-static {v1, v2, v3}, Ldev/mindlink/xposed/XposedBridge;->hookAllMethods(Ljava/lang/Class;Ljava/lang/String;Ldev/mindlink/xposed/XC_MethodHook;)Ljava/util/Set;
 
     const-string p1, "底栏: tag 拦截已注册"
 

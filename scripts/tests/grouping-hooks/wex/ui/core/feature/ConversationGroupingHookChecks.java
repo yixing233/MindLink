@@ -7,7 +7,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.HeaderViewListAdapter;
 import android.widget.ListView;
-import de.robv.android.xposed.XposedBridge;
+import dev.mindlink.xposed.XposedBridge;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -107,6 +107,19 @@ public final class ConversationGroupingHookChecks {
     }
     static void check(boolean value, String message) { if (!value) throw new AssertionError(message); }
     static int count(Object adapter) throws Throwable { return (Integer) call(adapter, "getCount"); }
+    /** libxposed's ORIGIN invoker unusable on device: filtering must still apply via the plain path. */
+    static void originFallback() throws Throwable {
+        XposedBridge.originBroken = true;
+        Adapter adapter = setup(); Clicks clicks = new Clicks(); ListView list = list(adapter, clicks);
+        check(count(adapter) == 2, "unread group filters even when the ORIGIN invoker throws");
+        check(call(adapter, "getItem", 0) == adapter.rows.get(1), "mapped item read through the plain fallback");
+        int attempts = XposedBridge.originCalls;
+        for (int i = 0; i < 20; i++) count(adapter);
+        check(XposedBridge.originCalls == attempts, "a broken invoker is tried once, not per row or frame");
+        ConversationGroupingFeature.setActive(ConversationGroupStore.ALL_ID); Handler.drainForTest();
+        check(count(adapter) == 3, "switching back to all still restores every row");
+        System.out.println("PASS origin-fallback: grouping filters without the framework ORIGIN invoker");
+    }
     static void epoch() throws Throwable {
         Adapter adapter = setup(); Clicks clicks = new Clicks(); ListView list = list(adapter, clicks);
         check(count(adapter) == 2, "initial unread mapping");
@@ -220,7 +233,7 @@ public final class ConversationGroupingHookChecks {
         check(count(second) == 1 && call(second, "getItem", 0) == second.rows.get(0), "same-count adapters keep distinct snapshots");
         before = builds;
         check(count(target) == 2 && builds == before, "second adapter build leaves first generation cached");
-        for (Map.Entry<Method, List<de.robv.android.xposed.XC_MethodHook>> entry : XposedBridge.hooks.entrySet())
+        for (Map.Entry<Method, List<dev.mindlink.xposed.XC_MethodHook>> entry : XposedBridge.hooks.entrySet())
             check(entry.getValue().size() == 1, "deduplicate inherited methods " + entry.getKey().getName());
         check(call(target, "getItem", -1) == null && call(target, "getItem", 2) == null, "invalid visible item");
         check(call(target, "getItemId", 2).equals(-1L), "invalid mapped id must not use hidden raw row");
@@ -375,7 +388,7 @@ public final class ConversationGroupingHookChecks {
         HostTargetResolver.footerResolved=nativeList.getDeclaredMethod("checkEmptyFooterHost");
         HostTargetResolver.barResolved=nativeList.getDeclaredMethod("resetActionBarHost");
         HostTargetResolver.barField=nativeList.getDeclaredField("actionBar");
-        ConversationListBridge.initialize(new de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam());
+        ConversationListBridge.initialize(new dev.mindlink.xposed.callbacks.XC_LoadPackage.LoadPackageParam());
         Handler.drainForTest();
     }
     static void selection() throws Throwable {
@@ -570,7 +583,7 @@ public final class ConversationGroupingHookChecks {
         adapter.rows.clear();
         for (int i = 0; i < 40; i++) adapter.rows.add(new CountRow("dummy-resume-" + i, 1));
         HostTargetResolver.resolved = Adapter.class.getDeclaredMethod("getView", int.class, View.class, ViewGroup.class);
-        ConversationGroupingFeature.INSTANCE.init(new de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam());
+        ConversationGroupingFeature.INSTANCE.init(new dev.mindlink.xposed.callbacks.XC_LoadPackage.LoadPackageParam());
         Handler.drainForTest();
         com.tencent.mm.ui.LauncherUI activity = new com.tencent.mm.ui.LauncherUI();
         android.widget.FrameLayout parent = (android.widget.FrameLayout) activity.getWindow().getDecorView();
@@ -835,6 +848,7 @@ public final class ConversationGroupingHookChecks {
         List<View> originals = new ArrayList<>();
         for (int i = 0; i < tabs.getChildCount(); i++) originals.add(tabs.getChildAt(i));
         int adds = tabs.additions, removes = tabs.removals, layouts = host.layouts;
+        int animatedBefore = ConversationGroupCard.animated, revealsBefore = ConversationGroupCard.reveals;
         // The actual tab click publishes synchronously; its immediate rebuild and queued host refresh must be idempotent.
         tabs.getChildAt(4).performClick(); Handler.drainForTest();
         check(ConversationGroupingFeature.activeGroupId().equals("officials") && count(adapter) == 1
@@ -845,9 +859,13 @@ public final class ConversationGroupingHookChecks {
         check(host.layouts == layouts, "selection-only refresh must not force host/header relayout");
         for (int i = 0; i < originals.size(); i++) check(tabs.getChildAt(i) == originals.get(i), "tab identity retained " + i);
         check(tabs.getChildAt(4).isSelected() && !tabs.getChildAt(1).isSelected(), "selection style updates in place");
+        check(ConversationGroupCard.animated == animatedBefore + 1,
+                "the selection capsule slides to the newly selected tab once, not on every refresh");
+        check(ConversationGroupCard.reveals == revealsBefore + 1, "the newly selected tab is scrolled into view once");
         for (int i = 0; i < 10; i++) call(adapter, "notifyDataSetChanged"); Handler.drainForTest();
         check(tabs.additions == adds && tabs.removals == removes && host.layouts == layouts,
                 "data notifications with unchanged labels cannot churn tabs/header");
+        check(ConversationGroupCard.animated == animatedBefore + 1, "data notifications never replay the capsule slide");
         wex.ui.core.WexStore.INSTANCE.values.put(ConversationGroupingFeature.KEY_EQUAL, "true"); host.refresh();
         check(((android.widget.LinearLayout.LayoutParams) tabs.getChildAt(0).getLayoutParams()).weight == 1f,
                 "equal-width setting still changes geometry");
@@ -871,6 +889,7 @@ public final class ConversationGroupingHookChecks {
             case "reentry": reentry(); break;
             case "host-lifecycle": hostLifecycle(); break;
             case "tab-updates": tabUpdates(); break;
+            case "origin-fallback": originFallback(); break;
             default: throw new IllegalArgumentException(args[0]);
         }
     }

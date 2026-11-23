@@ -87,8 +87,7 @@ configurations.configureEach {
 // Only the locally cached WeKit Material3 runtime enters this payload. The desktop Material3
 // graph stays in :app and uses a DIFFERENT boot-parent InMemoryDexClassLoader, never an ABI mixture.
 dependencies {
-    // Byte-identical selected vector classes from cached composeicons 2.2.1; per-class hashes in provenance.
-    implementation(files("thirdparty/material-symbols-selected-2.2.1.jar"))
+    // Icons: generated Lucide ImageVectors in src/main/java/dev/mindlink/ui/LucideIcons.kt (no icon artifact).
     implementation("androidx.compose.material3:material3:1.5.0-alpha28")
     implementation("androidx.compose.foundation:foundation:1.13.0-alpha01")
     implementation("androidx.compose.animation:animation:1.13.0-alpha01")
@@ -104,9 +103,7 @@ dependencies {
 
 val verifyVendoredSources = tasks.register("verifyVendoredSources") {
     val proof = rootProject.file("thirdparty/sourceprovenance/wekit-sidepanel.json")
-    val iconJar = rootProject.file("thirdparty/material-symbols-selected-2.2.1.jar")
     inputs.file(proof)
-    inputs.file(iconJar)
     inputs.files(fileTree("src/main/java/dev/mindlink/sidepanel/vendor/wekit") { include("*.kt") })
     doLast {
         @Suppress("UNCHECKED_CAST")
@@ -114,8 +111,6 @@ val verifyVendoredSources = tasks.register("verifyVendoredSources") {
         fun sha256(file: java.io.File, source: Boolean = false): String = MessageDigest.getInstance("SHA-256")
             .digest(if (source) file.readText().replace("\r\n", "\n").toByteArray(Charsets.UTF_8) else file.readBytes())
             .joinToString("") { "%02x".format(it.toInt() and 255) }
-        val icons = record["icons"] as Map<*, *>
-        check(sha256(iconJar) == icons["sha256"]) { "Original selected Material Symbols checksum changed" }
         val sources = record["copiedAndModified"] as List<*>
         for (source in sources) {
             val entry = source as Map<*, *>
@@ -124,7 +119,7 @@ val verifyVendoredSources = tasks.register("verifyVendoredSources") {
                 "WeKit copied source differs from its recorded diff: $target"
             }
         }
-        logger.lifecycle("PASS: WeKit vendored component and selected original icon hashes")
+        logger.lifecycle("PASS: WeKit vendored component hashes")
     }
 }
 tasks.named("preBuild").configure { dependsOn(verifyVendoredSources) }

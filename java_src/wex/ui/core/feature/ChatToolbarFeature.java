@@ -34,10 +34,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import dev.mindlink.xposed.XC_MethodHook;
+import dev.mindlink.xposed.XposedBridge;
+import dev.mindlink.xposed.XposedHelpers;
+import dev.mindlink.xposed.callbacks.XC_LoadPackage;
 import wex.ui.core.WexStore;
 
 /**
@@ -99,6 +99,8 @@ public final class ChatToolbarFeature {
     private static final String CLS_APP_PANEL = "com.tencent.mm.pluginsdk.ui.chat.AppPanel";
     /** 工具栏图标渲染边长（dp）。 */
     private static final float ICON_DP = 18f;
+    /** Grid units of inner padding: Lucide's round stroke edges reach the box edge and were clipped. */
+    private static final float ICON_PADDING = 1f;
 
     private static final String[][] TOOLS = {
             {"相册", "album.png"},
@@ -1635,16 +1637,16 @@ public final class ChatToolbarFeature {
     /**
      * 读取图标。
      *
-     * 已换成 Tabler 矢量渲染：24 栅格、2px 描边、圆头圆角，与原手绘 PNG 同规格。
+     * 已换成 Lucide 矢量渲染：24 栅格、2px 描边、圆头圆角，与原手绘 PNG 同规格。
      * 矢量没有透明边，不再需要裁边与位图缩放；染色沿用调用方传入的 tint。
      */
     private static Drawable loadAssetIcon(Context ctx, String name, int tint) {
         try {
-            if (!TablerIcons.has(name)) {
+            if (!LucideIcons.has(name)) {
                 return null;
             }
-            int color = tint != 0 ? tint : TablerIcons.themeColor();
-            return TablerIcons.drawableDp(name, ICON_DP, color);
+            int color = tint != 0 ? tint : LucideIcons.themeColor();
+            return LucideIcons.drawableDp(name, ICON_DP, color, ICON_PADDING);
         } catch (Throwable t) {
             return null;
         }

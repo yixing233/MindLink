@@ -1,12 +1,16 @@
 package dev.mindlink.compose
 
+import dev.mindlink.ui.LucideIcons
 import android.app.Activity
 import android.app.Application
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.net.Uri
 import android.os.Bundle
 import android.os.Looper
+import android.provider.Settings
 import android.view.View
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -19,12 +23,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,9 +41,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
-import com.composables.icons.materialsymbols.MaterialSymbols
-import com.composables.icons.materialsymbols.outlined.Close
-import com.composables.icons.materialsymbols.outlined.Chevron_right
 import dev.mindlink.ui.MindLinkCard
 import dev.mindlink.ui.MindLinkColors
 import dev.mindlink.ui.MindLinkListRow
@@ -45,6 +49,7 @@ import dev.mindlink.ui.MindLinkSectionHeader
 import dev.mindlink.ui.MindLinkTheme
 import dev.mindlink.ui.MindLinkIconButton
 import dev.mindlink.ui.MindLinkTopBar
+import java.util.concurrent.TimeUnit
 import java.util.WeakHashMap
 
 /** Launcher entry in the same payload as the drawer/settings; no host settings or objects cross it. */
@@ -129,7 +134,7 @@ object DesktopUi {
         MindLinkPage {
             MindLinkTopBar(document?.let { documents[it] }.orEmpty().ifBlank { "MindLink" }) {
                 if (document != null) {
-                    MindLinkIconButton(MaterialSymbols.Outlined.Close, "返回", { state.document = null })
+                    MindLinkIconButton(LucideIcons.X, "返回", { state.document = null })
                 }
             }
             if (document != null) {
@@ -170,6 +175,9 @@ object DesktopUi {
             }.getOrNull()
         }
         var error by remember { mutableStateOf<String?>(null) }
+        var confirmRestart by remember { mutableStateOf(false) }
+        var restarting by remember { mutableStateOf(false) }
+        var restartError by remember { mutableStateOf<String?>(null) }
         LazyColumn(
             state = rememberLazyListState(),
             contentPadding = PaddingValues(MindLinkColors.CONTENT_PADDING_DP.dp),
@@ -205,6 +213,27 @@ object DesktopUi {
                     modifier = Modifier.fillMaxWidth(),
                 ) { Text("打开微信") }
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
+                FilledTonalButton(
+                    enabled = wechat != null && !restarting,
+                    onClick = { confirmRestart = true },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                ) { Text(if (restarting) "正在重启微信…" else "重启微信") }
+                Text(
+                    "改动了需要重启才生效的设置后使用；需要 root 授权。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+                restartError?.let { message ->
+                    Text(message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 4.dp))
+                    TextButton(onClick = {
+                        runCatching {
+                            activity.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.fromParts("package", WECHAT, null)))
+                        }
+                    }) { Text("打开微信应用信息，手动强行停止") }
+                }
             }
             item {
                 MindLinkSectionHeader("关于")
@@ -213,11 +242,32 @@ object DesktopUi {
                         if (index > 0) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                         MindLinkListRow(
                             title, modifier = Modifier.clickable { openDocument(file) },
-                            trailing = { Icon(MaterialSymbols.Outlined.Chevron_right, contentDescription = null) },
+                            trailing = { Icon(LucideIcons.ChevronRight, contentDescription = null) },
                         )
                     }
                 }
             }
+        }
+        if (confirmRestart) {
+            AlertDialog(
+                onDismissRequest = { confirmRestart = false },
+                title = { Text("重启微信") },
+                text = {
+                    Text("微信会被结束并重新打开，正在编辑的内容可能丢失。\n\n需要 root 授权；首次使用时 root 管理器会弹窗询问。")
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        confirmRestart = false
+                        restarting = true
+                        restartError = null
+                        restartWechat(activity) { failure ->
+                            restarting = false
+                            restartError = failure
+                        }
+                    }) { Text("立即重启") }
+                },
+                dismissButton = { TextButton(onClick = { confirmRestart = false }) { Text("取消") } },
+            )
         }
     }
 
@@ -225,6 +275,40 @@ object DesktopUi {
         pm.getPackageInfo(name, 0).versionName ?: ""
     } catch (_: PackageManager.NameNotFoundException) {
         null
+    }
+
+    private const val WECHAT = "com.tencent.mm"
+
+    /**
+     * This app is not WeChat, so it cannot end WeChat's process without privilege; an LSPosed
+     * device has root. Force-stop through {@code su}, then launch WeChat again from here so the
+     * hooks register on a cold start. Runs off the main thread: the root manager may hold
+     * {@code su} open for its grant dialog. {@code done} gets null on success or a message.
+     */
+    private fun restartWechat(activity: Activity, done: (String?) -> Unit) {
+        Thread({
+            val failure: String? = try {
+                val process = ProcessBuilder("su", "-c", "am force-stop $WECHAT").redirectErrorStream(true).start()
+                process.outputStream.close()
+                if (!process.waitFor(30, TimeUnit.SECONDS)) {
+                    process.destroy(); "root 授权超时，未结束微信"
+                } else if (process.exitValue() != 0) {
+                    "root 授权被拒绝或失败（退出码 ${process.exitValue()}），未结束微信"
+                } else null
+            } catch (_: java.io.IOException) {
+                "未找到 su，设备没有 root，无法从这里结束微信"
+            } catch (error: Throwable) {
+                "结束微信失败：${error.javaClass.simpleName}"
+            }
+            activity.runOnUiThread {
+                if (activity.isFinishing || activity.isDestroyed) return@runOnUiThread
+                done(failure ?: runCatching {
+                    val intent = checkNotNull(activity.packageManager.getLaunchIntentForPackage(WECHAT))
+                    activity.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    null
+                }.getOrElse { "微信已结束，但无法自动打开，请手动打开" })
+            }
+        }, "mindlink-restart-wechat").start()
     }
 
     private fun mainThread() {

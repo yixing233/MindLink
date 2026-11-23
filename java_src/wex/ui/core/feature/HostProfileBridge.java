@@ -6,8 +6,8 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
+import dev.mindlink.xposed.XC_MethodHook;
+import dev.mindlink.xposed.XposedBridge;
 
 /** Reads WeKit's ConfigStorage identity fields only after a host-owned instance is observed. */
 final class HostProfileBridge {

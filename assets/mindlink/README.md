@@ -5,7 +5,7 @@
 ## 📦 安装
 
 1. 准备已 root 并安装 LSPosed 的设备。
-2. 安装本模块 APK，在 LSPosed 中启用模块，作用域勾选「微信」。
+2. 安装本模块 APK，在 LSPosed 中启用模块。模块以 libxposed API（standard 入口）加载，作用域已静态声明为「微信」，需 LSPosed 支持 API 101 及以上。
 3. 强行停止并重启微信后生效。
 
 ## 🔒 隐私与安全
@@ -26,11 +26,12 @@
 
 ## 🎨 图标
 
-界面图标使用 [Tabler Icons](https://tabler.io/icons)（Outline + Filled），
-以 pathData 形式内联在 `TablerIcons.java` 中，矢量渲染，不需要外部依赖。
+界面图标统一使用 [Lucide](https://lucide.dev)（24 栅格、2px 圆头线条）。
+`scripts/import_lucide_icons.py` 从 lucide-static 的 `icon-nodes.json` 生成 View 侧的 `LucideIcons.java`、
+底栏的 `NavigationIcons.java` 与 Compose 侧的 `LucideIcons.kt`，矢量渲染，不需要外部依赖。
 
-Tabler Icons 遵循 MIT 许可：
-Copyright (c) 2020-2024 Paweł Kuna — https://github.com/tabler/tabler-icons
+Lucide 遵循 ISC 许可：
+Copyright (c) 2026 Lucide Icons and Contributors — https://github.com/lucide-icons/lucide
 
 ## 🙏 致谢
 
@@ -53,7 +54,7 @@ Copyright (c) 2020-2024 Paweł Kuna — https://github.com/tabler/tabler-icons
   这些实现已改写为 Java 并适配本项目的 smali 注入结构，不是逐字复制；
   但功能设计、关键算法与部分配置键名沿用 WeKit。完整的逐文件对照见
   [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
-- 其他第三方组件（Tabler Icons、Backdrop、DexKit、AndroidX/Kotlin）及其许可，
+- 其他第三方组件（Lucide、Backdrop、DexKit、AndroidX/Kotlin）及其许可，
   同样列于 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
 
 ## 📄 许可证

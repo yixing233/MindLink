@@ -1,5 +1,5 @@
 .class public final Lz4/e;
-.super Lde/robv/android/xposed/XC_MethodHook;
+.super Ldev/mindlink/xposed/XC_MethodHook;
 .source "SourceFile"
 
 
@@ -17,14 +17,14 @@
 
     iput-object p1, p0, Lz4/e;->b:Lwex/ui/core/xposed/HookEntry;
 
-    invoke-direct {p0}, Lde/robv/android/xposed/XC_MethodHook;-><init>()V
+    invoke-direct {p0}, Ldev/mindlink/xposed/XC_MethodHook;-><init>()V
 
     return-void
 .end method
 
 
 # virtual methods
-.method public final afterHookedMethod(Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;)V
+.method public final afterHookedMethod(Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;)V
     .locals 7
 
     iget v0, p0, Lz4/e;->a:I
@@ -40,7 +40,7 @@
     packed-switch v0, :pswitch_data_0
 
     :try_start_0
-    iget-object p1, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
+    iget-object p1, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
 
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
@@ -83,7 +83,7 @@
 
     :pswitch_0
     :try_start_1
-    iget-object p1, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
+    iget-object p1, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
 
     const/4 v0, 0x0
 

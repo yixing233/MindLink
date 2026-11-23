@@ -86,6 +86,18 @@ public final class ChatGlassSurfaceChecks {
         BubbleSettings.values.put(NavigationBarFeature.KEY_EFFECT, 9);
         check(ChatGlassSurface.mode() == ChatGlassSurface.LIQUID, "out-of-range mode clamps instead of asking for a fifth material");
         BubbleSettings.values.clear();
+        check(ChatGlassSurface.opacity() == LiquidGlassLayer.AUTO_OPACITY, "absent opacity keeps the material default");
+        check(LiquidGlassLayer.tintAlpha(LiquidGlassLayer.AUTO_OPACITY, true, 8f) == 102
+                && LiquidGlassLayer.tintAlpha(LiquidGlassLayer.AUTO_OPACITY, true, 0f) == 0
+                && LiquidGlassLayer.tintAlpha(LiquidGlassLayer.AUTO_OPACITY, false, 25f) == 166,
+                "default tint alphas are unchanged");
+        BubbleSettings.values.put(NavigationBarFeature.KEY_OPACITY, 80);
+        check(ChatGlassSurface.opacity() == 80, "card follows nav_bar_surface_opacity");
+        check(LiquidGlassLayer.tintAlpha(80, true, 0f) == 204 && LiquidGlassLayer.tintAlpha(0, false, 25f) == 0
+                && LiquidGlassLayer.tintAlpha(100, true, 8f) == 255, "explicit opacity overrides both materials");
+        BubbleSettings.values.put(NavigationBarFeature.KEY_OPACITY, 300);
+        check(ChatGlassSurface.opacity() == 100, "out-of-range opacity clamps");
+        BubbleSettings.values.clear();
     }
 
     private static void liquidDrawsTheRealBackdrop() {

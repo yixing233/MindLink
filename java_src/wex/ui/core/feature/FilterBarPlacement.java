@@ -15,7 +15,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.WeakHashMap;
 
-import de.robv.android.xposed.XposedBridge;
+import dev.mindlink.xposed.XposedBridge;
 
 /**
  * 筛选栏固定在会话页内，为原滚动分支预留高度，不覆盖列表。

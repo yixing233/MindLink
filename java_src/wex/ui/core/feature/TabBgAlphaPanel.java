@@ -30,7 +30,7 @@ public final class TabBgAlphaPanel {
 
     private static void log(String message) {
         try {
-            de.robv.android.xposed.XposedBridge.log(TAG + message);
+            dev.mindlink.xposed.XposedBridge.log(TAG + message);
         } catch (Throwable ignore) {
         }
     }

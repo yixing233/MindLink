@@ -17,8 +17,8 @@ import com.tencent.mm.pluginsdk.ui.chat.ChattingScrollLayout;
 import com.tencent.mm.pluginsdk.ui.chat.ChattingUILayout;
 import com.tencent.mm.ui.LauncherUI;
 import com.tencent.mm.ui.chatting.ChattingUI;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import dev.mindlink.xposed.XposedBridge;
+import dev.mindlink.xposed.callbacks.XC_LoadPackage;
 import wex.ui.core.WexStore;
 
 import java.lang.reflect.Member;
@@ -270,6 +270,115 @@ public final class ChatHeaderToolbarChecks {
             decor.removeView(island); decor.detach();
         }
 
+        // A title longer than the centred pill takes the room the narrower side leaves unused
+        // (left reserve 76, right reserve 60 here): the pill spans 76..540, the title host is
+        // shifted to its centre. A short title goes back to the centred, symmetric pill.
+        {
+            LauncherUI activity = new LauncherUI();
+            ViewGroup decor = root(activity); decor.attach();
+            RelativeLayout island = new RelativeLayout(activity); decor.addView(island);
+            ActionBarContainer header = new ActionBarContainer(activity);
+            androidx.appcompat.widget.Toolbar toolbar = new androidx.appcompat.widget.Toolbar(activity);
+            RelativeLayout parts = new RelativeLayout(activity);
+            toolbar.addView(parts, new ViewGroup.LayoutParams(-1, 60));
+            header.addView(toolbar, new ViewGroup.LayoutParams(-1, 60));
+            island.addView(header, margin(12, 3, 12, 0));
+            ViewGroup left = new ViewGroup(activity);
+            ImageView back = new ImageView(activity);
+            back.setPadding(0, 0, 56, 0);
+            left.addView(back, new ViewGroup.LayoutParams(100, 60));
+            TextView title = new TextView(activity);
+            title.setText("12345678901234567890123456789012345678901234567890"); // 50 chars = 500px
+            RelativeLayout.LayoutParams titleRule = new RelativeLayout.LayoutParams(-2, 60); titleRule.addRule(RelativeLayout.CENTER_IN_PARENT);
+            ViewGroup right = new ViewGroup(activity);
+            LinearLayout menuHost = new LinearLayout(activity);
+            ViewGroup action = new ViewGroup(activity);
+            menuHost.addView(action, new ViewGroup.LayoutParams(44, 60));
+            right.addView(menuHost, new ViewGroup.LayoutParams(44, 60));
+            RelativeLayout.LayoutParams leftRule = new RelativeLayout.LayoutParams(100, 60); leftRule.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+            parts.addView(left, 0, leftRule);
+            parts.addView(title, 1, titleRule);
+            RelativeLayout.LayoutParams rightRule = new RelativeLayout.LayoutParams(44, 60); rightRule.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+            parts.addView(right, 2, rightRule);
+            header.measure(View.MeasureSpec.makeMeasureSpec(600, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(60, View.MeasureSpec.EXACTLY));
+            header.layout(0, 0, 600, 60);
+            right.layout(556, 0, 600, 60); menuHost.layout(0, 0, 44, 60); action.layout(0, 0, 44, 60);
+            title.layout(100, 0, 500, 60);
+            Object state = apply.invoke(null, header, null, corner, gap, elevation);
+            check(state != null, "long-title separated state built");
+            // Frame N+1 with the title laid out at the width just applied: the decision must hold.
+            title.layout(300 - titleRule.width / 2, 0, 300 + titleRule.width / 2, 60);
+            state = apply.invoke(null, header, state, corner, gap, elevation);
+            View decoration = decorationOf(state);
+            java.lang.reflect.Field pillField = decoration.getClass().getDeclaredField("title");
+            pillField.setAccessible(true);
+            android.graphics.RectF pill = (android.graphics.RectF) pillField.get(decoration);
+            check(Math.abs(pill.left - 76f) < 0.6f && Math.abs(pill.right - 540f) < 0.6f,
+                    "long title pill spans from the left circle to the right one, got " + pill.left + ".." + pill.right);
+            check(titleRule.width == 448 && title.getMaxWidth() == 448, "long title host gets the whole pill minus the inner gaps, got " + titleRule.width);
+            check(Math.abs(title.getTranslationX() - 8f) < 0.6f, "long title host is centred in the wider pill, got dx=" + title.getTranslationX());
+            // A short title goes back to the symmetric pill and the native position.
+            title.setText("1234567890");
+            title.layout(300 - titleRule.width / 2, 0, 300 + titleRule.width / 2, 60);
+            state = apply.invoke(null, header, state, corner, gap, elevation);
+            pill = (android.graphics.RectF) pillField.get(decorationOf(state));
+            check(Math.abs(pill.left - 76f) < 0.6f && Math.abs(pill.right - 524f) < 0.6f,
+                    "short title keeps the centred pill, got " + pill.left + ".." + pill.right);
+            check(titleRule.width == 432 && title.getTranslationX() == 0f, "short title host is centred again, got w=" + titleRule.width + " dx=" + title.getTranslationX());
+            restore.invoke(null, state);
+            check(titleRule.width == -2 && title.getTranslationX() == 0f && title.getMaxWidth() == Integer.MAX_VALUE,
+                    "restore returns native title width, position and limit");
+            decor.removeView(island); decor.detach();
+        }
+
+        // A fixed width WeChat gave a view inside the title host (computed for the native
+        // header) must not cap the name below the pill: it wraps its content while split.
+        {
+            LauncherUI activity = new LauncherUI();
+            ViewGroup decor = root(activity); decor.attach();
+            RelativeLayout island = new RelativeLayout(activity); decor.addView(island);
+            ActionBarContainer header = new ActionBarContainer(activity);
+            androidx.appcompat.widget.Toolbar toolbar = new androidx.appcompat.widget.Toolbar(activity);
+            RelativeLayout parts = new RelativeLayout(activity);
+            toolbar.addView(parts, new ViewGroup.LayoutParams(-1, 60));
+            header.addView(toolbar, new ViewGroup.LayoutParams(-1, 60));
+            island.addView(header, margin(12, 3, 12, 0));
+            ViewGroup left = new ViewGroup(activity); left.addView(new ImageView(activity), new ViewGroup.LayoutParams(44, 60));
+            LinearLayout titleHost = new LinearLayout(activity);
+            // WeChat pads the title host by the native side-button width on both sides.
+            titleHost.setPadding(84, 0, 84, 0);
+            TextView name = new TextView(activity); name.setText("12345678901234567890");
+            ViewGroup.LayoutParams nameParams = new ViewGroup.LayoutParams(150, 60);
+            titleHost.addView(name, nameParams);
+            ImageView mute = new ImageView(activity);
+            ViewGroup.LayoutParams muteParams = new ViewGroup.LayoutParams(20, 20);
+            titleHost.addView(mute, muteParams);
+            RelativeLayout.LayoutParams titleRule = new RelativeLayout.LayoutParams(-2, 60); titleRule.addRule(RelativeLayout.CENTER_IN_PARENT);
+            ViewGroup right = new ViewGroup(activity);
+            RelativeLayout.LayoutParams rightRule = new RelativeLayout.LayoutParams(44, 60); rightRule.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+            parts.addView(left, 0, new RelativeLayout.LayoutParams(44, 60));
+            parts.addView(titleHost, 1, titleRule);
+            parts.addView(right, 2, rightRule);
+            header.measure(View.MeasureSpec.makeMeasureSpec(600, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(60, View.MeasureSpec.EXACTLY));
+            header.layout(0, 0, 600, 60);
+            titleHost.layout(150, 0, 450, 60); name.layout(0, 0, 150, 60);
+            Object state = apply.invoke(null, header, null, corner, gap, elevation);
+            check(state != null, "fixed-width title state built");
+            check(nameParams.width == ViewGroup.LayoutParams.WRAP_CONTENT, "fixed native name width no longer caps the title, got " + nameParams.width);
+            check(muteParams.width == 20, "icons keep their own fixed size");
+            // The host keeps its own side padding (WeChat re-applies it on layout); the host grows
+            // by it, so the content area between the paddings is the whole pill.
+            java.lang.reflect.Field pillOf = decorationOf(state).getClass().getDeclaredField("title");
+            pillOf.setAccessible(true);
+            int pillInner = Math.round(((android.graphics.RectF) pillOf.get(decorationOf(state))).width() - 2 * gap);
+            check(titleHost.getPaddingLeft() == 84 && titleHost.getPaddingRight() == 84, "native side padding is left to the host");
+            check(titleRule.width == pillInner + 168, "host widened by its padding so content spans the pill, got " + titleRule.width + " pill " + pillInner);
+            restore.invoke(null, state);
+            check(nameParams.width == 150, "restore returns the native fixed name width, got " + nameParams.width);
+            check(titleRule.width == -2 && titleHost.getPaddingLeft() == 84, "restore returns the native width and keeps the native padding");
+            decor.removeView(island); decor.detach();
+        }
+
         // A tall ancestor can still clip an outdented shadow near its top edge.
         // Restore separated visuals before releasing the integrated owner snapshot.
         {
@@ -497,10 +606,19 @@ public final class ChatHeaderToolbarChecks {
         android.widget.FrameLayout wrapper = new android.widget.FrameLayout(activity); tips.addView(wrapper);
         RelativeLayout panel = new RelativeLayout(activity); panel.setId(0x7f093d1f);
         ColorDrawable original = new ColorDrawable(0xFFF7F7F7); panel.setBackground(original); wrapper.addView(panel);
+        // Expand scrim: a plain full-size View that stretched the group (and its glass) to the screen bottom.
+        View scrim = new View(activity); ColorDrawable scrimColor = new ColorDrawable(0x80000000);
+        scrim.setBackground(scrimColor);
+        wrapper.addView(scrim, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         ViewGroup items = new ViewGroup(activity); items.setId(0x7f095a10); panel.addView(items);
+        // One pinned entry: a container with WeChat's own white card around a leaf that draws itself.
+        ViewGroup entry = new ViewGroup(activity); ColorDrawable entryCard = new ColorDrawable(0xFFFFFFFF);
+        entry.setBackground(entryCard); items.addView(entry);
         View item = new View(activity); ColorDrawable itemColor = new ColorDrawable(0xFF123456);
-        item.setBackground(itemColor); items.addView(item);
+        item.setBackground(itemColor); entry.addView(item);
         XposedBridge.constructed(chat.layout); Handler.drain();
+        check(FloatingChatFooterFeature.adopted.contains(chat.footer),
+                "header pre-draw hands the page's ChatFooter to the footer feature (old GlassPatch.onFrame backstop)");
         check(((ViewGroup.MarginLayoutParams)tips.getLayoutParams()).topMargin == 19,
                 "pinned card compensates both parent screen y40 and padding13");
         int y = content.getPaddingTop() + ((ViewGroup.MarginLayoutParams)tips.getLayoutParams()).topMargin;
@@ -510,9 +628,21 @@ public final class ChatHeaderToolbarChecks {
         check(tips.getElevation() == 4f, "pinned card is found beyond a populated message subtree");
         check(panel.getBackground() == null && item.getBackground() == itemColor,
                 "nested tip chrome clears without touching host item backgrounds");
+        check(entry.getBackground() == null,
+                "pinned entry card loses its white fill so the glass shows through (old GlassPatch.onCardApplied)");
+        check(scrim.getVisibility() == View.GONE && scrim.getAlpha() == 0f && scrim.getBackground() == null,
+                "expand scrim no longer stretches the pinned card to the screen bottom");
+        check(panel.getVisibility() == View.VISIBLE && item.getVisibility() == View.VISIBLE,
+                "only the structural scrim is hidden, never the card body or its rows");
         check(list.getPaddingTop() == 92, "pinned card adds header64 and gap8 to native list padding20");
         for(int i=0;i<4;i++) chat.layout.getViewTreeObserver().draw();
         check(list.getPaddingTop() == 92, "stable frames do not accumulate our list inset");
+        wrapper.layout(0,0,376,64); panel.layout(0,6,376,46);
+        chat.layout.getViewTreeObserver().draw();
+        // Only the style double records the clamp; the separated-geometry variant compiles the real style.
+        Integer clamped = clampedForTest();
+        if (clamped != null) check(clamped == 46,
+                "pinned card height follows the card body bottom (wrapper 0 + panel 6 + 40), not the group");
         XposedBridge.invoke(tips,"setListViewPaddingTop",new Class<?>[]{int.class},72);
         check(tips.observedTop == 20 && list.getTag(0).equals(20),
                 "native baseline capture sees its own padding without our inset");
@@ -535,8 +665,17 @@ public final class ChatHeaderToolbarChecks {
         stop(activity);
         check(list.getPaddingTop() == 80 && panel.getBackground() == original,
                 "disable preserves latest native padding and restores nested chrome");
+        check(entry.getBackground() == entryCard && item.getBackground() == itemColor,
+                "disable restores the pinned entry card");
+        check(scrim.getBackground() == scrimColor && scrim.getAlpha() == 1f && scrim.getVisibility() == View.GONE,
+                "disable restores the scrim fill but leaves showing it to the host's next expand");
         check(((ViewGroup.MarginLayoutParams)tips.getLayoutParams()).topMargin == 2,
                 "disable restores original pinned-card margin");
+    }
+
+    private static Integer clampedForTest() {
+        try { return FloatingHeaderStyle.class.getField("clamped").getInt(null); }
+        catch (ReflectiveOperationException error) { return null; }
     }
 
     private static void panelSnapshotEntry() throws Throwable {

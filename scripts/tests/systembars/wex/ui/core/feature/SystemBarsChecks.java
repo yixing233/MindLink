@@ -7,7 +7,7 @@ import android.view.View;
 import android.view.Window;
 import com.tencent.mm.pluginsdk.ui.chat.ChattingUILayout;
 import com.tencent.mm.ui.widget.EdgeToEdgeWrapperLayout;
-import de.robv.android.xposed.XposedBridge;
+import dev.mindlink.xposed.XposedBridge;
 
 /** Host-JVM contract checks; both coordinators below are production, not doubles. */
 public final class SystemBarsChecks {

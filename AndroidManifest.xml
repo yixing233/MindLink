@@ -17,10 +17,6 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <meta-data android:name="xposedmodule" android:value="true"/>
-        <meta-data android:name="xposeddescription" android:value="本剑不才曾以此身破万军"/>
-        <meta-data android:name="xposedminversion" android:value="101"/>
-        <meta-data android:name="xposedscope" android:resource="@array/xposed_scope"/>
         <uses-library android:name="androidx.window.extensions" android:required="false"/>
         <uses-library android:name="androidx.window.sidecar" android:required="false"/>
         <provider android:authorities="dev.mindlink.androidx-startup" android:exported="false" android:name="androidx.startup.InitializationProvider">

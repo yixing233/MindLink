@@ -1,5 +1,5 @@
 .class public final Lwex/ui/core/feature/TabBgDrawHook;
-.super Lde/robv/android/xposed/XC_MethodHook;
+.super Ldev/mindlink/xposed/XC_MethodHook;
 .source "TabBgDrawHook.java"
 
 # 来源：DecorView 全屏 ImageView 蒙层的方案参照 WeKit 的
@@ -29,18 +29,18 @@
 .method public constructor <init>()V
     .locals 0
 
-    invoke-direct {p0}, Lde/robv/android/xposed/XC_MethodHook;-><init>()V
+    invoke-direct {p0}, Ldev/mindlink/xposed/XC_MethodHook;-><init>()V
 
     return-void
 .end method
 
 
 # virtual methods
-.method public beforeHookedMethod(Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;)V
+.method public beforeHookedMethod(Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;)V
     .locals 12
 
     :try_start_0
-    iget-object v0, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
+    iget-object v0, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
 
     check-cast v0, Landroid/view/View;
 
@@ -81,7 +81,7 @@
 
     move-result-object v2
 
-    invoke-static {v2}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
+    invoke-static {v2}, Ldev/mindlink/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
     if-nez v1, :cond_skip
 

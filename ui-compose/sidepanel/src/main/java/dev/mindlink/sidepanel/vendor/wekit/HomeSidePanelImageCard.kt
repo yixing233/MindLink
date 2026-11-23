@@ -2,10 +2,12 @@
 // Copied and modified from WeKit, Ujhhgtg and upstream contributors.
 // Source: app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelImageCard.kt
 // MindLink adaptations (2026-11-14): original image shape/heights/scale modes/placeholders/resize/dropdown bodies retained; already-decoded platform Bitmap replaces file/Coil/global image loader (no image networking)
-// Original component geometry/typography/icons are retained; host hooks are not copied.
+// 2026-11-22: icons switched to Lucide (dev.mindlink.ui.LucideIcons, ISC); see THIRD-PARTY-NOTICES.md.
+// Original component geometry/typography are retained (icons are now Lucide); host hooks are not copied.
 // See thirdparty/sourceprovenance/wekit-sidepanel.json and matching .patch files.
 package dev.mindlink.sidepanel.vendor.wekit
 
+import dev.mindlink.ui.LucideIcons
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -52,11 +54,6 @@ import androidx.compose.ui.unit.dp
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.asImageBitmap
-import com.composables.icons.materialsymbols.MaterialSymbols
-import com.composables.icons.materialsymbols.outlined.Add
-import com.composables.icons.materialsymbols.outlined.Aspect_ratio
-import com.composables.icons.materialsymbols.outlined.Close
-import com.composables.icons.materialsymbols.outlined.Drag_handle
 import dev.mindlink.sidepanel.R
 import kotlin.math.roundToInt
 
@@ -74,6 +71,7 @@ fun HomeSidePanelImageCard(
     onImageDimensionsChange: (String, Int, Int) -> Unit = { _, _, _ -> },
     onDeleteCard: (String) -> Unit = {},
     onResizeGesture: (Boolean) -> Unit = {},
+    onEditCard: ((String) -> Unit)? = null,
 ) {
     val shape = RoundedCornerShape(24.dp)
     var imageFailed by remember(card.imageAssetId, imageBitmap) {
@@ -159,6 +157,7 @@ fun HomeSidePanelImageCard(
                         enabled = !importing,
                         onScaleModeChange = onScaleModeChange,
                         onDeleteCard = onDeleteCard,
+                        onEditCard = onEditCard,
                     )
                 }
             } else {
@@ -233,7 +232,7 @@ private fun HomeSidePanelImagePlaceholder(message: Int) {
         verticalArrangement = Arrangement.Center,
     ) {
         Icon(
-            MaterialSymbols.Outlined.Add,
+            LucideIcons.Plus,
             contentDescription = null,
             modifier = Modifier.size(34.dp),
             tint = MaterialTheme.colorScheme.primary,
@@ -253,6 +252,7 @@ private fun HomeSidePanelImageBadge(
     enabled: Boolean,
     onScaleModeChange: (String, HomeSidePanelImageScaleMode) -> Unit,
     onDeleteCard: (String) -> Unit,
+    onEditCard: ((String) -> Unit)? = null,
 ) {
     var expanded by remember(card.id) { mutableStateOf(false) }
     val options = listOf(
@@ -283,7 +283,7 @@ private fun HomeSidePanelImageBadge(
                     HomeSidePanelBadgeButton(
                         onClick = { expanded = true }.takeIf { enabled },
                         contentDescription = stringResource(R.string.wekit_sp_home_side_panel_image_scale_mode),
-                        icon = MaterialSymbols.Outlined.Aspect_ratio,
+                        icon = LucideIcons.Ratio,
                     )
                     ExpressiveOptionDropdown(
                         expanded = expanded,
@@ -296,10 +296,17 @@ private fun HomeSidePanelImageBadge(
                         },
                     )
                 }
+                if (onEditCard != null) {
+                    HomeSidePanelBadgeButton(
+                        onClick = { onEditCard(card.id) }.takeIf { enabled },
+                        contentDescription = stringResource(R.string.wekit_sp_home_side_panel_edit_card),
+                        icon = LucideIcons.Pencil,
+                    )
+                }
                 HomeSidePanelBadgeButton(
                     onClick = { onDeleteCard(card.id) }.takeIf { enabled },
                     contentDescription = stringResource(R.string.wekit_sp_home_side_panel_delete_card),
-                    icon = MaterialSymbols.Outlined.Close,
+                    icon = LucideIcons.X,
                     tint = MaterialTheme.colorScheme.error,
                 )
             }
@@ -383,7 +390,7 @@ private fun HomeSidePanelImageResizeHandle(
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
-                MaterialSymbols.Outlined.Drag_handle,
+                LucideIcons.GripHorizontal,
                 contentDescription = null,
                 modifier = Modifier.size(24.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,

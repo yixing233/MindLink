@@ -2,10 +2,12 @@
 // Copied and modified from WeKit, Ujhhgtg and upstream contributors.
 // Source: app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelHome.kt
 // MindLink adaptations (2026-11-14): original LazyColumn, in-place editor pulse, 58dp header, 32dp toolbar and all card dispatch retained; drag/full editor host omitted; typed callbacks/platform Bitmap bind existing host
-// Original component geometry/typography/icons are retained; host hooks are not copied.
+// 2026-11-22: icons switched to Lucide (dev.mindlink.ui.LucideIcons, ISC); see THIRD-PARTY-NOTICES.md.
+// Original component geometry/typography are retained (icons are now Lucide); host hooks are not copied.
 // See thirdparty/sourceprovenance/wekit-sidepanel.json and matching .patch files.
 package dev.mindlink.sidepanel.vendor.wekit
 
+import dev.mindlink.ui.LucideIcons
 import android.graphics.PorterDuff
 import android.widget.ImageView
 import androidx.compose.animation.core.Animatable
@@ -74,13 +76,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.foundation.Image
 import androidx.compose.ui.graphics.asImageBitmap
-import com.composables.icons.materialsymbols.MaterialSymbols
-import com.composables.icons.materialsymbols.outlined.Add
-import com.composables.icons.materialsymbols.outlined.Chevron_right
-import com.composables.icons.materialsymbols.outlined.Close
-import com.composables.icons.materialsymbols.outlined.Refresh
-import com.composables.icons.materialsymbols.outlined.Save
-import com.composables.icons.materialsymbols.outlined.Settings
 import dev.mindlink.sidepanel.R
 
 fun homeSidePanelProfileDisplayName(profile: HomeSidePanelProfile, fallback: String): String =
@@ -318,6 +313,7 @@ private fun HomeSidePanelLayoutCard(
             onImageDimensionsChange = { _, _, _ -> },
             onDeleteCard = panelState::removeCard,
             onResizeGesture = panelState::setGestureOwnership,
+            onEditCard = panelState::editCard,
         )
 
         is HorizontalActionsCardConfig -> HomeSidePanelHorizontalActionsCard(
@@ -396,7 +392,7 @@ private fun HomeSidePanelProfileHeader(
                 )
                 if (!editing) {
                     Icon(
-                        MaterialSymbols.Outlined.Chevron_right,
+                        LucideIcons.ChevronRight,
                         contentDescription = null,
                         modifier = Modifier.size(18.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -414,7 +410,7 @@ private fun HomeSidePanelProfileHeader(
                         .semantics { contentDescription = discardDescription },
                 ) {
                     Icon(
-                        MaterialSymbols.Outlined.Close,
+                        LucideIcons.X,
                         contentDescription = null,
                     )
                 }
@@ -427,7 +423,7 @@ private fun HomeSidePanelProfileHeader(
                         .semantics { contentDescription = saveDescription },
                 ) {
                     Icon(
-                        MaterialSymbols.Outlined.Save,
+                        LucideIcons.Save,
                         contentDescription = null,
                     )
                 }
@@ -439,7 +435,7 @@ private fun HomeSidePanelProfileHeader(
                         .semantics { contentDescription = addDescription },
                 ) {
                     Icon(
-                        MaterialSymbols.Outlined.Add,
+                        LucideIcons.Plus,
                         contentDescription = null,
                     )
                 }
@@ -447,7 +443,7 @@ private fun HomeSidePanelProfileHeader(
         } else {
             IconButton(onClick = panelState::openPanelSettings) {
                 Icon(
-                    MaterialSymbols.Outlined.Settings,
+                    LucideIcons.Settings,
                     contentDescription = stringResource(R.string.wekit_sp_home_side_panel_settings),
                 )
             }
@@ -497,7 +493,7 @@ private fun HomeSidePanelStatus(
 
             HomeSidePanelStatusUiState.Error -> {
                 Icon(
-                    MaterialSymbols.Outlined.Close,
+                    LucideIcons.X,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(16.dp),
@@ -510,7 +506,7 @@ private fun HomeSidePanelStatus(
                 )
                 IconButton(onClick = panelState::refreshStatus, modifier = Modifier.size(24.dp)) {
                     Icon(
-                        MaterialSymbols.Outlined.Refresh,
+                        LucideIcons.RefreshCw,
                         contentDescription = stringResource(R.string.wekit_sp_home_side_panel_refresh_status),
                         modifier = Modifier.size(16.dp),
                     )
@@ -565,7 +561,7 @@ fun HomeSidePanelToolbarContent(
                     modifier = Modifier.weight(1f, fill = false),
                 )
                 Icon(
-                    imageVector = MaterialSymbols.Outlined.Chevron_right,
+                    imageVector = LucideIcons.ChevronRight,
                     contentDescription = null,
                     modifier = Modifier.size(14.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -642,7 +638,7 @@ private fun HomeSidePanelToolbarStatus(
 
             HomeSidePanelStatusUiState.Error -> {
                 Icon(
-                    imageVector = MaterialSymbols.Outlined.Close,
+                    imageVector = LucideIcons.X,
                     contentDescription = null,
                     modifier = Modifier.size(11.dp),
                     tint = MaterialTheme.colorScheme.error,

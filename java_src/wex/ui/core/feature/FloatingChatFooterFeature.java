@@ -27,9 +27,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
+import dev.mindlink.xposed.XC_MethodHook;
+import dev.mindlink.xposed.XposedBridge;
+import dev.mindlink.xposed.XposedHelpers;
 import wex.ui.core.WexStore;
 
 /** Full ChatFooter card and panel-above layout, ported from WeKit (GPL-3.0-only). */
@@ -519,6 +519,41 @@ public final class FloatingChatFooterFeature {
     private static State existing(View footer) {
         WeakReference<State> reference = STATES.get(footer);
         return reference == null ? null : reference.get();
+    }
+
+    private static int adoptLogs;
+    private static long adoptCheckedAt;
+
+    /**
+     * Backstop driven by the floating header, which keeps discovering the chat layout for as long
+     * as its decor lives. Ported from the old phone patch ({@code GlassPatch.onFrame}): the
+     * header's per-frame pass located the page's {@code ChatFooter} and drove the footer from
+     * there, because entering a chat from a system notification could leave the footer
+     * undecorated. This feature's own discovery stops after {@link #DISCOVERY_ATTEMPTS}, requires
+     * the chat Activity to still be the resumed one, and a notification launch can move resume
+     * to LauncherUI or deliver the chat tree late. Idempotent: an observed footer whose
+     * pre-draw listener sits on its current tree costs one comparison.
+     */
+    static void adopt(View footer) {
+        if (footer == null || !FOOTER.equals(footer.getClass().getName())
+                || Looper.myLooper() != Looper.getMainLooper() || !footer.isAttachedToWindow()) return;
+        State state = existing(footer);
+        if (state != null && state.watching(footer)) return;
+        // The header just read its own config: a stale disabled read here is from a
+        // notification cold start before external storage was mounted. Re-read at most once a
+        // second, so a feature the user really switched off costs nothing per header frame.
+        if (!config.enabled) {
+            // Plain JVM clock: the footer suites compile without an android.os.SystemClock double.
+            long now = System.nanoTime() / 1_000_000L;
+            // nanoTime has an arbitrary origin: the first check must never depend on it.
+            if (adoptCheckedAt != 0L && now - adoptCheckedAt < 1000L) return;
+            adoptCheckedAt = now;
+            if (!enabled()) return;
+            config = new Config();
+        }
+        if (adoptLogs < 4) { adoptLogs++; log("stage=adopt source=header state=" + (state != null)); }
+        if (state == null) { observe(footer); return; }
+        state.watch(); state.apply();
     }
 
     private static State state(Object footer) {
@@ -1344,6 +1379,10 @@ public final class FloatingChatFooterFeature {
         }
         private void restoreRecycler(){if(recycler!=null&&recyclerPadding!=null)recyclerPadding.restore(recycler);recycler=null;recyclerPadding=null;}
         private void unwatch(){if(observer!=null&&observer.isAlive())observer.removeOnPreDrawListener(this);observer=null;}
+        /** True while the pre-draw listener is on the footer's current, live tree observer. */
+        boolean watching(View footer) {
+            return observer != null && observer.isAlive() && observer == footer.getViewTreeObserver();
+        }
         @Override public void onViewAttachedToWindow(View view){watch();traceLoader(view);apply();}
         @Override public void onViewDetachedFromWindow(View view){
             unwatch(); restore();

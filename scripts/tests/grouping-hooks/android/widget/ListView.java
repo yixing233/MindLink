@@ -41,7 +41,7 @@ public class ListView extends AdapterView {
     public void setSelection(int position) {
         if (dispatchSelectionHooks) {
             dispatchSelectionHooks = false;
-            try { de.robv.android.xposed.XposedBridge.invoke(this, "setSelection", new Class<?>[]{int.class}, position); }
+            try { dev.mindlink.xposed.XposedBridge.invoke(this, "setSelection", new Class<?>[]{int.class}, position); }
             catch (RuntimeException error) { throw error; }
             catch (Throwable error) { throw new AssertionError(error); }
             finally { dispatchSelectionHooks = true; }

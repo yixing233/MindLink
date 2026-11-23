@@ -2,8 +2,8 @@ package wex.ui.core.feature;
 
 import android.content.Context;
 
-import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import dev.mindlink.xposed.XposedBridge;
+import dev.mindlink.xposed.callbacks.XC_LoadPackage;
 
 /** Single Java entry for features that share host services and lifecycle state. */
 public final class FeatureBootstrap {
@@ -84,6 +84,12 @@ public final class FeatureBootstrap {
             @Override
             public void run() throws Throwable {
                 FloatingChatFooterFeature.init(selectedHostLoader(lpparam));
+            }
+        });
+        start("首页顶栏卡片", new Initializer() {
+            @Override
+            public void run() {
+                HomeTopBarCards.init();
             }
         });
     }

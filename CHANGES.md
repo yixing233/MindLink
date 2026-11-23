@@ -1,5 +1,468 @@
 # WEX (wex.ui.core) 1.2.27 反编译修改工程
 
+## 2026-11-22 聊天顶栏：标题尽量完整显示，只省略放不下的部分
+
+- **根因**（反编译 `NoMeasuredTextView`）：`setText` 时就按 `min(maxWidth, 当时的测量宽度)` 把省略号写进存储的文本，原文不再保留；
+  群聊还会先用 `g(String,int,int)` 设后缀（如「(211)」，字段 L/M/N），由布局回调 P 只截名字。之前只把 maxWidth 抬到视图实际宽度，
+  对已截好的文本无效，于是悬浮卡片里出现「🏓…(211)」。
+- 修复：新增 `FloatingHeaderStyle.TitleSource`。
+  - 在 `FloatingChatHeaderFeature.init` 就 hook `NoMeasuredTextView` 内部的设文本方法（按签名找 `(CharSequence, 枚举)`，
+    找不到用 `setText(CharSequence)`）和 `onLayout`：记录微信传入的**原文**与后缀；视图自己在 onLayout 里的延迟截断不算原文。
+    只记录位于 ActionBarContainer/Toolbar 下（或尚未挂上窗口）的视图，会话列表里的同类视图只多一次短的父链遍历。
+  - 每次设完检查：显示的文本比原文短（被截过）就标记宽度未知。
+  - `NoMeasuredWidth.apply`（分体式、整体式每帧都会调）：视图宽度与上次截断所用宽度不同、且不在布局中时，按实际宽度**自己截一次**：
+    原文+后缀放得下就整段显示；放不下只把名字截到「宽度 − 后缀宽度」，后缀完整保留；清掉 L 避免回调再截。每次宽度变化只做一次。
+  - 诊断：LSPosed 日志 `WEX: 聊天顶栏: title re-cut width=… text=… suffix=… shown=…`（最多 4 条）；hook 失败会打 `title source hook unavailable`。
+- 测试：header 套件的样式替身加 `TitleSource.install` 空实现；separated-geometry 变体编译真实样式，补最小 `android.text.TextPaint`/`TextUtils` 替身。
+- **未验证**：未构建、未跑回归。若后缀其实已含在原文里（日志 `suffix=none`），截断会从末尾吃掉「(211)」，需要再按日志调整。
+
+## 2026-11-22 会话分组：选中态改为平移动画
+
+- 选中胶囊不再是每个标签自己的背景（只能淡入），改为标签行 `LinearLayout` 背景上的一个 `ConversationGroupCard.SelectionPill`，
+  画在标签和按压波纹下面。切换分组时从上次绘制的位置平移到新标签，280ms；前进方向的边缘先走、另一边稍慢跟上，有轻微拉伸。
+- 胶囊每次绘制都读选中标签的实时边界，所以改名、等宽切换、新增分组只会让它跟着移动；首次构建、主题/强调色变化直接就位不做动画。
+  旧选中标签先处理时只清目标、保留绘制位置，所以与循环顺序无关。
+- `styleTab` 签名不变（测试替身无需改），只更新了 tab-updates 两条断言的说明文字。原 160ms 淡入（`FADE_MS`/`fadeIn`）已删除。
+- 文字颜色与粗细仍是立即切换。**未构建、未跑回归。**
+
+## 2026-11-22 聊天顶栏返回按钮波纹被裁；首页顶栏透明、内容延伸、资料卡卡片
+
+- **返回按钮波纹被裁成矩形**：波纹是可点击视图的前景，父布局 clipChildren 会把它裁到该视图的矩形。返回键的可点击视图比圆窄
+  （右侧菜单按钮够宽，所以正常）。`FloatingHeaderParts.unclip()` 对目标到顶栏 root 的父链放开 clipChildren/clipToPadding
+  （最多 8 层，记录原值，`restore` 还原）；root 的父级仍按顶栏高度限制，圆直径 ≤ 顶栏高度。
+- **首页左侧资料卡没有卡片**：资料卡是 Compose 组件，没有 ImageView/TextView 子视图，`extent()` 返回空；而「隐藏标题」默认开，
+  于是左卡内容为空被丢弃。新增 `Cards.profileExtent()`：找不到原生子视图时按资料卡自身外框扣掉 Compose 行的 16dp 起始/约 10dp 末尾内边距，
+  取中心 36dp 高的带。
+- **首页顶栏透明 + 内容延伸到卡片下方**（新键 `top_cards_overlay`，默认开，设置在「首页顶栏 › 悬浮卡片」）：
+  - `Cards` 透明时不画 Toolbar 原背景、轮廓为空（无阴影）；ActionBarContainer 背景置空（保存最新一份用于还原）。
+  - 复用聊天顶栏的 `FloatingHeaderStyle.applyWindowHeader`：ActionBarOverlayLayout 进入 overlay 模式、content 顶部内边距清零。
+  - 只在首页分页容器（WxViewPager/CustomViewPager，优先用底栏已找到的那个）内扫描，跳过 ChattingUILayout：
+    被顶栏遮住的 ListView/ScrollView/RecyclerView/NestedScrollView（宽 ≥ 60%）加「顶栏底边 − 视图顶边」的顶部内边距并关闭 clipToPadding，
+    首行在卡片下方，上滑时从卡片下面滚过。内边距只在需要值变化时写（不每帧写）；顶栏位置变化时立即扫描，否则最多每 400ms 一次，
+    打开 overlay 后前 6 帧不节流（等页面重新布局）。找不到分页容器时什么都不改。会话分组标签栏的置顶位置按列表 paddingTop 计算，会随之下移。
+  - 关闭开关或停用卡片时全部还原（内边距、clipToPadding、overlay 模式、content 内边距、两处背景）。
+  - 诊断：LSPosed 日志一次 `首页顶栏卡片: underlay barBottom=… overlay=… chain=… padded=[…] covered=[…] statusBar=…`，
+    `covered` 列出被顶栏挡住的非列表视图（横幅等），`chain` 是顶栏往上 5 层的类名/位置/顶部内边距。
+- **已知限制 / 未验证**：状态栏区域未处理——若微信用不透明的状态栏颜色或 EdgeToEdgeWrapperLayout 画状态栏，内容只延伸到状态栏下沿。
+  毛玻璃/液态玻璃是否采样到下方列表未确认。全部未构建、未跑回归。
+
+## 2026-11-22 聊天页：上滑历史消息时周期性卡顿
+
+- **推断的根因**：`ChatTailSpacer` 为修「新消息后空白」，在 adapter 条数**任何**变化时都 `D0`（invalidateItemDecorations）+跳过一帧。
+  上滑时微信每页加载一批历史消息，条数也会变，于是每页都触发整列表重新布局并丢一帧，就是「隔一段抽搐一下」。
+- 修复：记录拿到底部留白的那条消息视图（`latestTail`/`settledTail`）。条数变化后只在**旧的末条仍挂着、且已不是末条、
+  且其留白没被重算**时才重新布局（新消息追加）；历史消息加在上方时末条不变，不再重新布局。
+  旧末条不在屏幕上时延后判断（`UNKNOWN`），等它重新挂上再判；被回收复用为别的行时视为已重算。拿不到位置时回退为原来的整列表重排。
+- 诊断：每次真正触发会在 LSPosed 日志打 `WEX: tail-spacer relayout stale-tail`（每个列表最多 4 次）。上滑时若仍出现此日志，说明判定有误。
+- 测试：`decorationLifecycle` 改为真实的多视图场景（新消息、历史分页、末条离屏/重新挂上、末条被回收），
+  RecyclerView 替身 `u0` 支持按视图返回位置（`positions`）。
+- **未验证**：未构建、未跑回归。若卡顿依旧，需换方向排查（顶栏/底栏每帧工作、材质模糊），可先关「悬浮输入栏」对比。
+
+## 2026-11-22 首页侧栏：左边缘右滑热区加大
+
+- `HomeSidePanelFeature` 左边缘起滑的判定宽度由 32dp 改为 96dp（新常量 `EDGE_DP`，中途试过 56dp），约为常见手机屏宽的四分之一。其余判定不变：横向位移须大于纵向的 1.25 倍，
+  所以从这条区域开始的上下滚动仍交给会话列表；只在「微信」标签页生效。
+- 代价：从左侧 96dp 内开始向右拖会话分组标签栏，会改为拉出侧栏（此前是 32dp）。侧栏测试的按下位置都在 200dp 以上，不受影响。
+- **未验证**：需构建与真机确认手感，以及与系统返回手势（全面屏手势的左边缘）是否冲突。
+
+## 2026-11-22 首页顶栏：左右两张悬浮卡片
+
+- 新增 `HomeTopBarCards`（`FeatureBootstrap` 里最后初始化）：首页（LauncherUI）顶栏画两张胶囊形悬浮卡片。
+  - 左卡片包住资料卡（头像、昵称、状态，`TopBarFeature` 插入的 `wеx_top_profile`）；关闭资料卡时包住标题文字（「微信(1)」「通讯录」等）。
+    资料卡和标题同时显示时，两者放进同一张左卡片（取两者的并集）；任一方不在时只包住另一方。
+    宽度按实际文字排版计算，不按 TextView 的盒子。
+  - 「隐藏标题「微信」」（`top_cards_hide_title`，默认开，随卡片开关生效）：会话页标题（「微信」「微信(3)」「WeChat」或自定义的
+    `top_title`）设为 INVISIBLE，不用 GONE，顶栏布局不变、不会每帧重排；左卡片因此只包住资料卡。同一个标题 TextView 切到
+    通讯录 / 发现 / 我时恢复显示；关闭开关、关闭卡片或首页销毁时还原。未读数随标题一起隐藏（底栏角标仍在）。
+    资料卡也关着时左边没有内容，左卡片不画。
+  - 右卡片只包住动作按钮（搜索和「+」）：顶栏右侧 45% 范围内可点击的小按钮，从第一个按钮中心到最后一个，两端是半圆。
+    打开「显示搜索框」隐藏原生搜索按钮时，右卡片只剩「+」（变成圆形）；其它标签页按当时的按钮自动适配。
+  - 两张卡片同高（默认顶栏高减 8dp，最高 52dp，至少容得下资料卡），居中，左右距屏幕边 8dp，互不重叠。
+- 绘制：给原生 Toolbar 换一个背景 drawable，先画 Toolbar 原来的背景，再画卡片阴影和材质；内边距、轮廓、状态都取自原背景，
+  所以顶栏布局和点击完全不变。材质复用卡片材质（普通 / 毛玻璃 / 液态玻璃 + 模糊 + 不透明度），颜色与会话分组卡片、悬浮聊天顶栏一致。
+  卡片阴影会超出 Toolbar，所以放开 Toolbar 往上 3 层父容器的 `clipChildren`，关闭时还原。
+- 每帧预绘制按当时的 View 重新计算位置（切标签、资料卡出现、标题未读数变化都会跟着变），变化时才重画；
+  预绘制不读设置，开关与材质只在首页 resume、设置改动和材质改动时读取。微信替换 Toolbar 背景时自动重新包一层。
+- 设置：首页顶栏页新增「悬浮卡片」区块，开关 `top_floating_cards`（默认开，即时生效）并链接到卡片材质；总览摘要显示开关状态。
+  材质改动时 `SettingsPanelModel.refreshGlassSurfaces()` 也刷新这两张卡片。
+- 测试：`database-capture/bootstrap` 的 `BootstrapDoubles` 补 `HomeTopBarCards` 替身并把 `home-top-cards` 加进启动顺序。
+- 备份：`build/home-top-cards-backup-20261122`。**未验证**：没有微信首页顶栏的真机 View 树，按资料卡标签、`android.R.id.text1` 标题和
+  「右侧可点击小按钮」识别；需构建、回归与真机确认，重点看四个标签页、资料卡开关、搜索框开关、深浅色与三种材质。
+  若卡片位置不对，日志里 `首页顶栏卡片: geometry ...` 会给出两张卡片的坐标。
+
+## 2026-11-22 悬浮顶栏：标题被提前省略、左右按钮按压波纹；工具栏图标显示完整
+
+**标题在有空间时仍显示省略号**
+- 原因（jadx 反编译 8.0.76 `com.tencent.mm.ui.base.NoMeasuredTextView` 确认，输出在 `build/host-pulldown-20261122/`）：
+  聊天标题不是系统 TextView，而是继承 X2CView 的 `NoMeasuredTextView`。它在 `setText` 时用 `min(maxWidth, measuredWidth)`
+  直接把省略号截进保存的文字里，maxWidth 来自微信按原生顶栏布局算的值。放进悬浮卡片后这个上限可能比实际可用宽度窄，
+  于是连「对方正在输入…」都被截断。原来的 `TitleState` 只调整 `android.widget.TextView`，漏了这个类。
+- 修改（`FloatingHeaderStyle.TitleState`）：新增 `NoMeasuredWidth`，把它的 maxWidth 固定为它自己的实际宽度（它的测量宽度总等于父布局给的宽度，
+  所以不会溢出）；字段 `v` / `w` 可读时用于精确还原，读不到时只是不还原。标题区每次应用都重新扫描（最多 64 个 View），
+  微信后加的输入状态 / 副标题也会被覆盖。分体式由原有的标题宽度逻辑执行；整体式新增 `TitleState.lift(..., false)`，只放开
+  `NoMeasuredTextView`，系统 TextView 仍交给微信。
+- 限制：已经截进文字里的省略号要等微信下一次 `setText` 才会恢复（如输入状态出现 / 消失）。
+
+**左右按钮按压波纹**（新增 `HeaderButtonRipple`、`FloatingHeaderParts`）
+- 返回按钮与每个可见的菜单按钮（跳过微信保留的空位）各装一个前景 drawable：从按下的位置向外扩散的波纹，裁剪在按钮圆形内，
+  底下叠一层淡的按压态；松手时快速补完波纹再淡出。按压状态与触点由系统传给前景，不拦截点击。
+- 圆形：分体式与画出来的胶囊完全重合（直径 = 顶栏高度，圆心在返回图标 / 菜单按钮中心）；整体式按 M3 图标按钮，半径最大 20dp。
+- 浅色 16%、深色 24% 不透明度；关闭功能或切换顶栏时还原原前景。`FloatingChatHeaderFeature.State.apply()` 在样式之后调用，`restoreHeader()` 中还原。
+
+**输入区上方快捷工具栏图标显示不全**
+- Lucide 图形占 2..22 栅格，圆头描边会伸到 1..23，而渲染按 20 单位的安全区铺满方框，边缘最多被裁 1 个单位。
+- `LucideIcons.bitmap` / `drawableDp` 新增带内边距的重载（栅格单位，线宽像素不变）；工具栏图标用 1 个单位内边距（`ICON_PADDING`），
+  图形在 18dp 方框内缩到约 16.4dp，四边完整显示。其它地方的图标不变。
+- 测试：`chat-header-toolbar-checks.py` 补 `FloatingHeaderParts` 替身与 `LucideIcons.drawableDp` 四参数重载。
+- 备份：`build/header-title-ripple-backup-20261122`。**未验证**：需构建、回归与真机确认（两种顶栏样式下的标题、输入状态、按钮波纹，深浅色）。
+
+## 2026-11-22 聊天页：底部继续上拉的回弹先落到输入卡片后面
+
+- 现象：停在最后一条消息时继续上拉，松手回弹会先落到屏幕最底部（被悬浮输入卡片盖住），随后才出现在可见区域。
+- 原因（已用 jadx 反编译宿主 8.0.76 `com.tencent.mm.ui.base.MMPullDownView` 确认，输出在 `build/host-pulldown-20261122/`）：
+  聊天列表外层的 `MMChattingListView extends MMPullDownView`，它把顶部加载区 / 内容 / 底部加载区竖向排列，
+  拉动和回弹都是对自身 `scrollTo`（静止时 scrollY = 内容子 View 的 top，即顶部加载区可见时它的高度、不可见时 0）。
+  `ChatFooterOverlay.updateTail()` 用列表的屏幕坐标计算被输入卡片遮住的高度，屏幕坐标包含了这段拉动位移，
+  于是上拉时末尾留白变小、回弹先按小留白停在卡片后面，静止两帧后留白恢复才被 `followEnd` 推上来。
+- 修改：新增 `ChatTailSpacer.pullOffset(list, stop)`，沿列表到输入卡片父容器之间的祖先查找 `MMPullDownView`（按类名，含子类），
+  把 `scrollY - 内容子 View.getTop()` 这段临时拉动加回去；`updateTail()` 的遮挡计算用它抵消。输入法抬升与视口缩放仍按屏幕坐标计入，不受影响。
+- 测试：`ChatFooterOverlayChecks.pullBounceKeepsTail`：列表放在带 40px 顶部加载区的 `MMPullDownView` 里，静止、上拉 260px、回弹三种状态留白都保持 126。
+  `chat-footer-checks.py` 的 View 替身补 `scrollY` / `getScrollY()`，`getLocationOnScreen` 计入祖先滚动；新增 `MMPullDownView` 替身。
+- 顺带修正：`getTop()` 原来只在 `chat-footer-checks.py` 的 `main()` 里临时加到 View 替身，复用这份替身的
+  `chat-header-toolbar-checks.py` 拿不到；而本轮早些时候置顶卡片高度（`tipsCardHeight`）用到了 `View.getTop()`，
+  会导致顶栏测试编译失败。现在 `getTop()` 改在模块级补进替身，两个测试套件都能用。
+- **未验证**：需构建、回归与真机确认：底部上拉回弹、顶部下拉加载历史、键盘弹出时的留白。
+
+## 2026-11-22 会话分组卡片：加强选中态
+
+- 选中的分组：标签后面加一个强调色胶囊（浅色约 14%、深色约 24% 不透明），文字改为强调色加粗；切换时胶囊 160ms 淡入。
+  首次构建、数据通知、主题刷新不重放动画（`ConversationGroupCard.styleTab` 按「选中 / 强调色 / 深浅色」缓存外观，未变化就不重建 drawable）。
+- 所有标签与「＋」都有胶囊形按压水波纹（此前没有按压反馈）。
+- 尺寸：标签改为 36dp 高的胶囊，左右 14dp 内边距、间隔 4dp；标签行内缩 6dp，卡片仍是 48dp 高的胶囊，胶囊不会贴到卡片圆角。
+  「＋」由 48×48 改为 36×36。等宽模式保留权重。
+- 分组较多、标签行可横向滚动时，新选中的标签会平滑滚动到中间。
+- 实现集中在 `ConversationGroupCard`（`styleTabs` / `tabMargins` / `styleTab` / `styleAdd` / `reveal`），`ConversationGroupBar` 只调用它，
+  分组测试里的 Android 替身因此不需要 drawable / Typeface。测试：`tab-updates` 校验点击切换时淡入只触发一次、滚动定位一次、数据通知不重放。
+- **未验证**：需构建、回归与真机确认（深浅色、三种材质下胶囊的对比度，分组多时的滚动定位）。
+
+## 2026-11-22 会话分组栏改为悬浮卡片
+
+- 新增 `ConversationGroupCard`：把分组标签包进一张卡片，左右内缩 12dp、上 6dp / 下 8dp 留白，24dp 圆角（48dp 高的标签栏即胶囊形），
+  4dp 阴影，材质复用卡片材质（普通 / 毛玻璃 / 液态玻璃，含模糊与表面不透明度），做法与悬浮聊天顶栏的 `FloatingHeaderStyle.applyCard` 相同。
+- 分组栏原本就是叠在会话列表上的覆盖层（下面垫一个等高的列表头），并可固定在标题栏下方；这次只改外观：
+  留白算在覆盖层高度里，列表头跟着变高，第一条会话不会被卡片和阴影盖住；固定时会话从玻璃卡片下面滚过。
+  玻璃采样的是会话列表本身，列表滚动会触发重采。
+- `ConversationGroupBar` 去掉自带的不透明底色（原 `#F7F7F7` / `#191919`），底面交给卡片。
+- 刷新：覆盖层每次 `refresh()`（标签变化、会话数据通知）重新套材质；卡片材质设置变更时 `SettingsPanelModel.refreshGlassSurfaces()`
+  也会触发 `ConversationGroupingFeature.refreshHostLabels()`，改材质即时生效。覆盖层销毁时停止玻璃采样。
+- 卡片材质页说明改为「首页底栏、会话分组、聊天顶栏与输入栏共用」。
+- 测试：`grouping-hooks` 的 `GroupingDoubles` 补 `ConversationGroupCard` 替身（标签栏仍是覆盖层的第一个子 View，原有断言不变）。
+- 备份：`build/group-card-backup-20261122`。**未验证**：需构建、回归与真机确认：卡片位置与阴影、固定 / 不固定两种滚动、
+  三种材质、深色模式、点按 / 长按标签与在卡片两侧留白处上下滑动列表。
+
+## 2026-11-22 会话分组：有标签栏但切换分组后列表不变
+
+- 现象对应的路径：标签栏能显示，说明会话列表钩子已装上；切换后要先用「绕过钩子调用原方法」读出每行会话做快照。
+  这一步在 libxposed 迁移后由兼容层 `xposed_compat/.../XposedBridge.invokeOriginalMethod` 实现，测试里一直是替身，真机从未验证。
+  它一旦报错，快照返回 null，所有过滤钩子放行，列表保持原样，且这条路径没有任何日志。
+- 对照 libxposed 102.0.0 的 `api-102.0.0.aar`（javap），`getInvoker(Method)` / `Invoker.setType(Type)` / `Type.ORIGIN` /
+  `invoke(Object, Object...)` 的签名与兼容层一致，所以具体失败点尚未确认；本次修改按「兜底 + 诊断」处理。
+- `XposedBridge`（兼容层）：反射查找只做一次并缓存（每个方法一个 ORIGIN invoker），不再每行反射；框架侧失败抛新的
+  `OriginalUnavailable`（目标方法自己抛的异常照旧原样抛出），首次失败记一条日志 `invokeOriginalMethod unavailable for ...`。
+- `ConversationListBridge.original()`：收到 `OriginalUnavailable` 后记一次「原方法调用不可用，改为直接调用」，此后直接
+  `method.invoke`。安全性：调用期间 `RAW_DEPTH` 已置位，分组的所有钩子都会放行，直接调用得到的就是微信自己的结果。
+- 诊断（每种原因只记一次，只记类型不记宿主异常内容）：分组快照失败、快照与适配器条数不一致、切换分组时尚无可刷新的列表 / 适配器。
+  日志前缀 `WEX: 会话列表桥:`，在 LSPosed 管理器的日志里查看（不在 Mdl 设置的日志页）。
+- 测试：`grouping-hooks` 的 XposedBridge 替身新增 `OriginalUnavailable` / `originBroken`，并改为宿主分发不经过 `invokeOriginalMethod`；
+  新增用例 `origin-fallback`（未读分组在 ORIGIN 不可用时仍过滤为 2 行、只尝试一次、切回全部恢复 3 行），已加入 `regression.py`。
+- **未验证**：需构建、回归与真机确认。若仍不生效，请把 LSPosed 日志里 `会话列表桥` 与 `invokeOriginalMethod` 相关的行发来。
+
+## 2026-11-22 从系统通知进入聊天：输入卡片样式补上旧补丁的兜底
+
+- 对照：旧补丁 `GlassPatch.java` 本身没有写「通知进入」的逻辑；11-20 手机包里顶栏 / 输入栏 / 样式三个类的方法与日志字符串，
+  现在的源码全部都有（通知进入相关的 `onNewIntent` / `onStart` 挂钩、外部存储未挂载时的配置重读、顶栏不提前放弃的发现逻辑都已在）。
+- 差别在旧补丁挂在顶栏每帧预绘制上的 `GlassPatch.onFrame`（手机包 `FloatingChatHeaderFeature$State.onPreDraw` 第一行）：
+  它从顶栏所在窗口找到 `ChatFooter`，直接把输入卡片的叠层样式套上去。也就是说，输入栏是由顶栏「带起来」的。
+  这条路径在把补丁并入源码时没有带过来。
+- 为什么需要：输入栏自己的发现逻辑比顶栏弱，要求聊天 Activity 仍是当前 resumed 的那个，且 8 次（约 1 秒）后就放弃；
+  而通知进入时 resume 可能落到 LauncherUI 上，聊天树也可能在过渡之后才到。顶栏的发现逻辑在窗口存在期间不会放弃，所以由顶栏兜底。
+- 修改：
+  - `FloatingChatHeaderFeature.State.apply()` 末尾新增 `adoptFooter(layout)`：在本页聊天布局里找唯一的 `ChatFooter`（缓存，
+    丢失后最多每 8 帧重找一次），交给 `FloatingChatFooterFeature.adopt()`。
+  - `FloatingChatFooterFeature.adopt(View)`：已在监听且监听挂在当前视图树上时只做一次比较就返回；否则创建 / 重新挂上监听并立即套用样式。
+    若输入栏自己的配置还是冷启动时读到的「关闭」，最多每秒重读一次开关，用户真的关掉功能时不会每帧读存储。
+    新增 `State.watching(View)`。日志 `stage=adopt source=header` 最多 4 条，可用于确认兜底是否被触发。
+  - 输入栏原有的发现逻辑、`stage=discover exhausted` 诊断及其测试都保持不变。
+- 顶栏本身：这次没有找到旧补丁里针对顶栏的额外修复（旧补丁对顶栏的 `onApply` / `onRestoreHeader` / `onDiagnose` 只是写日志）；
+  如果通知进入后顶栏仍异常，需要真机日志里的 `悬浮顶栏: stage=entry` / `stage=discover` / `diagnose` 几行来继续查。
+- 测试：`ChatHeaderToolbarChecks` 校验顶栏预绘制把本页 `ChatFooter` 交给输入栏；`ChatFooterHookChecks` 新增「发现已放弃后
+  聊天树才到」的场景：交接后输入栏被监听，重复交接不重复注册。输入栏替身补 `adopt`。
+- 备份：`build/notification-entry-backup-20261122`。**未验证**：需构建、回归，并真机从通知进入单聊 / 群聊（冷启动和微信在后台两种）。
+
+## 2026-11-22 悬浮输入栏：收到新消息后列表中间出现空白
+
+- 对照：旧补丁（`phone-integration-20261119/active-src/mdl/patch/GlassPatch.java` 的 `TailSpacer` / `updateChatViewport`，
+  以及 11-20 手机包 `GlassPatch$TailSpacer.smali`）与现在的 `ChatTailSpacer` 是同一套做法：给聊天列表最后一项加一个底部
+  item offset，让消息能滚到悬浮输入栏上方。两边都没有针对「新消息」的单独处理，旧补丁源码与手机包里也找不到别的相关代码。
+- 原因：RecyclerView 只给重新绑定的项重算 item offset。新消息追加到末尾时，新的最后一项拿到了底部留白，
+  但原来的最后一项没有重新绑定，仍保留缓存的留白，于是两条消息之间空出一个输入栏高度的空白。
+- 修改（`ChatTailSpacer`）：`getItemOffsets` 时记下 adapter 的条目数；`update()` 发现条目数变了（且留白高度大于 0），
+  调一次 `invalidateItemDecorations`（宿主混淆名 `D0`），下一次布局所有项重算，留白只留在真正的最后一项上。
+  第一次看到的条目数只记录不重排；`release()` 时清空。
+  `ChatFooterOverlay.updateTail()` 在触发重排的那一帧设 `changed = true`，让 `onPreDraw` 跳过这一帧，不把带空白的画面画出来。
+- 范围：条目数增减都会触发（新消息、撤回 / 删除、上滑加载历史），每次只多一次布局；
+  条目数不变的内容更新（如消息状态变化）不受影响，也不需要处理。
+- 测试：`ChatFooterOverlayChecks.decorationLifecycle` 新增三条：首次记录条目数不重排；条目数从 4 变 5 时重排一次并跳过一帧；
+  条目数稳定后不再重排。
+- **未验证**：需构建、回归与真机确认。重点看：停在底部时收到新消息、自己发消息、上滑加载历史时有没有卡顿。
+
+## 2026-11-22 置顶卡片展开高度适配；桌面主页可重启微信
+
+**置顶卡片展开后高到屏幕底部**
+- 原因：多条置顶消息展开时，微信在 `ChatTipsBarGroup` 内显示一张全尺寸遮罩（纯 `View`，match_parent × match_parent，
+  #80000000，点它会收起）。在 wrap_content 的组里，这个 View 会占满父容器给的全部高度，组跟着撑到屏幕底部，
+  组上的玻璃卡片也一起。我们之前只去掉了它的底色，它仍然占位。
+- `FloatingChatHeaderFeature.suppressTipsScrim()`：按结构（类正好是 `android.view.View` 且宽高都是 MATCH_PARENT）找到遮罩，
+  设为 GONE、alpha 0、去底色，做法同 WeKit `suppressTipsBarDim`。不依赖混淆 id。隐藏后该帧的 `onPreDraw` 返回 false
+  跳过一次绘制，避免闪一帧全高卡片；不会连续两帧跳过。关闭功能时还原底色与 alpha，可见性留给微信下次展开时自己设置
+  （强行改回 VISIBLE 可能在已收起时盖住聊天）。
+- 兜底：`tipsCardHeight()` 取卡片体（组内唯一的 `RelativeLayout`，WeKit 的 hyi）在组内的底边，
+  `FloatingHeaderStyle.clampCard()` 把卡片轮廓（裁剪和阴影）与玻璃（`ChatGlassSurface.visibleHeight`）限制在这个高度，
+  即使组本身仍然偏高（折叠动画的占位层、微信重新点亮遮罩的那一帧）。`CardState` 新增 `heightLimit`，`restore` 时清除。
+- 代价：展开后点卡片外的空白不再收起列表（遮罩不再拦截点击），需点卡片上的收起按钮。
+- 测试：置顶用例加一个全尺寸遮罩，校验隐藏、卡片体和行不受影响、关闭后还原；校验卡片高度取卡片体底边
+  （样式替身记录 `clampCard` 的值，separated-geometry 变体用真实样式时自动跳过这条）。
+
+**桌面主页「重启微信」**
+- `DesktopUi.kt` 首页在「打开微信」下加「重启微信」：确认后在后台线程执行 `su -c "am force-stop com.tencent.mm"`
+  （等待 30 秒，root 管理器首次会弹窗），成功后从模块里重新打开微信，让 hook 在冷启动时重新注册。
+  模块不是微信，没有 root 无法结束微信进程。失败时分别提示：没有 su、授权被拒或失败（带退出码）、超时；
+  并给出「打开微信应用信息，手动强行停止」。不新增权限，不用 `killProcess`（`material3_checks` 禁止）。
+- **未验证**：需构建、回归与真机确认：多条置顶展开 / 收起的高度与阴影、群公告、桌面重启（含拒绝 root 授权的提示）。
+
+## 2026-11-22 置顶卡片：补上旧手机补丁里漏移的「去内层白卡」
+
+- 对照旧补丁 `build/phone-integration-20261119/active-src/mdl/patch/GlassPatch.java`（11-20 手机包实际挂载的钩子见
+  `release-20261120-phone-sidebar-001/baseline-smali`）。和置顶条相关的四项里，前三项现在的源码已有：
+  每个矩形独立 `LiquidGlassLayer`（`ChatGlassSurface.regions`）、采样源向上找 5 层（`bind()`）、
+  置顶条随滚动或每 120ms 重采（`keepFresh()`）。
+- 漏掉的是 `FloatingHeaderStyle.applyCard` 入口的 `GlassPatch.onCardApplied`：置顶条套上玻璃后，
+  每条置顶消息（`ChatTipsBar`）还留着微信自己的圆角白底，成了「玻璃在外、白卡在内」。
+  现在的 `detachTipsPanel()` 只清三个写死 ID 的面板底色，而且特意不进入条目列表 `0x7f095a10`。
+- 修改：`detachTipsPanel()` 改为带深度的遍历，在面板 chrome 之外，置顶组往下 4 层内（组 → 包装 → 面板 → 条目列表 → 条目卡）
+  的每个容器都去掉底色，和旧补丁的覆盖范围一致；照旧记进 `tipsChrome`，关闭功能时还原。
+  与旧补丁的差别：叶子 View 的背景不动（图标、关闭按钮可能把自己画在背景上），自己的 `ChatGlassSurface` 不动，
+  而且可还原（旧补丁直接换成透明 ColorDrawable，不还原）。
+- 旧补丁里没有移入、也不需要移入的：`frosted()` 与 `pickContent()` 有定义但从未被调用；
+  `applyBlurOverride`（顶栏专属模糊 `floating_chat_header_blur_dp`）被默认模式位 256 关闭，实际不生效。
+- 测试：`ChatHeaderToolbarChecks` 的置顶用例加一层带白底的条目容器，校验它被清空、叶子背景保留、关闭后还原。
+- 备份：`build/tips-material-backup-20261122`。**未验证**：需构建、回归，并在有置顶消息 / 群公告的群里真机看效果，
+  留意条目按下时的反馈是否消失（若条目背景是带按压态的 selector，会一并去掉）。
+
+## 2026-11-22 卡片材质：表面不透明度可调
+
+- 新键 `nav_bar_surface_opacity`（0–100%，留空 = 按材质默认），首页底栏、悬浮聊天顶栏与输入栏共用，即时生效（`nav_bar_` 前缀不需重启）。
+- 调的是盖在模糊背景上的那层底色：`LiquidGlassLayer.drawBase` 新增带 `opacity` 参数的重载（旧签名转调 `AUTO_OPACITY`），
+  `tintAlpha()` 在未设置时沿用原值（液态玻璃 102 = 40%，模糊为 0 时 0；毛玻璃 166 = 65%），设置后按百分比换算。
+  背景无法采样时仍画不透明实色，不会出现没有模糊的半透明卡片。
+- 接线：`NavigationBarFeature.Config.opacity` → `NavigationBarViews`；`ChatGlassSurface.configure()` 读 `opacity()`，
+  因此聊天顶栏 / 输入栏的调用方不用改。设置写入后照旧 `refreshGlassSurfaces()` 刷新三处。
+- 面板：卡片材质页选毛玻璃或液态玻璃时出现「玻璃」区块（背景模糊 + 表面不透明度）；普通表面不再显示这两个无效滑块。
+  未设置时滑块显示当前材质的默认值并标「默认」，拖动后出现「恢复默认」（写空值）。`Setting.Range` 新增可选 `fallback`。
+  总览与各页的「卡片材质」行摘要加上不透明度。
+- 测试：`ChatGlassSurfaceChecks` 校验默认 alpha 不变、显式值覆盖、越界钳制；`SidePanelBoundaryChecks` 校验各材质默认值与普通表面不显示；
+  `backdrop-recovery` 的 `NavigationBarFeature` 替身、`navigation-hooks` 的 `LiquidGlassLayer` 替身补对应常量与重载。
+- 备份：`build/material-opacity-backup-20261122`。**未验证**：需构建、回归与真机确认三处卡片随滑块同步变化。
+
+## 2026-11-22 Mdl 设置：改为「总览 → 详细设置」两级
+
+原面板是「首页 / 聊天 / 更多」三个标签 → 功能卡片 → 点「功能配置」展开 → 设置项，四层；
+功能关闭时配置整块隐藏；「更多」混放外观、隐私与诊断；卡片材质与它影响的底栏 / 聊天栏分在不同标签；
+「首页面板」把会话分组和侧滑面板两个无关开关硬凑一卡。
+
+- `SettingsSpec.kt` 重写数据结构：`PageGroup`（首页 / 聊天 / 外观 / 隐私与诊断）→ `SettingsPage`（每个功能一页）
+  → `Section`（页内卡片）。页面级 `master` 是功能开关，同时出现在总览行和详情页顶部；
+  区块级 `master` 用于一页里放了互相独立的功能（首页顶栏的资料卡 / 快捷入口、背景与壁纸的全局背景 / 首页壁纸）。
+  新增 `Setting.Link`：底栏、聊天顶栏、输入栏的设置页各有一行「卡片材质 ›」，直接跳到共用的材质页。
+- 总览页：顶部状态卡显示版本号与激活状态（读已有的 `version` / `activation`，此前没有展示）；
+  纯开关功能（会话分组、侧滑面板）点行即切换；带配置的功能点文字进入详情，开关放在分隔线后面，避免误触。
+  有状态的入口显示当前值，如「资料卡 开 · 快捷入口 关」「液态玻璃 · 模糊 8 dp」。
+- 详情页：固定顶栏带「← 返回」，页内按「外观 / 间距 / 外形 / 行为」等分卡。功能关闭时设置项置灰但保持可见，
+  不再整块隐藏；悬浮顶栏「分体组件间距」只在分体式时显示。
+- 系统返回：新增 `SettingsBack.java`，详情页先退回上一页，在总览时才关闭面板。宿主开启预测性返回时走
+  `Dialog.getOnBackInvokedDispatcher()`（随面板挂载注册 / 注销），未开启时走 `setOnKeyListener` 的 KEYCODE_BACK，
+  两条路径不会同时生效。`SettingsUi.back(view)` / `SettingsComposeBridge.back(view)` 负责转发。
+- 移除：标签页与 `panel_tab` / `SettingsShell.currentTab`；顶栏的昵称、状态文字、状态圆点颜色三项
+  （`top_nickname` / `top_status` / `top_dot_color` 已无功能读取，只是不再显示，已保存的值不动）；
+  日志弹窗里重复的「复制诊断」按钮（详情页仍有「复制脱敏诊断」）。
+- `MindLinkSwitchRow` 增加 `enabled` 参数（默认 true，现有调用不受影响）。
+- 总览图标：每个功能行左侧加 40 dp 圆角色块图标（secondaryContainer 底、22 dp Lucide 线性图标），
+  映射在 `SettingsScreen.kt` 的 `pageIcon()`：顶栏 panel-top、底栏 panel-bottom、会话分组 folders、侧滑面板 panel-left、
+  一键已读 check-check、聊天顶栏 app-window、工具栏 toolbox、输入栏 keyboard、气泡 message-circle、材质 layers、
+  背景与壁纸 wallpaper、联网数据 globe、日志与诊断 bug。`import_lucide_icons.py` 的 COMPOSE 表加这 13 个并重新生成
+  `LucideIcons.kt`（43 → 56 个 ImageVector，全模块 77 → 86 个图标，THIRD-PARTY-NOTICES 两份同步）；
+  `MindLinkListRow` / `MindLinkSwitchRow` 增加可选 `leading` 参数。`NavigationIcons.java` 生成结果不变。
+- 测试：`SidePanelBoundaryChecks` 改为校验新页面结构（每个键只出现一次、页面 id 唯一、材质链接、
+  已移除的键、导航栈的入栈 / 去重 / 返回）；`settings_systembar_checks.py` 补 `SettingsBack` 替身。
+- 备份：`build/settings-hierarchy-backup-20261122`。**未验证**：需完整构建、回归与真机确认，
+  重点看详情页返回手势、总览开关与「同意并开启」联网确认、置灰状态。
+
+## 2026-11-22 「+」菜单：一键已读 / Mdl 设置图标与原生对齐
+
+- `LucideIcons.matchNative(ImageView, name, boxW, boxH)`：测量同菜单原生图标的不透明区域与自身墨迹，
+  按长边等比缩放、中心对齐，结果按尺寸缓存；测量失败返回 null。
+- `PlusMenuExtra`：`Style` 记录原生图标，`MenuRow.apply` 优先用对齐后的尺寸与内边距，否则沿用旧逻辑。
+  测试替身 `scripts/tests/menu/.../LucideIcons.java` 补 `matchNative` 返回 null。
+- **未验证**：需真机看大小与线宽；对齐失败时日志有「原生图标对齐失败」。
+
+## 2026-11-22 全模块图标统一为 Lucide
+
+此前三套图标混用：View 侧 Tabler（`TablerIcons.java`，49 键）、首页底栏 Material Symbols
+（`NavigationIcons.java`，960 栅格填充路径）、Compose 侧栏 Material Symbols（composeicons 选定类 JAR，47 个）
+外加编辑页 3 个手绘箭头，线条粗细与端点风格不一致。现全部改为 Lucide 1.77.0（ISC），共 77 个不同图标。
+
+- 新增 `scripts/import_lucide_icons.py`：读 lucide-static 的 `icon-nodes.json`（只当数据解析），
+  把 path/circle/rect/line/polyline 等元素（含相对命令、H/V/S/Q/T 与椭圆弧）统一转换为绝对 M/L/C/Z，
+  一张映射表同时生成三处：
+  - `java_src/.../LucideIcons.java`（原 `TablerIcons.java` 改名，键名不变，渲染器保留；数据块在 GENERATED 标记间）。
+    实心态（播放、暂停、已收藏、`*-filled`）改为「填充闭合轮廓 + 同色描边」，Lucide 没有官方实心套。
+  - `java_src/.../NavigationIcons.java`：底栏 house / book-user / compass / user，24 栅格；
+    `NavigationBarViews` 改为 2 单位圆头描边，选中态 2.5 单位 + 强调色（原为实心图形）。
+  - `ui-compose/sidepanel/src/main/java/dev/mindlink/ui/LucideIcons.kt`：43 个 `ImageVector`，描边 2、圆头圆角，由 `Icon()` 着色。
+- 生成后逐图与原 SVG 光栅化对比：77 个图标像素一致（仅抗锯齿边缘差异）。对照图：会话工作区 `lucide-icon-map.png`。
+- Compose：9 个文件的 `MaterialSymbols.Outlined/OutlinedFilled.*` 全部换成 `LucideIcons.*`，删除 composeicons import；
+  编辑页手绘的返回、上移、下移箭头改用 Lucide arrow-left / chevron-up / chevron-down。
+  `build.gradle.kts` 去掉 `material-symbols-selected-2.2.1.jar` 依赖与其校验（JAR 文件仅作历史保留）。
+  6 个改动的 WeKit 复制源码同步更新 `wekit-sidepanel.json` 的 `targetSha256` 与对应 `.patch`，`icons` 记录改为 Lucide。
+- 类名改动 `TablerIcons` → `LucideIcons`：Java 调用方 6 个文件、smali 3 个文件（u0 / TopBarFeature / PlusCardFeature，
+  仅类描述符）、测试替身 3 处（chat-header-toolbar、side_panel、menu）；`NavigationRenderingDoubles` 补 `GRID` 常量。
+- 许可：新增 `assets/mindlink/licenses/LUCIDE-ISC.txt`（含 Feather MIT 段），删除 `COMPOSEICONS-MIT.txt`；
+  `apk_checks` 改查 Lucide 许可，`complete_candidate_checks` 允许该替换及 README 资产变化。
+  THIRD-PARTY-NOTICES 第 3、7 节与 README 图标段改写，并同步到 `assets/mindlink/` 的打包副本（此前 README 副本已过期）。
+- 删除 `scripts/import_navigation_icons.py`（Material Symbols 生成器）。
+- 需要你确认的语义选择：红包 → gift、礼物 → package、群工具 → users、接龙 → list-ordered、
+  朋友圈 → aperture、视频号 → clapperboard、通讯录 → book-user；改映射后重跑生成脚本即可。
+- 备份：`build/lucide-migration-backup-20261122`。**未验证**：需完整构建（含侧栏 Gradle 的 verifyVendoredSources）、
+  回归测试与真机确认，重点看底栏选中态、工具栏与「+」菜单图标大小、侧栏卡片图标。
+
+## 2026-11-22 侧栏：编辑中关闭不再丢弃改动
+
+- 原行为：左滑、点遮罩、系统返回、切换首页页签等任何关闭方式都会调用 `discardEditor()`，
+  编辑中的布局草稿与导入的图片直接丢弃，没有提示。`close(true)` 更是在动画开始前就丢弃，
+  即使在收起动画中途把抽屉抓回来，草稿也已经没了。
+- 现在：关闭时比较草稿与已保存布局（新增 `HomeSidePanelLayout.sameLayout`，按持久化内容逐字段比较）。
+  没改动的草稿照旧丢弃；有改动的草稿保留，抽屉收起时提示一次「侧栏编辑未保存，已保留，再次打开可继续」，
+  再次打开直接回到编辑页。只有点「× 放弃」或 Activity 销毁才会真正丢弃。不拦截手势，左滑仍全程跟手。
+- 一并修正：拖动识别时的重新定位改为只扣除触摸阈值（原来扣掉整段首次位移，单次大幅 MOVE 时会少走一截）；
+  快甩距离改为从按下位置算起。
+- 测试：`side_panel_checks.py` 补上 `VelocityTracker`、`ViewConfiguration`、`MotionEvent.obtain(MotionEvent)` /
+  `setLocation`、`ValueAnimator.isRunning` 的替身（上一轮手势改动用到了它们，测试源码此前会编译失败）。
+  `gestures` 用例里的未改动草稿仍按原断言在左滑关闭后被丢弃。
+- 限制：一言页里还没点「应用」的改动只存在于页面内，不在布局草稿里，不受此保护。
+- 备份：`build/sidepanel-draft-keep-backup-20261122`。**未验证**：需构建并运行回归、真机确认。
+
+## 2026-11-22 修复：侧栏左滑不跟手、松手才关闭
+
+**根因**：开始拖动时向 DecorView 补发 `ACTION_CANCEL`，让下层视图放弃这次触摸。但 DecorView 会把事件
+转回 `Activity.dispatchTouchEvent`，也就是本模块自己的 hook。`onTouch` 把这次补发当成「手指抬起」：
+`dragging` 被清零、触发回弹、并吞掉了这个 CANCEL。结果只跟了一帧，后续 MOVE 全部漏给页面。
+打开状态下手指若落在右侧遮罩上，遮罩没收到 CANCEL，抬手时被当成一次点击，于是「松手才关闭」。
+早期版本（`if (dragging)` 判断）同样受影响，这就是一直「不够跟手」的原因。
+
+- 补发 CANCEL 期间置 `injectingCancel`，`onTouch` 直接放行，让它真正送达下层视图。
+- 新增 `gestureDragged`：本次手势一旦变成拖动，遮罩的点击关闭不再生效，由拖动自己决定开合。
+- **未验证**：需构建装机确认左滑全程跟手、从左缘打开同样跟手、轻点遮罩仍能关闭。
+
+## 2026-11-22 侧栏：图片 / 快捷操作编辑页，往左关闭改为跟手
+
+### 跟手关闭（`HomeSidePanelFeature.DrawerSession.onTouch`）
+- 越过触摸阈值（系统 `ScaledTouchSlop`，原为固定 10dp）时把起点重置为当前手指位置，
+  抽屉从此刻贴手移动，不再先跳一个阈值距离。
+- 打开状态向左滑：横向位移 ≥ 竖向即接管（45°），打开方向仍保留 1.25 倍比例，避免抢边缘附近的竖向滚动。
+- 按下时若开/关动画正在进行，立即停在手指下；没有拖动就松手则继续原动画。
+- 松手速度改用 `VelocityTracker`（原为最后两次 MOVE 的差分），快甩阈值 400dp/s；
+  收尾动画按手速计算时长（90–260ms），无速度时按剩余距离 140–240ms，不再固定 200ms。
+- 拖动开始前若 `close()` 已执行（关闭动画中被抓住），回弹到打开时重新订阅资料并恢复 Compose 生命周期。
+- Compose 一旦声明手势（`gesture_start`），Java 立即放弃本次追踪。
+
+### 缺失回调补齐（Java）
+- `SidePanelComposeBridge` 注释里写了 `image_height` / `image_scale` / `delete_action` / `add_action`，
+  但 `callbacks()` 从未注册：编辑首页图片角标的缩放下拉、拖动调高度、动作删除与「+」此前点击无效。
+  现已在编辑态注册；新增 `move_action:<card>:<action>:<index>` 与 `add_action:<card>:<KIND>`。
+  `add_action:<card>`（编辑首页「+」）改为进入该卡片的设置页。
+- 图片缩放模式持久化：`HomeSidePanelLayout.Card.imageScaleMode`（crop / fit / fill_bounds / auto_ratio），
+  编码进布局 JSON 的 `scaleMode`；旧布局无此键按 crop 读取，非法值保存时拒绝。快照不再写死 `"crop"`。
+
+### 编辑页（`HomeSidePanelEditorPages.kt`）
+- 图片：预览；选择/替换图片（导入中禁用）；四种缩放模式单选（带说明）；高度滑块 80–800dp，
+  按 8dp 吸附，松手才提交；「适应比例」下隐藏滑块并说明高度跟随图片。滑块按下即声明手势，抽屉不会把横拖当关闭。
+- 横向 / 纵向动作：预览；已添加列表（上移 / 下移 / 删除）；全部 11 种动作可添加，已有的标注「已添加」（允许重复，与原模型一致）。
+- 图片卡片编辑角标新增「编辑」入口；上移/下移箭头本地绘制（选定图标包没有 Expand 图标）。
+- 中英文字符串各新增 17 条。
+
+### 备份与验证
+- 备份：`build/sidepanel-image-actions-gesture-backup-20261122-120033`。
+- **未验证**：本轮无法执行 javac / Gradle。静态核对：括号配对、所用字符串中英文均已定义且无重复、
+  所用图标均在选定图标包内、新回调键与 Kotlin 调用一致。需构建并真机确认：跟手手感与快甩阈值、
+  动画中途抓取、滑块拖动不触发关闭、图片缩放模式保存后重开仍生效。
+
+## 2026-11-22 侧栏卡片编辑页布局重做
+
+只改 `ui-compose/sidepanel/.../HomeSidePanelEditorPages.kt` 与侧栏字符串（中英各新增 24 条），
+Java 回调键、草稿写入方式与存储格式不变。
+
+- 统一页面框架 `HomeSidePanelEditorScaffold`：顶栏固定（不随内容滚动），安全区上下各只计算一次
+  （修复日期/钱包页顶部留白翻倍）；顶栏与内容统一 16dp 边距（原为 18dp 外再套 TopAppBar 内边距）；
+  卡片设置页返回键改为「←」（本地绘制，选定图标包里没有 Arrow_back），添加卡片页仍为「× 关闭并放弃更改」。
+  需要确认的操作放在底部固定操作栏。
+- 每个设置页顶部加实时预览（复用卡片组件，`interactionEnabled = false`）：钱包按「默认隐藏余额」开关渲染，
+  一言按草稿的出处/作者开关渲染；预览下注明「更改写入编辑中的布局，回到编辑页保存后生效」。
+- 分组列表：标题 + 一张卡片 + 行间分隔线，不再每个开关单独一张卡片。
+- 一言：分类显示「已选 n / 12」并有「清空 / 全选」；新增最少/最多字数输入框（留空 = 不限，对应 null）；
+  本地校验「至少一个分类」「最多不小于最少」；底部「恢复默认 / 应用」，有未应用更改时点返回改为底部确认
+  「放弃 / 应用并返回」（不用 Dialog 窗口）。原「保存」按钮误用了「保存侧栏布局」文案，改为「应用」。
+- 天气：显示当前城市（城市 + 省份 · 代码，未设置时显示「未设置」）；城市代码输入框只收数字、数字键盘，
+  「应用」放在输入框右侧，代码未变化时不可点。
+- 钱包：开关下加说明「打开侧栏时余额显示为 ******，点一下钱包卡片可临时显示」。
+- 备份：`build/sidepanel-editor-backup-*`。
+- **未验证**：本轮无法执行 Gradle 编译，只做了静态检查（括号配对、所用字符串中英文均已定义、
+  `material3_checks` 依赖的 `MindLinkSwitchRow(` / `MindLinkCard(` 仍在）。需构建后真机确认：
+  侧栏宽度下数字输入框与按钮的排布、软键盘弹出时底部操作栏的位置、系统返回手势（仍走 Java 侧逻辑，
+  不会触发一言的未应用确认）。
+
+## 2026-11-22 改为 libxposed（standard）入口，静态声明作用域，移除 legacy
+
+参照本地 WeKit `app/src/standard`：作用域不再靠 Manifest，而是 `META-INF/xposed/` 三件套，
+LSPosed 据 `module.prop` 的 `staticScope=true` 把 `scope.list` 作为固定作用域。按用户要求只保留 standard，不再出 legacy 包。
+
+- 新增 `unknown/META-INF/xposed/`（`apktool.yml` 的 `unknownFiles` 同步登记，原样打包）：
+  `java_init.list` = `dev.mindlink.xposed.ModuleEntry`；`scope.list` = `com.tencent.mm`；
+  `module.prop` = `minApiVersion=101` / `targetApiVersion=102` / `staticScope=true`。
+  WeKit 写的是 `minApiVersion=51`，这里取 101：入口用了 101 起才有的无参构造与拦截链 API，低版本框架应直接拒载。
+- 删除 legacy：`assets/xposed_init` 与 Manifest 中 `xposedmodule` / `xposeddescription` / `xposedminversion` / `xposedscope`。
+  `res/values/arrays.xml` 的 `xposed_scope` 资源保留（public.xml 固定了 0x7f010000，删掉会牵动共享资源表），只是不再被引用。
+- 新增 `xposed_compat/`（编入 classes2.dex）：`dev.mindlink.xposed` 下与 de.robv 同形的
+  `XposedBridge` / `XposedHelpers` / `XC_MethodHook` / `XC_MethodReplacement` / `IXposedHookLoadPackage` /
+  `IXposedHookZygoteInit` / `callbacks.XC_LoadPackage`，底层只走 libxposed（参照 WeKit `LxpHookWrapper`：
+  每个回调一个拦截器，before → `chain.proceed(args)` → after，`ExceptionMode.PASSTHROUGH`）。
+  `ModuleEntry extends XposedModule`：`onModuleLoaded` 以模块 `sourceDir` 调 `HookEntry.initZygote`，
+  `onPackageReady`（微信、首包）组装 `LoadPackageParam` 调 `HookEntry.handleLoadPackage`，功能启动顺序不变。
+- 全量包名改写 `de.robv.android.xposed` → `dev.mindlink.xposed`：smali 36 个文件、java_src 43 个文件、
+  测试夹具 50 个文件（夹具的 fake 目录同步移到 `dev/mindlink/xposed`）。`java_stub/de/robv` 删除，
+  改为 `java_stub/io/github/libxposed/api` 编译桩（不打包）。
+- 编译桩只声明已在 WeKit 源码中确认的成员（`Chain`、`Hooker`、`XposedModule` 的
+  `getApiVersion/getModuleApplicationInfo/log`、两个回调）；hook 构建器、`HookHandle`、`Invoker`、
+  `PackageReadyParam` 的取值一律按名称反射，避免猜错签名导致 `NoSuchMethodError`。
+- 构建：`build.ps1` / `build.sh` 第 2 步把 `xposed_compat` 加入源码；`merge.py`、`build_effects_candidate.py`、
+  `build_scoped_features.py` 与测试的「桩不得打包」前缀加入 `Lio/github/libxposed/`。
+- 测试：`apk_checks` / `effects_candidate_checks` 改为校验 `META-INF/xposed/*` 且禁止 `assets/xposed_init`；
+  `regression.py` 改为断言 legacy 元数据已移除、三件套内容与 `apktool.yml` 登记、`HookEntry` 已改写。
+- 备份：改动前的文件在 `build/standard-migration-backup-*`。
+- **未验证**：本轮环境无法执行 javac/构建/回归，只做了静态核对（引用的类与成员在兼容层中齐全、
+  源码与夹具中无残留 `de.robv`）。必须先完整构建并真机确认：LSPosed 识别为 API 101+ 模块、作用域自动带出微信、
+  日志出现 hook 链、无 `ClassNotFoundException` / `NoSuchMethodError`。`build_scoped_features.py`
+  的已验证基线 stub 仍是旧 de.robv 版本，限定范围构建需重新准备基线。
+
 ## 2026-11-20 删除旧 View 设置面板与 12 张遗留卡片
 
 - `SettingsShell` 从 894 行收缩到 342 行：删掉 `buildLegacy`、`refreshTabs`、`fillContent`、

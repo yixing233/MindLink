@@ -1,5 +1,5 @@
 .class public final Lx4/c0;
-.super Lde/robv/android/xposed/XC_MethodHook;
+.super Ldev/mindlink/xposed/XC_MethodHook;
 .source "SourceFile"
 
 
@@ -17,14 +17,14 @@
 
     iput-object p1, p0, Lx4/c0;->b:Ljava/lang/ClassLoader;
 
-    invoke-direct {p0}, Lde/robv/android/xposed/XC_MethodHook;-><init>()V
+    invoke-direct {p0}, Ldev/mindlink/xposed/XC_MethodHook;-><init>()V
 
     return-void
 .end method
 
 
 # virtual methods
-.method public final afterHookedMethod(Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;)V
+.method public final afterHookedMethod(Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;)V
     .locals 6
 
     iget v0, p0, Lx4/c0;->a:I
@@ -47,7 +47,7 @@
     goto/16 :goto_2
 
     :cond_0
-    iget-object p1, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
+    iget-object p1, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
 
     if-nez p1, :cond_1
 
@@ -62,7 +62,7 @@
 
     const-string v3, "d"
 
-    invoke-static {p1, v3}, Lde/robv/android/xposed/XposedHelpers;->getObjectField(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
+    invoke-static {p1, v3}, Ldev/mindlink/xposed/XposedHelpers;->getObjectField(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
 
     move-result-object p1
 
@@ -86,7 +86,7 @@
 
     new-array v5, v2, [Ljava/lang/Object;
 
-    invoke-static {p1, v4, v5}, Lde/robv/android/xposed/XposedHelpers;->callMethod(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;
+    invoke-static {p1, v4, v5}, Ldev/mindlink/xposed/XposedHelpers;->callMethod(Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;
 
     move-result-object p1
 
@@ -130,7 +130,7 @@
 
     iget-object p0, p0, Lx4/c0;->b:Ljava/lang/ClassLoader;
 
-    invoke-static {v1, p0}, Lde/robv/android/xposed/XposedHelpers;->findClass(Ljava/lang/String;Ljava/lang/ClassLoader;)Ljava/lang/Class;
+    invoke-static {v1, p0}, Ldev/mindlink/xposed/XposedHelpers;->findClass(Ljava/lang/String;Ljava/lang/ClassLoader;)Ljava/lang/Class;
 
     move-result-object p0
 
@@ -138,7 +138,7 @@
 
     new-array v2, v2, [Ljava/lang/Object;
 
-    invoke-static {p0, v1, v2}, Lde/robv/android/xposed/XposedHelpers;->callStaticMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;
+    invoke-static {p0, v1, v2}, Ldev/mindlink/xposed/XposedHelpers;->callStaticMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;
 
     move-result-object p0
 
@@ -237,7 +237,7 @@
     goto/16 :goto_8
 
     :cond_7
-    iget-object p1, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
+    iget-object p1, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
 
     instance-of v0, p1, Landroid/app/Activity;
 
@@ -350,7 +350,7 @@
 
     iget-object p0, p0, Lx4/c0;->b:Ljava/lang/ClassLoader;
 
-    invoke-static {p1, p0}, Lde/robv/android/xposed/XposedHelpers;->findClass(Ljava/lang/String;Ljava/lang/ClassLoader;)Ljava/lang/Class;
+    invoke-static {p1, p0}, Ldev/mindlink/xposed/XposedHelpers;->findClass(Ljava/lang/String;Ljava/lang/ClassLoader;)Ljava/lang/Class;
 
     move-result-object p0
 
@@ -358,7 +358,7 @@
 
     new-array v0, v2, [Ljava/lang/Object;
 
-    invoke-static {p0, p1, v0}, Lde/robv/android/xposed/XposedHelpers;->callStaticMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;
+    invoke-static {p0, p1, v0}, Ldev/mindlink/xposed/XposedHelpers;->callStaticMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/Object;
 
     move-result-object p0
 

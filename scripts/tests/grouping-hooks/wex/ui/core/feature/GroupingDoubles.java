@@ -76,6 +76,22 @@ final class ChatToolbarLifecycle {
 final class ConversationGroupEditor {
     static void edit(Activity activity, ConversationGroupStore.Group group) { }
 }
+/** The real card dress needs FloatingHeaderStyle/ChatGlassSurface; the hooks suite only needs the tabs in the host. */
+final class ConversationGroupCard {
+    static final int TAB_HEIGHT_DP = 36;
+    static int applies, styled, animated, reveals;
+    static android.view.View wrap(android.widget.FrameLayout host, android.view.View tabs) {
+        host.addView(tabs, new android.widget.FrameLayout.LayoutParams(-1, -2)); applies++; return tabs;
+    }
+    static void apply(android.view.View card) { applies++; }
+    static void release(android.view.View card) { }
+    static int glassRefreshes; static void refreshGlass(android.view.View card) { glassRefreshes++; }
+    static void styleTabs(android.widget.LinearLayout tabs) { }
+    static void tabMargins(android.view.ViewGroup.LayoutParams params, android.content.Context context) { }
+    static void styleTab(android.widget.TextView label, boolean selected, boolean animate) { styled++; if (animate) animated++; }
+    static void styleAdd(android.widget.TextView add) { }
+    static void reveal(android.widget.HorizontalScrollView bar, android.view.View tab) { reveals++; }
+}
 final class HostStageLog {
     static final List<String> events = new ArrayList<>();
     static boolean fail;

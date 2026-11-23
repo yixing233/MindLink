@@ -176,4 +176,47 @@
     <string name="wekit_sp_home_side_panel_hitokoto_netease_music">NetEase Music</string>
     <string name="wekit_sp_home_side_panel_hitokoto_philosophy">Philosophy</string>
     <string name="wekit_sp_home_side_panel_hitokoto_witty">Witty remarks</string>
+    <!-- 2026-11-22 editor page redesign -->
+    <string name="wekit_sp_home_side_panel_back">Back</string>
+    <string name="wekit_sp_home_side_panel_apply">Apply</string>
+    <string name="wekit_sp_home_side_panel_apply_and_back">Apply and go back</string>
+    <string name="wekit_sp_home_side_panel_discard">Discard</string>
+    <string name="wekit_sp_home_side_panel_unsaved_changes">You have changes that are not applied yet.</string>
+    <string name="wekit_sp_home_side_panel_editor_preview">Preview</string>
+    <string name="wekit_sp_home_side_panel_editor_draft_hint">Changes go into the layout being edited. Save the layout to keep them.</string>
+    <string name="wekit_sp_home_side_panel_editor_display">Display</string>
+    <string name="wekit_sp_home_side_panel_hide_balance_summary">The balance shows as ****** when the panel opens. Tap the card to reveal it.</string>
+    <string name="wekit_sp_home_side_panel_current_city">Current city</string>
+    <string name="wekit_sp_home_side_panel_city_not_set">Not set</string>
+    <string name="wekit_sp_home_side_panel_change_city">Change city</string>
+    <string name="wekit_sp_home_side_panel_city_code">City code</string>
+    <string name="wekit_sp_home_side_panel_city_code_summary">Enter the 9-digit city code, for example 101010100 for Beijing.</string>
+    <string name="wekit_sp_home_side_panel_categories_selected" formatted="true">%1$d of %2$d selected</string>
+    <string name="wekit_sp_home_side_panel_select_all">Select all</string>
+    <string name="wekit_sp_home_side_panel_clear_all">Clear</string>
+    <string name="wekit_sp_home_side_panel_length">Length</string>
+    <string name="wekit_sp_home_side_panel_length_summary">Leave empty for no limit.</string>
+    <string name="wekit_sp_home_side_panel_min_length">Minimum</string>
+    <string name="wekit_sp_home_side_panel_max_length">Maximum</string>
+    <string name="wekit_sp_home_side_panel_no_limit">No limit</string>
+    <string name="wekit_sp_home_side_panel_error_no_category">Select at least one category.</string>
+    <string name="wekit_sp_home_side_panel_error_length_range">The maximum cannot be less than the minimum.</string>
+    <!-- 2026-11-22 image / action editor pages -->
+    <string name="wekit_sp_home_side_panel_editor_image">Image</string>
+    <string name="wekit_sp_home_side_panel_image_importing">Importing…</string>
+    <string name="wekit_sp_home_side_panel_image_scale_crop_summary">Fills the card; edges may be cropped.</string>
+    <string name="wekit_sp_home_side_panel_image_scale_fit_summary">Shows the whole image; may leave margins.</string>
+    <string name="wekit_sp_home_side_panel_image_scale_stretch_summary">Stretches to fill; may distort.</string>
+    <string name="wekit_sp_home_side_panel_image_scale_auto_ratio_summary">Card height follows the image\'s own ratio.</string>
+    <string name="wekit_sp_home_side_panel_image_height">Height</string>
+    <string name="wekit_sp_home_side_panel_image_height_value" formatted="true">%1$d dp</string>
+    <string name="wekit_sp_home_side_panel_image_height_auto">Height follows the image ratio in this mode.</string>
+    <string name="wekit_sp_home_side_panel_actions_added">Added</string>
+    <string name="wekit_sp_home_side_panel_actions_added_summary" formatted="true">%1$d actions. Use the arrows to reorder.</string>
+    <string name="wekit_sp_home_side_panel_actions_empty">No actions yet. Add some below.</string>
+    <string name="wekit_sp_home_side_panel_actions_available">Add action</string>
+    <string name="wekit_sp_home_side_panel_actions_available_summary">Tap to append to the end.</string>
+    <string name="wekit_sp_home_side_panel_action_already_added">Already added</string>
+    <string name="wekit_sp_home_side_panel_move_up">Move up</string>
+    <string name="wekit_sp_home_side_panel_move_down">Move down</string>
 </resources>

@@ -78,7 +78,10 @@ def inspect(apk):
             dex_info[name] = {"size": len(data), "sha256": hashlib.sha256(data).hexdigest(), "classes": len(dex_classes[name])}
         assert not dex_classes["classes.dex"] & dex_classes["classes2.dex"], "duplicate definitions across DEX"
         manifest = archive.read("AndroidManifest.xml")
-        assert "assets/xposed_init" in names, "Xposed entry missing"
+        assert "assets/xposed_init" not in names, "legacy Xposed entry must not be packaged"
+        assert archive.read("META-INF/xposed/java_init.list").decode("utf-8").split() == ["dev.mindlink.xposed.ModuleEntry"], "libxposed entry missing"
+        assert archive.read("META-INF/xposed/scope.list").decode("utf-8").split() == ["com.tencent.mm"], "static scope missing"
+        assert "staticScope=true" in archive.read("META-INF/xposed/module.prop").decode("utf-8").split(), "staticScope disabled"
         return dex_classes, dex_info, manifest, len(names)
 
 
@@ -108,7 +111,7 @@ def main():
     for name in ["AboutPageBuilder", "ModuleDashboardPage", "ModuleDashboardState", "NavigationFrostedController",
                  "ModuleAboutPage", "ModulePreferenceViews", "ModulePageState", "ModuleAboutBackdrop"]:
         assert f"Lwex/ui/core/feature/{name};" in new_classes["classes2.dex"], name + " absent"
-    assert not any(name.startswith(("Landroid/", "Landroidx/", "Lde/robv/android/xposed/", "Lcom/tencent/mm/"))
+    assert not any(name.startswith(("Landroid/", "Landroidx/", "Lde/robv/android/xposed/", "Lio/github/libxposed/", "Lcom/tencent/mm/"))
                    for name in new_classes["classes2.dex"]), "compile or host stubs packaged"
     assert not any("/tests/" in name or name.endswith("Checks;") for name in new_classes["classes2.dex"]), "test code packaged"
     with zipfile.ZipFile(args.apk) as archive:
@@ -156,7 +159,7 @@ def main():
                 assert expected in sidebar_classes, "original WeKit component/runtime absent: " + expected
             assert "Lwex/ui/core/WexStore;" not in sidebar_classes, "host store leaked into sidepanel"
             assert "Lwex/ui/core/feature/SidePanelComposeBridge;" in new_classes["classes2.dex"]
-            assert "assets/mindlink/licenses/COMPOSEICONS-MIT.txt" in archive.namelist(), "copied icon license absent"
+            assert "assets/mindlink/licenses/LUCIDE-ISC.txt" in archive.namelist(), "Lucide icon license absent"
             print("PASS: isolated original WeKit/Material3 sidepanel payload", sidebar_info)
     signer = [args.jdk / "bin/java.exe", "-jar", args.build_tools / "lib/apksigner.jar", "verify", "--verbose", "--print-certs"]
     old_signature = tool([*signer, args.baseline], args.output / "baseline-signature.txt")

@@ -15,6 +15,9 @@ import android.os.SystemClock;
 
 /** The background is blurred before foreground recording; the indicator only refracts that combined image. */
 final class LiquidGlassLayer {
+    /** Opacity value meaning "use the material's own default" (liquid 40%, frosted 65%). */
+    static final int AUTO_OPACITY = -1;
+
     private final RenderNode node = new RenderNode("MindLink-liquid-background");
     private final Paint tint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Path clip = new Path();
@@ -42,6 +45,12 @@ final class LiquidGlassLayer {
 
     boolean drawBase(Canvas canvas, ViewBackdropSampler sampler, RectF rect, float radius,
                      float blur, boolean liquid, boolean dark, float density, boolean useBackdrop) {
+        return drawBase(canvas, sampler, rect, radius, blur, liquid, dark, density, useBackdrop, AUTO_OPACITY);
+    }
+
+    /** @param opacity tint over the sampled backdrop, 0-100 %, or {@link #AUTO_OPACITY}. */
+    boolean drawBase(Canvas canvas, ViewBackdropSampler sampler, RectF rect, float radius, float blur,
+                     boolean liquid, boolean dark, float density, boolean useBackdrop, int opacity) {
         float lensAmount = liquid && blur > 0f ? 24f * density : 0f;
         float padding = Math.max(1f, Math.max(blur * 3f, lensAmount));
         bounds(rect, padding);
@@ -88,10 +97,16 @@ final class LiquidGlassLayer {
         }
         drawn = sampled;
         lastRect.set(rect); lastRadius = radius;
-        int alpha = sampled ? (liquid ? (blur > 0f ? 102 : 0) : 166) : 255;
+        // Unsampled frames keep the opaque neutral surface: a see-through card without blur is never shown.
+        int alpha = sampled ? tintAlpha(opacity, liquid, blur) : 255;
         surfaceColor = ((dark ? 0x191919 : 0xF7F7F7) & 0xFFFFFF) | alpha << 24;
         drawSnapshot(canvas);
         return sampled;
+    }
+
+    static int tintAlpha(int opacity, boolean liquid, float blur) {
+        if (opacity == AUTO_OPACITY) return liquid ? (blur > 0f ? 102 : 0) : 166;
+        return Math.round(Math.max(0, Math.min(100, opacity)) * 2.55f);
     }
 
     void drawSnapshot(Canvas canvas) {

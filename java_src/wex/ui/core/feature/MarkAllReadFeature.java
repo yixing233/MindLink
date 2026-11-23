@@ -7,7 +7,7 @@ import android.os.Looper;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import de.robv.android.xposed.XposedBridge;
+import dev.mindlink.xposed.XposedBridge;
 import wex.ui.core.WexStore;
 
 /**

@@ -100,7 +100,7 @@ public class View implements ViewParent {
  public int getId(){return id;} public void setId(int value){id=value;} public static int generateViewId(){return nextId++;}
  public void setPadding(int l,int t,int r,int b){pl=l;pt=t;pr=r;pb=b;} public int getPaddingLeft(){return pl;}public int getPaddingTop(){return pt;}public int getPaddingRight(){return pr;}public int getPaddingBottom(){return pb;}
  public WindowInsets getRootWindowInsets(){return getRootView().insets;} public WindowInsets onApplyWindowInsets(WindowInsets insets){return insets;} public boolean getGlobalVisibleRect(Rect rect){if(!isShown()||getWidth()<=0||getHeight()<=0)return false;View root=getRootView();int[] rootLoc=new int[2],loc=new int[2];root.getLocationOnScreen(rootLoc);getLocationOnScreen(loc);rect.left=loc[0]-rootLoc[0];rect.top=loc[1]-rootLoc[1];rect.right=rect.left+getWidth();rect.bottom=rect.top+getHeight();for(View v=parent instanceof View?(View)parent:null;v!=null;v=v.parent instanceof View?(View)v.parent:null){if(v==root||v instanceof ViewGroup&&((ViewGroup)v).getClipChildren()){v.getLocationOnScreen(loc);int pl=v instanceof ViewGroup&&((ViewGroup)v).getClipToPadding()?v.getPaddingLeft():0,pt=v instanceof ViewGroup&&((ViewGroup)v).getClipToPadding()?v.getPaddingTop():0,pr=v instanceof ViewGroup&&((ViewGroup)v).getClipToPadding()?v.getPaddingRight():0,pb=v instanceof ViewGroup&&((ViewGroup)v).getClipToPadding()?v.getPaddingBottom():0;rect.left=Math.max(rect.left,loc[0]-rootLoc[0]+pl);rect.top=Math.max(rect.top,loc[1]-rootLoc[1]+pt);rect.right=Math.min(rect.right,loc[0]-rootLoc[0]+v.getWidth()-pr);rect.bottom=Math.min(rect.bottom,loc[1]-rootLoc[1]+v.getHeight()-pb);}}return rect.right>rect.left&&rect.bottom>rect.top;}
- public void getLocationOnScreen(int[] loc){float x=l,y=t+translationY;for(View v=parent instanceof View?(View)parent:null;v!=null;v=v.parent instanceof View?(View)v.parent:null){x+=v.l;y+=v.t+v.translationY;}loc[0]=Math.round(x);loc[1]=Math.round(y);}public boolean canScrollVertically(int d){return false;}public void scrollBy(int x,int y){}public int requests;public void requestApplyInsets(){requests++;}
+ public void getLocationOnScreen(int[] loc){float x=l,y=t+translationY;for(View v=parent instanceof View?(View)parent:null;v!=null;v=v.parent instanceof View?(View)v.parent:null){x+=v.l;y+=v.t+v.translationY-v.scrollY;}loc[0]=Math.round(x);loc[1]=Math.round(y);}public boolean canScrollVertically(int d){return false;}public void scrollBy(int x,int y){}public int requests;public void requestApplyInsets(){requests++;}
  public boolean post(Runnable r){return new android.os.Handler(android.os.Looper.getMainLooper()).post(r);}
 }
 ''',
@@ -152,14 +152,15 @@ public class ChatFooter extends android.view.ViewGroup {
  public int switchCalls,configCalls,keyboardCalls,beforeSwitchVisibility,scrollFlagA,scrollFlagB,requestedMode=-1,imeRequests;public boolean failSwitch,failConfig;public Runnable switchProbe;
  public ChatFooter(android.content.Context c){super(c);}
  public void refreshHost(){}
- public void switchHost(int mode,boolean animate,int flag){switchCalls++;ChatFooterBottom panel=findPanel(this);beforeSwitchVisibility=panel==null?-1:panel.getVisibility();if(switchProbe!=null)switchProbe.run();if(failSwitch)throw new IllegalStateException("native switch failed");if(panel!=null&&(mode==2||mode==3))panel.setVisibility(VISIBLE);if(getLayoutParams() instanceof android.view.ViewGroup.MarginLayoutParams&&panel!=null)((android.view.ViewGroup.MarginLayoutParams)getLayoutParams()).bottomMargin=-Math.max(0,panel.getLayoutParams().height);for(android.view.View v=getParent() instanceof android.view.View?(android.view.View)getParent():null;v!=null;v=v.getParent() instanceof android.view.View?(android.view.View)v.getParent():null)if(v instanceof ChattingScrollLayout){int ime=getRootWindowInsets()==null?0:getRootWindowInsets().ime;try{de.robv.android.xposed.XposedBridge.invoke(v,"scrollHost",new Class<?>[]{int.class,boolean.class,int.class,int.class},mode==2||mode==3?Math.max(360,ime):ime,animate,scrollFlagA,scrollFlagB);}catch(Throwable t){throw new RuntimeException(t);}break;}}
+ public void switchHost(int mode,boolean animate,int flag){switchCalls++;ChatFooterBottom panel=findPanel(this);beforeSwitchVisibility=panel==null?-1:panel.getVisibility();if(switchProbe!=null)switchProbe.run();if(failSwitch)throw new IllegalStateException("native switch failed");if(panel!=null&&(mode==2||mode==3))panel.setVisibility(VISIBLE);if(getLayoutParams() instanceof android.view.ViewGroup.MarginLayoutParams&&panel!=null)((android.view.ViewGroup.MarginLayoutParams)getLayoutParams()).bottomMargin=-Math.max(0,panel.getLayoutParams().height);for(android.view.View v=getParent() instanceof android.view.View?(android.view.View)getParent():null;v!=null;v=v.getParent() instanceof android.view.View?(android.view.View)v.getParent():null)if(v instanceof ChattingScrollLayout){int ime=getRootWindowInsets()==null?0:getRootWindowInsets().ime;try{dev.mindlink.xposed.XposedBridge.invoke(v,"scrollHost",new Class<?>[]{int.class,boolean.class,int.class,int.class},mode==2||mode==3?Math.max(360,ime):ime,animate,scrollFlagA,scrollFlagB);}catch(Throwable t){throw new RuntimeException(t);}break;}}
  public void configHost(int mode,boolean animate,int flag){configCalls++;if(failConfig)throw new IllegalStateException("native config failed");requestedMode=mode;if(mode==1&&(getRootWindowInsets()==null||getRootWindowInsets().ime==0))imeRequests++;invokeNative("switchHost",new Class<?>[]{int.class,boolean.class,int.class},mode,animate,flag);}public void keyboardHost(){keyboardCalls++;invokeNative("configHost",new Class<?>[]{int.class,boolean.class,int.class},1,true,-1);}public void fullscreenHost(){}
- private void invokeNative(String name,Class<?>[] types,Object... args){try{de.robv.android.xposed.XposedBridge.invoke(this,name,types,args);}catch(RuntimeException|Error error){throw error;}catch(Throwable error){throw new RuntimeException(error);}}
+ private void invokeNative(String name,Class<?>[] types,Object... args){try{dev.mindlink.xposed.XposedBridge.invoke(this,name,types,args);}catch(RuntimeException|Error error){throw error;}catch(Throwable error){throw new RuntimeException(error);}}
  private static ChatFooterBottom findPanel(android.view.View v){if(v instanceof ChatFooterBottom)return (ChatFooterBottom)v;if(v instanceof android.view.ViewGroup)for(android.view.View child:((android.view.ViewGroup)v).children){ChatFooterBottom found=findPanel(child);if(found!=null)return found;}return null;}
  // OPTIONAL_Y
 }
 ''',
 "com/tencent/mm/pluginsdk/ui/chat/ChatFooterBottom.java": r'''package com.tencent.mm.pluginsdk.ui.chat;public class ChatFooterBottom extends android.view.ViewGroup {public ChatFooterBottom(android.content.Context c){super(c);} }''',
+"com/tencent/mm/ui/base/MMPullDownView.java": r'''package com.tencent.mm.ui.base;public class MMPullDownView extends android.view.ViewGroup {public MMPullDownView(android.content.Context c){super(c);} }''',
 "com/tencent/mm/ui/chatting/view/MMChattingListView.java": r'''package com.tencent.mm.ui.chatting.view;public class MMChattingListView extends android.view.ViewGroup {public MMChattingListView(android.content.Context c){super(c);} }''',
 "com/tencent/mm/pluginsdk/ui/tools/ChattingRecyclerView.java": r'''package com.tencent.mm.pluginsdk.ui.tools;public class ChattingRecyclerView extends android.view.ViewGroup {public int scrolled;public ChattingRecyclerView(android.content.Context c){super(c);}public void scrollBy(int x,int y){scrolled+=y;} }''',
 "com/tencent/mm/pluginsdk/ui/chat/AppPanel.java": r'''package com.tencent.mm.pluginsdk.ui.chat;public class AppPanel extends android.view.ViewGroup {public int calls,lastHeight;public boolean attachedInitialized,lazy;public AppPanel(android.content.Context c){super(c);}@Override protected void onAttachedToWindow(){attachedInitialized=true;}public void setPortHeighPx(int height){if(lazy&&!attachedInitialized)throw new AssertionError("AppPanel setter before attach");calls++;lastHeight=height;} }''',
@@ -190,13 +191,13 @@ public class ChatGlassSurface extends android.graphics.drawable.Drawable {
 "wex/ui/core/feature/ChatWindowInsetsCoordinator.java": r'''package wex.ui.core.feature;
 public class ChatWindowInsetsCoordinator {public static final int BOTTOM=2;public static int acquired,released;public static boolean fail,owned;public static android.view.Window acquire(android.app.Activity a,int mask){if(fail)throw new IllegalStateException("test");acquired++;owned=true;return a.getWindow();}public static void release(android.view.Window w,int mask){if(w!=null){released++;owned=false;}}public static boolean isBottomOwned(android.view.Window w){return owned;}public static boolean needsBottomReassert(android.app.Activity a){return false;}public static void reassertBottom(android.app.Activity a){} }
 ''',
-"de/robv/android/xposed/XC_MethodHook.java": r'''package de.robv.android.xposed;
+"dev/mindlink/xposed/XC_MethodHook.java": r'''package dev.mindlink.xposed;
 public class XC_MethodHook {protected void beforeHookedMethod(MethodHookParam p)throws Throwable{}protected void afterHookedMethod(MethodHookParam p)throws Throwable{}
  public static class MethodHookParam {public java.lang.reflect.Member method;public Object thisObject;public Object[] args=new Object[0];public Object result;public Throwable throwable;public boolean early;public Object getResult(){return result;}public void setResult(Object value){result=value;early=true;}public Throwable getThrowable(){return throwable;}public boolean hasThrowable(){return throwable!=null;}}
 }
 ''',
-"de/robv/android/xposed/XposedHelpers.java": r'''package de.robv.android.xposed;public class XposedHelpers {public static Class<?> findClass(String name,ClassLoader loader)throws ClassNotFoundException{return Class.forName(name,false,loader);} }''',
-"de/robv/android/xposed/XposedBridge.java": r'''package de.robv.android.xposed;
+"dev/mindlink/xposed/XposedHelpers.java": r'''package dev.mindlink.xposed;public class XposedHelpers {public static Class<?> findClass(String name,ClassLoader loader)throws ClassNotFoundException{return Class.forName(name,false,loader);} }''',
+"dev/mindlink/xposed/XposedBridge.java": r'''package dev.mindlink.xposed;
 import java.lang.reflect.*;import java.util.*;
 public class XposedBridge {
  public static final Map<Method,List<XC_MethodHook>> hooks=new LinkedHashMap<>(); public static final Map<Class<?>,List<XC_MethodHook>> constructors=new LinkedHashMap<>();public static final List<String> logs=new ArrayList<>();
@@ -264,7 +265,7 @@ public RecyclerView(android.content.Context c){super(c);}public void N(p2 d){dec
 public void layoutItems(){if(contentHeight<=0)return;h3 state=new h3();state.count=1;android.graphics.Rect offsets=new android.graphics.Rect();tailHeight=0;for(p2 d:decorations){d.getItemOffsets(offsets,new android.view.View(getContext()),this,state);tailHeight+=offsets.bottom;}scrollOffset=Math.min(scrollOffset,Math.max(0,contentHeight+tailHeight-getHeight()));layoutRequested=false;}
 @Override public boolean canScrollVertically(int direction){return contentHeight>0&&(direction>0?scrollOffset<Math.max(0,contentHeight+tailHeight-getHeight()):scrollOffset>0);}
 @Override public void scrollBy(int x,int y){if(contentHeight<=0)return;scrollCalls++;scrollOffset=Math.max(0,Math.min(scrollOffset+y,Math.max(0,contentHeight+tailHeight-getHeight())));}
-public int u0(android.view.View v){return position;}public Object getLayoutManager(){return manager;}}''',
+public final java.util.Map<android.view.View,Integer> positions=new java.util.HashMap<>();public int u0(android.view.View v){Integer p=positions.get(v);return p!=null?p:position;}public Object getLayoutManager(){return manager;}}''',
     "dalvik/system/InMemoryDexClassLoader.java": r'''package dalvik.system;
 public class InMemoryDexClassLoader extends ClassLoader {
 public InMemoryDexClassLoader(java.nio.ByteBuffer bytes,ClassLoader parent){super(parent);if(bytes.get(0)!='d'||bytes.get(1)!='e'||bytes.get(2)!='x')throw new AssertionError("invalid DEX");}}''',
@@ -277,7 +278,7 @@ try{callback.invoke(this,null,new Object[]{r,v,p,s});}catch(Throwable e){throw n
 })
 SOURCES["android/view/View.java"] = SOURCES["android/view/View.java"].replace(
     "public int getHeight(){return b-t;}",
-    "public int getHeight(){return b-t;}public boolean layoutRequested;"
+    "public int getHeight(){return b-t;}public boolean layoutRequested;public int scrollY;public int getScrollY(){return scrollY;}public int getTop(){return t;}"
     "public boolean isLayoutRequested(){return layoutRequested;}public void postInvalidateOnAnimation(){}"
     "public void getDrawingRect(Rect out){out.left=0;out.top=0;out.right=getWidth();out.bottom=getHeight();}")
 SOURCES["android/view/ViewGroup.java"] = SOURCES["android/view/ViewGroup.java"].replace(
@@ -355,9 +356,6 @@ def main():
             classes = temp / variant / "classes"
             classes.mkdir(parents=True)
             for name, value in SOURCES.items():
-                if name == "android/view/View.java":
-                    value = value.replace("public int getHeight(){return b-t;}",
-                                          "public int getHeight(){return b-t;}public int getTop(){return t;}")
                 if variant in ("present", "pre-fix-panel", "pre-fix-pill", "pre-fix-glass"):
                     value = value.replace("// OPTIONAL_Y", "public int getYFromBottom(){return 300;}")
                     value = value.replace("// OPTIONAL_FIT", "protected boolean fitSystemWindows(android.graphics.Rect rect){if(failFit)throw new IllegalStateException(\"native fit failed\");if(!noOpFit)setPadding(getPaddingLeft(),getPaddingTop(),getPaddingRight(),rect.bottom+extraPadding);return true;}")

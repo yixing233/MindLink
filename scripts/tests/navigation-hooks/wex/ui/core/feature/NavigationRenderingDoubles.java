@@ -17,12 +17,14 @@ final class ViewBackdropSampler {
     void stop() { running = false; }
 }
 final class LiquidGlassLayer {
+    static final int AUTO_OPACITY = -1;
     boolean baseReady = true, indicatorReady = true;
     boolean rebuildFailed() { return false; }
     long retryDelay() { return -1; }
     long retryBudget() { return 0; }
     void release() { }
     boolean drawBase(Canvas c, ViewBackdropSampler s, RectF r, float radius, float blur, boolean liquid, boolean dark, float density, boolean backdrop) { return c.isHardwareAccelerated() && baseReady; }
+    boolean drawBase(Canvas c, ViewBackdropSampler s, RectF r, float radius, float blur, boolean liquid, boolean dark, float density, boolean backdrop, int opacity) { return drawBase(c, s, r, radius, blur, liquid, dark, density, backdrop); }
     boolean drawIndicator(Canvas c, RenderNode n, RectF r, float radius, float progress, boolean dark, float density, boolean liquid, boolean sharp, int color) { return liquid && indicatorReady; }
     void drawSnapshot(Canvas canvas) { }
 }
@@ -40,7 +42,7 @@ final class GlassGravity {
     void stop() { }
     void enable(boolean value) { }
 }
-final class NavigationIcons { static Path create(int index, boolean filled) { return new Path(); } }
+final class NavigationIcons { static final float GRID = 24f; static Path create(int index, boolean filled) { return new Path(); } }
 final class GestureNavigationApply { static void inspect(View view) { } }
 final class SystemBarsCoordinator {
     static int remainingBottom(View view) { return 0; }

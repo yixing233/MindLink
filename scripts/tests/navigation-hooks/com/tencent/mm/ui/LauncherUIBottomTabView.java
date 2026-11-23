@@ -9,7 +9,7 @@ public class LauncherUIBottomTabView extends android.widget.FrameLayout {
             tab.setTag(i); tab.setOnClickListener(view->selected=index);
             tab.addView(new TabIconView(context)); addView(tab);
         }
-        de.robv.android.xposed.XposedBridge.constructed(this);
+        dev.mindlink.xposed.XposedBridge.constructed(this);
     }
     public final int[] unread = new int[4];
     public boolean friendPoint, settingsPoint, failFriendUnread, failSettingsPoint;

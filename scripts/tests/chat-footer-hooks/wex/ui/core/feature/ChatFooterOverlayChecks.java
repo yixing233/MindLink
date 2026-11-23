@@ -18,6 +18,7 @@ public final class ChatFooterOverlayChecks {
         geometryAndRestoration();
         decorationLifecycle();
         listReplacementReleasesSpace();
+        pullBounceKeepsTail();
         nativeVisibilityAndSmallWindow();
         movedFooterDoesNotRestoreOldLift();
         deepInputAndGestureBand();
@@ -183,6 +184,36 @@ public final class ChatFooterOverlayChecks {
                 "a reparented footer never receives the previous window's native lift");
     }
 
+    /** WeChat's MMPullDownView bounces by scrolling itself; the tail must ignore that transient. */
+    private static void pullBounceKeepsTail() {
+        Tree tree = new Tree();
+        com.tencent.mm.ui.base.MMPullDownView pull = new com.tencent.mm.ui.base.MMPullDownView(tree.footer.getContext());
+        tree.root.addView(pull, 0, new ViewGroup.LayoutParams(400, 1000));
+        pull.layout(0, 0, 400, 1000);
+        RecyclerView list = new RecyclerView(tree.footer.getContext());
+        pull.addView(list, new ViewGroup.LayoutParams(400, 1000));
+        // A 40px top load view sits above the content; at rest the pull view scrolls past it.
+        list.layout(0, 40, 400, 1040); pull.scrollY = 40;
+        tree.footer.layout(0, 874, 400, 1346);
+        tree.row.layout(0, 0, 400, 106); tree.row.getChildAt(0).layout(0, 40, 400, 100);
+        tree.panel.layout(0, 116, 400, 472); tree.app.layout(0, 0, 400, 356);
+        ChatFooterOverlay overlay = new ChatFooterOverlay(tree.footer);
+        for (int i = 0; i < 8; i++) overlay.apply(0, 0, 356, 10, 12, true);
+        h3 state = new h3(); state.count = 1;
+        Rect offsets = new Rect();
+        list.decorations.get(0).getItemOffsets(offsets, new View(tree.footer.getContext()), list, state);
+        check(offsets.bottom == 126, "a list at rest inside the pull view reserves its overlap with the card");
+        pull.scrollY = 300;
+        for (int i = 0; i < 8; i++) overlay.apply(0, 0, 356, 10, 12, true);
+        list.decorations.get(0).getItemOffsets(offsets, new View(tree.footer.getContext()), list, state);
+        check(offsets.bottom == 126, "a held bottom pull does not shrink the tail");
+        pull.scrollY = 40;
+        for (int i = 0; i < 8; i++) overlay.apply(0, 0, 356, 10, 12, true);
+        list.decorations.get(0).getItemOffsets(offsets, new View(tree.footer.getContext()), list, state);
+        check(offsets.bottom == 126, "the bounce settles with the same tail, so the last message never dips behind the card");
+        overlay.restore();
+    }
+
     private static void listReplacementReleasesSpace() {
         Tree tree = new Tree();
         RecyclerView list = new RecyclerView(tree.footer.getContext());
@@ -296,6 +327,39 @@ public final class ChatFooterOverlayChecks {
         recycler.manager.h = true; recycler.position = 0;
         recycler.decorations.get(0).getItemOffsets(offsets, child, recycler, state);
         check(offsets.bottom == 126, "reverse layout uses adapter position zero");
+        recycler.manager.h = false; recycler.position = 3;
+        recycler.decorations.get(0).getItemOffsets(offsets, child, recycler, state);
+        int before = recycler.invalidations;
+        check(spacer.update(126) && recycler.invalidations == before, "the first item count settles without a relayout");
+        // The settled tail stays attached at its old position while a new message is bound below it.
+        recycler.addView(child); recycler.positions.put(child, 3);
+        View fresh = new View(context); recycler.positions.put(fresh, 4); recycler.addView(fresh);
+        state.count = 5;
+        recycler.decorations.get(0).getItemOffsets(offsets, fresh, recycler, state);
+        check(offsets.bottom == 126, "the new message takes the tail space");
+        check(!spacer.update(126) && recycler.invalidations == before + 1 && spacer.takeRelayout() && !spacer.takeRelayout(),
+                "a new message re-dirties every tail inset once, so the former last message drops its blank");
+        check(spacer.update(126) && recycler.invalidations == before + 1, "a settled item count never relayouts again");
+        // History pages prepended while scrolling up change the count but keep the same last item:
+        // no full relayout (that dropped a frame per page and showed as a periodic scroll hitch).
+        recycler.positions.put(child, 5); recycler.positions.put(fresh, 6); state.count = 7;
+        View history = new View(context); recycler.positions.put(history, 0);
+        recycler.decorations.get(0).getItemOffsets(offsets, history, recycler, state);
+        check(offsets.bottom == 0 && spacer.update(126) && recycler.invalidations == before + 1 && !spacer.takeRelayout(),
+                "a history page above the visible tail does not relayout the list");
+        // Deep in history the tail is detached; the verdict waits until it is attached again.
+        recycler.removeView(fresh); state.count = 9;
+        View older = new View(context); recycler.positions.put(older, 0);
+        recycler.decorations.get(0).getItemOffsets(offsets, older, recycler, state);
+        check(spacer.update(126) && recycler.invalidations == before + 1, "an off-screen tail defers the decision");
+        recycler.positions.put(fresh, 8); recycler.addView(fresh);
+        check(spacer.update(126) && recycler.invalidations == before + 1 && !spacer.takeRelayout(),
+                "the re-attached tail is still last, so scrolling back down needs no relayout either");
+        // A tail view recycled into a history row stops counting as the tail.
+        recycler.positions.put(fresh, 1); state.count = 10;
+        recycler.decorations.get(0).getItemOffsets(offsets, fresh, recycler, state);
+        check(offsets.bottom == 0 && spacer.update(126) && recycler.invalidations == before + 1,
+                "a recycled tail view rebound to another row carries no stale inset");
         spacer.release();
         recycler.decorations.get(0).getItemOffsets(offsets, child, recycler, state);
         check(offsets.bottom == 0, "release removes the obstruction without altering viewport padding");
@@ -304,13 +368,13 @@ public final class ChatFooterOverlayChecks {
     }
 
     private static void sourceEntry() throws Throwable {
-        de.robv.android.xposed.XposedBridge.hooks.clear();
+        dev.mindlink.xposed.XposedBridge.hooks.clear();
         HostTargetResolver.fail = false;
         wex.ui.core.WexStore.INSTANCE.flags.put("floating_chat_footer_enabled", true);
         FloatingChatFooterFeature.init(ChatFooterOverlayChecks.class.getClassLoader());
         android.os.Handler.drain();
         Tree tree = new Tree();
-        de.robv.android.xposed.XposedBridge.constructed(tree.footer);
+        dev.mindlink.xposed.XposedBridge.constructed(tree.footer);
         for (int i = 0; i < 5; i++) tree.footer.getViewTreeObserver().draw();
         java.lang.reflect.Method existing = FloatingChatFooterFeature.class.getDeclaredMethod("existing", View.class);
         existing.setAccessible(true); Object state = existing.invoke(null, tree.footer);
@@ -325,7 +389,7 @@ public final class ChatFooterOverlayChecks {
         preDraw.setAccessible(true);
         check(preDraw.invoke(state).equals(true), "a hidden footer never cancels the whole window's drawing");
         tree.footer.setVisibility(View.VISIBLE);
-        de.robv.android.xposed.XposedBridge.invoke(tree.footer, "switchHost",
+        dev.mindlink.xposed.XposedBridge.invoke(tree.footer, "switchHost",
                 new Class<?>[]{int.class, boolean.class, int.class}, 3, true, 7);
         check(tree.root.lastY == 0, "real completed native switch cancels the open-panel lift");
         check(!tree.root.lastAnimate, "native scroller settles before the module animates the panel");
@@ -337,7 +401,7 @@ public final class ChatFooterOverlayChecks {
                 "disable replays the witnessed native panel position and animation flags");
         wex.ui.core.WexStore.INSTANCE.flags.put("floating_chat_footer_enabled", true);
         FloatingChatFooterFeature.refresh(); android.os.Handler.drain();
-        de.robv.android.xposed.XposedBridge.invoke(tree.footer, "switchHost",
+        dev.mindlink.xposed.XposedBridge.invoke(tree.footer, "switchHost",
                 new Class<?>[]{int.class, boolean.class, int.class}, 0, false, 0);
         wex.ui.core.WexStore.INSTANCE.flags.put("floating_chat_footer_enabled", false);
         FloatingChatFooterFeature.refresh(); android.os.Handler.drain();
@@ -373,7 +437,7 @@ public final class ChatFooterOverlayChecks {
         wex.ui.core.WexStore.INSTANCE.flags.put("floating_chat_footer_enabled", true);
         FloatingChatFooterFeature.refresh(); android.os.Handler.drain();
         Tree tree = new Tree();
-        de.robv.android.xposed.XposedBridge.constructed(tree.footer);
+        dev.mindlink.xposed.XposedBridge.constructed(tree.footer);
         for (int i = 0; i < 5; i++) tree.footer.getViewTreeObserver().draw();
         ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) tree.footer.getLayoutParams();
         check(tree.footer.getHeight() + lp.topMargin + lp.bottomMargin == 0,

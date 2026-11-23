@@ -1,5 +1,5 @@
 .class public final Lx4/f0;
-.super Lde/robv/android/xposed/XC_MethodHook;
+.super Ldev/mindlink/xposed/XC_MethodHook;
 .source "SourceFile"
 
 
@@ -13,14 +13,14 @@
 
     iput p1, p0, Lx4/f0;->a:I
 
-    invoke-direct {p0}, Lde/robv/android/xposed/XC_MethodHook;-><init>()V
+    invoke-direct {p0}, Ldev/mindlink/xposed/XC_MethodHook;-><init>()V
 
     return-void
 .end method
 
 
 # virtual methods
-.method public afterHookedMethod(Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;)V
+.method public afterHookedMethod(Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;)V
     .locals 7
 
     iget v0, p0, Lx4/f0;->a:I
@@ -38,14 +38,14 @@
     packed-switch v0, :pswitch_data_0
 
     :pswitch_0
-    invoke-super {p0, p1}, Lde/robv/android/xposed/XC_MethodHook;->afterHookedMethod(Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;)V
+    invoke-super {p0, p1}, Ldev/mindlink/xposed/XC_MethodHook;->afterHookedMethod(Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;)V
 
     return-void
 
     :pswitch_1
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
-    iget-object p0, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
+    iget-object p0, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
 
     invoke-virtual {p0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
@@ -63,7 +63,7 @@
 
     sget-object p0, Lwex/ui/core/xposed/HookEntry;->Companion:Lz4/b;
 
-    iget-object p1, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
+    iget-object p1, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
 
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
@@ -80,7 +80,7 @@
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
     :try_start_0
-    iget-object p0, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
+    iget-object p0, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
 
     instance-of p1, p0, Landroid/app/Activity;
 
@@ -160,7 +160,7 @@
     :pswitch_3
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
-    iget-object p0, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
+    iget-object p0, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
 
     instance-of p1, p0, Landroid/app/Activity;
 
@@ -204,7 +204,7 @@
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
     :try_start_1
-    iget-object p0, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
+    iget-object p0, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
 
     instance-of p1, p0, Landroid/app/Activity;
 
@@ -304,7 +304,7 @@
     :pswitch_5
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
-    iget-object p0, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
+    iget-object p0, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
 
     invoke-virtual {p0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
@@ -325,7 +325,7 @@
     goto :goto_6
 
     :cond_10
-    iget-object p0, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
+    iget-object p0, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
 
     invoke-virtual {p0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
@@ -381,9 +381,9 @@
 
     const-string p0, "W\u0415\u0425: w() \u89e6\u53d1!"
 
-    invoke-static {p0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
+    invoke-static {p0}, Ldev/mindlink/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
-    iget-object p0, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
+    iget-object p0, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
 
     aget-object p0, p0, v3
 
@@ -400,7 +400,7 @@
 
     const-string p0, "W\u0415\u0425: itemView null"
 
-    invoke-static {p0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
+    invoke-static {p0}, Ldev/mindlink/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
     goto :goto_7
 
@@ -423,7 +423,7 @@
 
     const-string p0, "W\u0415\u0425: \u672a\u5b9a\u4f4d\u4e2a\u4eba\u5361\u7247,\u8df3\u8fc7"
 
-    invoke-static {p0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
+    invoke-static {p0}, Ldev/mindlink/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
     goto :goto_7
 
@@ -438,14 +438,14 @@
 
     const-string p0, "W\u0415\u0425: \u4e2a\u4eba\u5361\u7247\u4e3a\u7a7a"
 
-    invoke-static {p0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
+    invoke-static {p0}, Ldev/mindlink/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
     goto :goto_7
 
     :cond_17
     const-string p1, "W\u0415\u0425: \u5df2\u5b9a\u4f4d\u4e2a\u4eba\u5361\u7247, \u5f00\u59cb\u6ce8\u5165"
 
-    invoke-static {p1}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
+    invoke-static {p1}, Ldev/mindlink/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
     const-string p1, "custom_status_tag"
 
@@ -457,7 +457,7 @@
 
     const-string p0, "W\u0415\u0425: \u5df2\u6ce8\u5165,\u8df3\u8fc7"
 
-    invoke-static {p0}, Lde/robv/android/xposed/XposedBridge;->log(Ljava/lang/String;)V
+    invoke-static {p0}, Ldev/mindlink/xposed/XposedBridge;->log(Ljava/lang/String;)V
 
     goto :goto_7
 
@@ -477,7 +477,7 @@
     :pswitch_7
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
-    iget-object p0, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
+    iget-object p0, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
 
     aget-object p0, p0, v3
 
@@ -496,7 +496,7 @@
     goto :goto_a
 
     :cond_19
-    iget-object p0, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
+    iget-object p0, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
 
     const/4 v0, 0x1
 
@@ -510,7 +510,7 @@
 
     move-result p0
 
-    iget-object v0, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
+    iget-object v0, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
 
     const/4 v1, 0x2
 
@@ -528,7 +528,7 @@
     move-object v0, v5
 
     :goto_8
-    iget-object p1, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
+    iget-object p1, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
 
     instance-of v1, p1, Landroid/app/Activity;
 
@@ -611,7 +611,7 @@
     :pswitch_8
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
-    iget-object p0, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
+    iget-object p0, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
 
     instance-of p1, p0, Landroid/app/Activity;
 
@@ -768,7 +768,7 @@
     goto :goto_e
 
     :cond_26
-    iget-object p1, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
+    iget-object p1, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
 
     instance-of v0, p1, Landroid/view/View;
 
@@ -823,7 +823,7 @@
     goto :goto_f
 
     :cond_2b
-    iget-object p1, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
+    iget-object p1, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
 
     instance-of v0, p1, Landroid/view/View;
 
@@ -893,21 +893,21 @@
     .end array-data
 .end method
 
-.method public beforeHookedMethod(Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;)V
+.method public beforeHookedMethod(Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;)V
     .locals 6
 
     iget v0, p0, Lx4/f0;->a:I
 
     sparse-switch v0, :sswitch_data_0
 
-    invoke-super {p0, p1}, Lde/robv/android/xposed/XC_MethodHook;->beforeHookedMethod(Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;)V
+    invoke-super {p0, p1}, Ldev/mindlink/xposed/XC_MethodHook;->beforeHookedMethod(Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;)V
 
     return-void
 
     :sswitch_0
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
-    iget-object p0, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
+    iget-object p0, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
 
     const/4 v0, 0x0
 
@@ -972,7 +972,7 @@
 
     if-lez v1, :cond_4
 
-    iget-object p1, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
+    iget-object p1, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
 
     aput-object p0, p1, v0
 
@@ -984,7 +984,7 @@
     invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
     :try_start_0
-    iget-object p0, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
+    iget-object p0, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
 
     instance-of v0, p0, Landroid/view/View;
 
@@ -1012,7 +1012,7 @@
     :try_start_1
     const-string v2, "f"
 
-    invoke-static {p0, v2, v0}, Lde/robv/android/xposed/XposedHelpers;->setBooleanField(Ljava/lang/Object;Ljava/lang/String;Z)V
+    invoke-static {p0, v2, v0}, Ldev/mindlink/xposed/XposedHelpers;->setBooleanField(Ljava/lang/Object;Ljava/lang/String;Z)V
     :try_end_1
     .catchall {:try_start_1 .. :try_end_1} :catchall_0
 
@@ -1067,7 +1067,7 @@
     goto :goto_3
 
     :cond_9
-    iget-object p1, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
+    iget-object p1, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
 
     aget-object p1, p1, v0
 
@@ -1130,13 +1130,13 @@
     goto/16 :goto_4
 
     :cond_d
-    iget-object p0, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
+    iget-object p0, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
 
     invoke-virtual {p0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
     check-cast p0, Landroid/view/ViewGroup;
 
-    iget-object v0, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
+    iget-object v0, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
 
     aget-object v0, v0, v1
 
@@ -1273,14 +1273,14 @@
 
     sget-object p0, Ljava/lang/Boolean;->FALSE:Ljava/lang/Boolean;
 
-    invoke-virtual {p1, p0}, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->setResult(Ljava/lang/Object;)V
+    invoke-virtual {p1, p0}, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->setResult(Ljava/lang/Object;)V
 
     goto :goto_4
 
     :cond_13
     sget-object v0, Ljava/lang/Boolean;->FALSE:Ljava/lang/Boolean;
 
-    invoke-virtual {p1, v0}, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->setResult(Ljava/lang/Object;)V
+    invoke-virtual {p1, v0}, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->setResult(Ljava/lang/Object;)V
 
     invoke-static {v1, p0}, Lwex/ui/core/feature/PlusCardFeature;->access$toggleCard(Lwex/ui/core/feature/PlusCardFeature;Landroid/view/ViewGroup;)V
 
@@ -1302,7 +1302,7 @@
     goto :goto_7
 
     :cond_14
-    iget-object p0, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
+    iget-object p0, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
 
     invoke-virtual {p0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
@@ -1322,14 +1322,14 @@
     :goto_5
     if-nez p0, :cond_16
 
-    iget-object p0, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
+    iget-object p0, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
 
     sget-object v1, Ljava/lang/Boolean;->FALSE:Ljava/lang/Boolean;
 
     aput-object v1, p0, v0
 
     :cond_16
-    iget-object p0, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
+    iget-object p0, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
 
     instance-of p1, p0, Landroid/view/View;
 
@@ -1350,7 +1350,7 @@
     :cond_18
     const-string p1, "f"
 
-    invoke-static {p0, p1, v0}, Lde/robv/android/xposed/XposedHelpers;->setBooleanField(Ljava/lang/Object;Ljava/lang/String;Z)V
+    invoke-static {p0, p1, v0}, Ldev/mindlink/xposed/XposedHelpers;->setBooleanField(Ljava/lang/Object;Ljava/lang/String;Z)V
     :try_end_3
     .catchall {:try_start_3 .. :try_end_3} :catchall_2
 
@@ -1373,7 +1373,7 @@
     goto :goto_9
 
     :cond_19
-    iget-object p0, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
+    iget-object p0, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
 
     invoke-virtual {p0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
@@ -1393,7 +1393,7 @@
     :goto_8
     if-nez p0, :cond_1b
 
-    iget-object p0, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
+    iget-object p0, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->args:[Ljava/lang/Object;
 
     invoke-static {v0}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
 
@@ -1423,7 +1423,7 @@
     goto/16 :goto_e
 
     :cond_1c
-    iget-object p0, p1, Lde/robv/android/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
+    iget-object p0, p1, Ldev/mindlink/xposed/XC_MethodHook$MethodHookParam;->thisObject:Ljava/lang/Object;
 
     instance-of p1, p0, Landroid/view/View;
 
@@ -1470,7 +1470,7 @@
     :try_start_6
     const-string v2, "f"
 
-    invoke-static {p0, v2, v1}, Lde/robv/android/xposed/XposedHelpers;->setBooleanField(Ljava/lang/Object;Ljava/lang/String;Z)V
+    invoke-static {p0, v2, v1}, Ldev/mindlink/xposed/XposedHelpers;->setBooleanField(Ljava/lang/Object;Ljava/lang/String;Z)V
     :try_end_6
     .catchall {:try_start_6 .. :try_end_6} :catchall_4
 
@@ -1478,7 +1478,7 @@
     :try_start_7
     const-string v2, "g"
 
-    invoke-static {p0, v2, v1}, Lde/robv/android/xposed/XposedHelpers;->setIntField(Ljava/lang/Object;Ljava/lang/String;I)V
+    invoke-static {p0, v2, v1}, Ldev/mindlink/xposed/XposedHelpers;->setIntField(Ljava/lang/Object;Ljava/lang/String;I)V
     :try_end_7
     .catchall {:try_start_7 .. :try_end_7} :catchall_5
 
@@ -1486,7 +1486,7 @@
     :try_start_8
     const-string v2, "m"
 
-    invoke-static {p0, v2, v1}, Lde/robv/android/xposed/XposedHelpers;->setIntField(Ljava/lang/Object;Ljava/lang/String;I)V
+    invoke-static {p0, v2, v1}, Ldev/mindlink/xposed/XposedHelpers;->setIntField(Ljava/lang/Object;Ljava/lang/String;I)V
     :try_end_8
     .catchall {:try_start_8 .. :try_end_8} :catchall_6
 
@@ -1494,7 +1494,7 @@
     :try_start_9
     const-string v2, "t"
 
-    invoke-static {p0, v2, v1}, Lde/robv/android/xposed/XposedHelpers;->setIntField(Ljava/lang/Object;Ljava/lang/String;I)V
+    invoke-static {p0, v2, v1}, Ldev/mindlink/xposed/XposedHelpers;->setIntField(Ljava/lang/Object;Ljava/lang/String;I)V
     :try_end_9
     .catchall {:try_start_9 .. :try_end_9} :catchall_7
 
@@ -1502,7 +1502,7 @@
     :try_start_a
     const-string v2, "s"
 
-    invoke-static {p0, v2, v1}, Lde/robv/android/xposed/XposedHelpers;->setIntField(Ljava/lang/Object;Ljava/lang/String;I)V
+    invoke-static {p0, v2, v1}, Ldev/mindlink/xposed/XposedHelpers;->setIntField(Ljava/lang/Object;Ljava/lang/String;I)V
     :try_end_a
     .catchall {:try_start_a .. :try_end_a} :catchall_8
 
@@ -1510,7 +1510,7 @@
     :try_start_b
     const-string v2, "u"
 
-    invoke-static {p0, v2, v1}, Lde/robv/android/xposed/XposedHelpers;->setIntField(Ljava/lang/Object;Ljava/lang/String;I)V
+    invoke-static {p0, v2, v1}, Ldev/mindlink/xposed/XposedHelpers;->setIntField(Ljava/lang/Object;Ljava/lang/String;I)V
     :try_end_b
     .catchall {:try_start_b .. :try_end_b} :catchall_9
 
@@ -1520,7 +1520,7 @@
 
     const v3, 0xffffff
 
-    invoke-static {p0, v2, v3}, Lde/robv/android/xposed/XposedHelpers;->setIntField(Ljava/lang/Object;Ljava/lang/String;I)V
+    invoke-static {p0, v2, v3}, Ldev/mindlink/xposed/XposedHelpers;->setIntField(Ljava/lang/Object;Ljava/lang/String;I)V
     :try_end_c
     .catchall {:try_start_c .. :try_end_c} :catchall_a
 
@@ -1543,7 +1543,7 @@
 
     aget-object v3, v2, v1
 
-    invoke-static {p0, v3}, Lde/robv/android/xposed/XposedHelpers;->getObjectField(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
+    invoke-static {p0, v3}, Ldev/mindlink/xposed/XposedHelpers;->getObjectField(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;
 
     move-result-object v4
 
@@ -1569,7 +1569,7 @@
     .catchall {:try_start_d .. :try_end_d} :catchall_c
 
     :try_start_e
-    invoke-static {p0, v3, v0}, Lde/robv/android/xposed/XposedHelpers;->setObjectField(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)V
+    invoke-static {p0, v3, v0}, Ldev/mindlink/xposed/XposedHelpers;->setObjectField(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)V
     :try_end_e
     .catchall {:try_start_e .. :try_end_e} :catchall_b
 

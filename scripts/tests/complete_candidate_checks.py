@@ -119,11 +119,14 @@ def main():
             if name in old.namelist() and name in new.namelist() and old.read(name) == new.read(name):
                 preserved.append(name)
                 continue
-            require(name in new.namelist(), "Unexpected removed baseline entry: " + name)
+            # The Material Symbols wrapper license left with its icons (Lucide since 2026-11-22).
+            require(name in new.namelist() or name == "assets/mindlink/licenses/COMPOSEICONS-MIT.txt",
+                    "Unexpected removed baseline entry: " + name)
             allowed = (name == "classes2.dex" or name == "resources.arsc" or name.startswith("res/")
                        or name.startswith(("assets/compose-payload/", "assets/sidepanel-compose-payload/"))
                        or name in {"assets/compose-runtime-inventory.json", "assets/mindlink/THIRD-PARTY-NOTICES.md",
-                                   "assets/mindlink/APACHE-2.0.txt", "assets/mindlink/licenses/COMPOSEICONS-MIT.txt"})
+                                   "assets/mindlink/README.md", "assets/mindlink/APACHE-2.0.txt",
+                                   "assets/mindlink/licenses/COMPOSEICONS-MIT.txt", "assets/mindlink/licenses/LUCIDE-ISC.txt"})
             require(allowed, "Unexpected changed entry outside the approved build scope: " + name)
             changed.append(name)
         original = CHECK.read_resource_table(old.read("resources.arsc"))

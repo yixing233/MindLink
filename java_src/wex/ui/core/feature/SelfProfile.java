@@ -23,7 +23,7 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import de.robv.android.xposed.XposedBridge;
+import dev.mindlink.xposed.XposedBridge;
 import wex.ui.core.WexStore;
 
 /** 本人资料快照。数据库和图片读取均在后台执行；不保存副本、不记录资料正文。 */

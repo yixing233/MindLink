@@ -159,7 +159,7 @@ public final class ContactsViewportSupport {
     }
 
     private static void log(String message) {
-        try { de.robv.android.xposed.XposedBridge.log("WEX: 联系人整页: " + message); } catch (Throwable ignored) { }
+        try { dev.mindlink.xposed.XposedBridge.log("WEX: 联系人整页: " + message); } catch (Throwable ignored) { }
     }
 
     private static int dp(View view, int value) {

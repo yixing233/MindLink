@@ -12,7 +12,9 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.Gravity;
 import android.view.MotionEvent;
+import android.view.VelocityTracker;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
 import android.view.Window;
@@ -30,8 +32,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-import de.robv.android.xposed.XC_MethodHook;
-import de.robv.android.xposed.XposedBridge;
+import dev.mindlink.xposed.XC_MethodHook;
+import dev.mindlink.xposed.XposedBridge;
 import wex.ui.core.WexStore;
 
 /**
@@ -51,6 +53,11 @@ public final class HomeSidePanelFeature {
 
     private static final String TAG = "WEX: 侧栏: ";
     private static final String LAUNCHER = "com.tencent.mm.ui.LauncherUI";
+    /**
+     * Width of the left-edge strip where a rightward swipe opens the drawer (was 32dp, then 56dp).
+     * Vertical list scrolls starting here are still left alone by the 1.25 direction ratio.
+     */
+    static final int EDGE_DP = 96;
     private static final Object STATE_LOCK = new Object();
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
     private static final WeakHashMap<Activity, DrawerSession> SESSIONS =
@@ -367,6 +374,24 @@ public final class HomeSidePanelFeature {
         float velocityX;
         long lastTouchTime;
         int drawerWidth;
+        /** Finger velocity for the release decision/settle speed (replaces the two-sample estimate). */
+        VelocityTracker velocity;
+        /** The settle animation the finger caught on ACTION_DOWN, resumed if no drag follows. */
+        boolean caught;
+        float caughtTarget;
+        float animatingTo;
+        /** close() had already started when this drag began; reopening must restore subscriptions. */
+        boolean dragWasClosing;
+        /** True while the synthetic ACTION_CANCEL is being sent to the views. DecorView routes it
+         *  back through Activity.dispatchTouchEvent (our own hook); without this guard the hook
+         *  treated it as the finger lifting and ended the drag after a single frame. */
+        boolean injectingCancel;
+        /** The current gesture became a drawer drag, so its release must not count as a dim tap. */
+        boolean gestureDragged;
+        /** Finger position at ACTION_DOWN; fling distance is measured from here, not the re-anchor. */
+        float gestureStartX;
+        /** "Draft kept" notice shown once per editing session. */
+        boolean draftKeptNotified;
 
         DrawerSession(Activity activity, FrameLayout decor, View content) {
             this.activity = activity;
@@ -384,6 +409,8 @@ public final class HomeSidePanelFeature {
             dim.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
+                    // A swipe across the dim area is a drag, not a tap: it is settled by the drag itself.
+                    if (gestureDragged) return;
                     close(true);
                 }
             });
@@ -397,7 +424,7 @@ public final class HomeSidePanelFeature {
             drawer = new FrameLayout(activity);
             drawer.setClickable(true);
             GradientDrawable background = new GradientDrawable();
-            background.setColor(SettingsTheme.page(TablerIcons.isDark()));
+            background.setColor(SettingsTheme.page(LucideIcons.isDark()));
             background.setCornerRadii(new float[]{0, 0, dp(activity, 24), dp(activity, 24),
                     dp(activity, 24), dp(activity, 24), 0, 0});
             drawer.setBackground(background);
@@ -586,13 +613,43 @@ public final class HomeSidePanelFeature {
                     case IMAGE:
                         // Image picking belongs to editing (WeKit image_enter_edit semantics);
                         // display mode shows the "enter edit mode to select" hint instead.
-                        if (editorDraft != null) actions.put("select_image:" + id, () -> selectImage(id));
+                        if (editorDraft != null) {
+                            actions.put("select_image:" + id, () -> selectImage(id));
+                            // image_height:<id>:<dp> and image_scale:<id>:<mode> were documented in the
+                            // bridge contract but never registered; the card badge/resize handle and the
+                            // image settings page depend on them.
+                            for (int h = HomeSidePanelLayout.IMAGE_MIN_HEIGHT_DP; h <= HomeSidePanelLayout.IMAGE_MAX_HEIGHT_DP;
+                                 h += HomeSidePanelLayout.IMAGE_HEIGHT_STEP_DP) {
+                                final int height = h;
+                                actions.put("image_height:" + id + ":" + height, () -> updateEditorImage(id, height, null));
+                            }
+                            for (final String mode : HomeSidePanelLayout.IMAGE_SCALE_MODES) {
+                                actions.put("image_scale:" + id + ":" + mode, () -> updateEditorImage(id, null, mode));
+                            }
+                        }
                         break;
                     case HORIZONTAL_ACTIONS:
                     case VERTICAL_ACTIONS:
                         for (HomeSidePanelLayout.Action action : card.actions) {
                             final String actionId = action.id;
                             actions.put("run:" + id + ":" + actionId, () -> runAction(id, actionId));
+                        }
+                        if (editorDraft != null) {
+                            // The edit-home "+" tile opens this card's settings page (add / order / delete).
+                            actions.put("add_action:" + id, () -> enterEditor(ROUTE_CARD_SETTINGS + id));
+                            for (final HomeSidePanelLayout.ActionKind kind : HomeSidePanelLayout.ActionKind.values()) {
+                                actions.put("add_action:" + id + ":" + kind.name(), () -> addEditorAction(id, kind));
+                            }
+                            final int count = card.actions.size();
+                            for (HomeSidePanelLayout.Action action : card.actions) {
+                                final String actionId = action.id;
+                                actions.put("delete_action:" + id + ":" + actionId, () -> deleteEditorAction(id, actionId));
+                                for (int index = 0; index < count; index++) {
+                                    final int destination = index;
+                                    actions.put("move_action:" + id + ":" + actionId + ":" + index,
+                                            () -> moveEditorAction(id, actionId, destination));
+                                }
+                            }
                         }
                         break;
                     default:
@@ -674,6 +731,53 @@ public final class HomeSidePanelFeature {
             }
         }
 
+        private void updateEditorImage(String id, Integer heightDp, String scaleMode) {
+            if (editorDraft == null) return;
+            HomeSidePanelLayout.Card target = card(id);
+            if (target == null || target.type != HomeSidePanelLayout.CardType.IMAGE) return;
+            if (heightDp != null) target.imageHeightDp = heightDp;
+            if (scaleMode != null) target.imageScaleMode = scaleMode;
+            refreshEditingSnapshot();
+        }
+
+        private boolean isActionCard(HomeSidePanelLayout.Card card) {
+            return card != null && (card.type == HomeSidePanelLayout.CardType.HORIZONTAL_ACTIONS
+                    || card.type == HomeSidePanelLayout.CardType.VERTICAL_ACTIONS);
+        }
+
+        private int actionIndex(HomeSidePanelLayout.Card card, String actionId) {
+            for (int i = 0; i < card.actions.size(); i++) if (card.actions.get(i).id.equals(actionId)) return i;
+            return -1;
+        }
+
+        private void addEditorAction(String id, HomeSidePanelLayout.ActionKind kind) {
+            if (editorDraft == null) return;
+            HomeSidePanelLayout.Card target = card(id);
+            if (!isActionCard(target)) return;
+            target.actions.add(HomeSidePanelLayout.action(kind));
+            refreshEditingSnapshot();
+        }
+
+        private void deleteEditorAction(String id, String actionId) {
+            if (editorDraft == null) return;
+            HomeSidePanelLayout.Card target = card(id);
+            if (!isActionCard(target)) return;
+            int index = actionIndex(target, actionId);
+            if (index < 0) return;
+            target.actions.remove(index);
+            refreshEditingSnapshot();
+        }
+
+        private void moveEditorAction(String id, String actionId, int destination) {
+            if (editorDraft == null) return;
+            HomeSidePanelLayout.Card target = card(id);
+            if (!isActionCard(target) || destination < 0 || destination >= target.actions.size()) return;
+            int source = actionIndex(target, actionId);
+            if (source < 0 || source == destination) return;
+            target.actions.add(destination, target.actions.remove(source));
+            refreshEditingSnapshot();
+        }
+
         private void moveEditorCard(String id, int destination) {
             if (editorDraft == null || destination < 0 || destination >= editorDraft.size()) return;
             HomeSidePanelLayout.Card target = card(id);
@@ -715,6 +819,18 @@ public final class HomeSidePanelFeature {
             rebuild();
         }
 
+        /** The draft differs from the saved layout (order, ids, settings or an imported image). */
+        private boolean editorDirty() {
+            return editorDraft != null
+                    && !HomeSidePanelLayout.sameLayout(editorDraft, HomeSidePanelFeature.loadLayout());
+        }
+
+        private void notifyDraftKept() {
+            if (draftKeptNotified) return;
+            draftKeptNotified = true;
+            Toast.makeText(activity, "侧栏编辑未保存，已保留，再次打开可继续", Toast.LENGTH_SHORT).show();
+        }
+
         private void discardEditor() {
             composeGesture = false;
             if (editorDraft == null) return;
@@ -749,7 +865,7 @@ public final class HomeSidePanelFeature {
         }
 
         void resumed(boolean value) {
-            if (!value) { composeGesture = false; tracking = false; dragging = false; }
+            if (!value) { composeGesture = false; tracking = false; dragging = false; caught = false; releaseVelocity(); }
             activityResumed = value;
             if (value && progress > 0f) subscribe(); else unsubscribe();
             syncLifecycle();
@@ -787,6 +903,7 @@ public final class HomeSidePanelFeature {
          *  All editor UI lives in Compose pages (edit_home / add_card / card_settings). */
         private void showEditor(final List<HomeSidePanelLayout.Card> draft) {
             editorImportedAssets.clear();
+            draftKeptNotified = false;
             editorDraft = draft;
             originalAssets = imageAssets(draft);
             editorRoute = ROUTE_EDIT_HOME;
@@ -829,72 +946,155 @@ public final class HomeSidePanelFeature {
             if (!LAUNCHER.equals(activity.getClass().getName())) {
                 return false;
             }
-            switch (event.getActionMasked()) {
-                case MotionEvent.ACTION_DOWN:
-                    composeGesture = false;
-                    downX = event.getRawX();
-                    downY = event.getRawY();
-                    downProgress = progress;
-                    tracking = progress > 0f || downX <= dp(activity, 32);
-                    dragging = false;
-                    lastTouchX = downX;
-                    lastTouchTime = event.getEventTime();
-                    velocityX = 0f;
-                    return false;
-                case MotionEvent.ACTION_MOVE:
-                    if (composeGesture || !tracking) {
+            // Our own synthetic cancel coming back through the hook: let it reach the views untouched.
+            if (injectingCancel) return false;
+            int action = event.getActionMasked();
+            if (action == MotionEvent.ACTION_DOWN) {
+                composeGesture = false;
+                gestureDragged = false;
+                downX = event.getRawX();
+                downY = event.getRawY();
+                gestureStartX = downX;
+                // Catch a running open/close animation under the finger, like the edge drag does.
+                caught = animator != null && animator.isRunning() && progress > 0f && progress < 1f;
+                if (caught) {
+                    caughtTarget = animatingTo;
+                    animator.cancel();
+                }
+                downProgress = progress;
+                tracking = progress > 0f || downX <= dp(activity, EDGE_DP);
+                dragging = false;
+                releaseVelocity();
+                if (tracking) velocity = VelocityTracker.obtain();
+                trackVelocity(event);
+                return false;
+            }
+            if (!tracking) {
+                return false;
+            }
+            switch (action) {
+                case MotionEvent.ACTION_MOVE: {
+                    if (composeGesture) {
+                        abandonTracking();
                         return false;
                     }
+                    trackVelocity(event);
                     float dx = event.getRawX() - downX;
                     float dy = event.getRawY() - downY;
-                    long elapsed = event.getEventTime() - lastTouchTime;
-                    if (elapsed > 0) velocityX = (event.getRawX() - lastTouchX) * 1000f / elapsed;
-                    lastTouchX = event.getRawX();
-                    lastTouchTime = event.getEventTime();
-                    if (!dragging && Math.max(Math.abs(dx), Math.abs(dy)) > dp(activity, 10)) {
-                        if (Math.abs(dx) < Math.abs(dy) * 1.25f || downProgress == 0f && dx <= 0f) {
-                            tracking = false;
+                    if (!dragging) {
+                        if (Math.max(Math.abs(dx), Math.abs(dy)) <= touchSlop()) {
+                            return false;
+                        }
+                        // Closing (leftward on an open drawer) accepts up to 45°; opening keeps the
+                        // stricter ratio so vertical list scrolls near the edge are not stolen.
+                        float ratio = downProgress > 0f && dx < 0f ? 1f : 1.25f;
+                        if (Math.abs(dx) < Math.abs(dy) * ratio || downProgress == 0f && dx <= 0f) {
+                            abandonTracking();
                             return false;
                         }
                         dragging = true;
+                        gestureDragged = true;
+                        caught = false;
                         if (animator != null) animator.cancel();
-                        downProgress = progress;
+                        dragWasClosing = closing;
                         closing = false;
                         overlay.setVisibility(View.VISIBLE);
+                        if (downProgress > 0f) {
+                            // Re-anchor by the slop so the drawer does not jump by the slop distance
+                            // when the drag is recognised; the rest of this move is applied at once.
+                            downX += Math.signum(dx) * touchSlop();
+                            downProgress = progress;
+                            dx = event.getRawX() - downX;
+                        }
                         MotionEvent cancel = MotionEvent.obtain(event.getDownTime(), event.getEventTime(),
                                 MotionEvent.ACTION_CANCEL, event.getX(), event.getY(), event.getMetaState());
-                        try { decor.dispatchTouchEvent(cancel); } finally { cancel.recycle(); }
+                        injectingCancel = true;
+                        try {
+                            decor.dispatchTouchEvent(cancel);
+                        } finally {
+                            injectingCancel = false;
+                            cancel.recycle();
+                        }
                     }
-                    if (dragging) {
-                        applyProgress(downProgress + dx / drawerWidth);
-                        return true;
-                    }
-                    return false;
+                    applyProgress(downProgress + dx / drawerWidth);
+                    return true;
+                }
                 case MotionEvent.ACTION_UP:
-                case MotionEvent.ACTION_CANCEL:
-                    if (!tracking) {
-                        return false;
-                    }
+                case MotionEvent.ACTION_CANCEL: {
                     boolean consumed = dragging;
                     tracking = false;
                     dragging = false;
+                    float vx = 0f;
+                    if (velocity != null) {
+                        trackVelocity(event);
+                        velocity.computeCurrentVelocity(1000);
+                        vx = velocity.getXVelocity();
+                    }
+                    releaseVelocity();
                     if (consumed) {
-                        if (event.getActionMasked() == MotionEvent.ACTION_CANCEL) {
-                            animateTo(downProgress >= 0.5f ? 1f : 0f);
+                        boolean open;
+                        if (action == MotionEvent.ACTION_CANCEL) {
+                            open = downProgress >= 0.5f;
                         } else {
-                            float distance = event.getRawX() - downX;
-                            boolean fling = event.getEventTime() - lastTouchTime <= 120
-                                    && Math.abs(distance) >= dp(activity, 24)
-                                    && Math.abs(velocityX) >= dp(activity, 600);
-                            boolean open = fling ? velocityX > 0f
+                            boolean fling = Math.abs(vx) >= dp(activity, 400)
+                                    && Math.abs(event.getRawX() - gestureStartX) >= touchSlop();
+                            open = fling ? vx > 0f
                                     : downProgress >= 0.5f ? progress > 0.75f : progress >= 0.25f;
-                            animateTo(open ? 1f : 0f);
                         }
+                        settle(open, open == (vx > 0f) ? vx : 0f);
+                    } else if (caught) {
+                        caught = false;
+                        animateTo(caughtTarget);
                     }
                     return consumed;
+                }
                 default:
                     return dragging;
             }
+        }
+
+        private int touchSlop() {
+            return ViewConfiguration.get(activity).getScaledTouchSlop();
+        }
+
+        private void trackVelocity(MotionEvent event) {
+            if (velocity == null) return;
+            // Raw coordinates: the drawer itself moves under the finger while dragging.
+            MotionEvent copy = MotionEvent.obtain(event);
+            try {
+                copy.setLocation(event.getRawX(), event.getRawY());
+                velocity.addMovement(copy);
+            } finally {
+                copy.recycle();
+            }
+        }
+
+        private void releaseVelocity() {
+            if (velocity != null) {
+                velocity.recycle();
+                velocity = null;
+            }
+        }
+
+        /** Hand the gesture back to the page; a caught animation continues to where it was going. */
+        private void abandonTracking() {
+            tracking = false;
+            releaseVelocity();
+            if (caught) {
+                caught = false;
+                animateTo(caughtTarget);
+            }
+        }
+
+        private void settle(boolean open, float velocityPx) {
+            if (open && dragWasClosing) {
+                // close() already unsubscribed and paused Compose; reopening restores both.
+                if (activityResumed) subscribe();
+                syncLifecycle();
+                updateSnapshot();
+            }
+            dragWasClosing = false;
+            animateTo(open ? 1f : 0f, velocityPx);
         }
 
         boolean consumeBack() {
@@ -912,7 +1112,7 @@ public final class HomeSidePanelFeature {
             // stayed dead until WeChat restarted; retry on every open instead.
             bridgeFailed = false;
             displayCards = HomeSidePanelFeature.loadLayout();
-            if (editorDraft == null) showDisplay();
+            if (editorDraft == null || compose == null) showDisplay();
             overlay.setVisibility(View.VISIBLE);
             if (activityResumed) subscribe();
             updateSnapshot();
@@ -926,7 +1126,9 @@ public final class HomeSidePanelFeature {
         void close(boolean animated) {
             closing = true;
             saveCompose();
-            discardEditor();
+            // Closing never throws away edits: an unchanged draft is dropped as before, a changed one
+            // is kept and the drawer reopens in the editor. Only Discard (or detach) removes it.
+            if (!editorDirty()) discardEditor();
             walletMasks.clear();
             unsubscribe();
             syncLifecycle();
@@ -938,12 +1140,26 @@ public final class HomeSidePanelFeature {
         }
 
         private void animateTo(final float target) {
+            animateTo(target, 0f);
+        }
+
+        /** Settle toward target; a release velocity continues at finger speed (Decelerate starts at 2x mean). */
+        private void animateTo(final float target, float velocityPx) {
             if (target > 0f) closing = false;
             if (animator != null) {
                 animator.cancel();
             }
+            float distancePx = Math.abs(target - progress) * Math.max(1, drawerWidth);
+            long duration;
+            if (Math.abs(velocityPx) >= dp(activity, 400)) {
+                duration = Math.round(2f * distancePx / Math.abs(velocityPx) * 1000f);
+                duration = Math.max(90L, Math.min(260L, duration));
+            } else {
+                duration = Math.max(140L, Math.min(240L, Math.round(110f + 150f * distancePx / Math.max(1, drawerWidth))));
+            }
+            animatingTo = target;
             animator = ValueAnimator.ofFloat(progress, target);
-            animator.setDuration(200L);
+            animator.setDuration(duration);
             animator.setInterpolator(new DecelerateInterpolator());
             animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                 @Override
@@ -963,7 +1179,7 @@ public final class HomeSidePanelFeature {
             if (progress > 0f) {
                 overlay.setVisibility(View.VISIBLE);
                 if (previous <= 0f) {
-                    if (editorDraft == null) showDisplay();
+                    if (editorDraft == null || compose == null) showDisplay();
                     if (activityResumed) subscribe();
                     updateSnapshot();
                 }
@@ -971,7 +1187,7 @@ public final class HomeSidePanelFeature {
                 overlay.setVisibility(View.GONE);
                 if (previous > 0f) {
                     saveCompose();
-                    discardEditor();
+                    if (editorDirty()) notifyDraftKept(); else discardEditor();
                     walletMasks.clear();
                     unsubscribe();
                 }

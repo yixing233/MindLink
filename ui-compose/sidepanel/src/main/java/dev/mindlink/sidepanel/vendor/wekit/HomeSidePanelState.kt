@@ -138,6 +138,9 @@ class HomeSidePanelState(snapshot: Bundle, images: Map<String, Bitmap>, callback
     fun updateImageHeight(id: String, height: Int) = call("image_height:$id:$height")
     fun removeAction(cardId: String, actionId: String) = call("delete_action:$cardId:$actionId")
     fun openAddAction(id: String) = call("add_action:$id")
+    fun addAction(cardId: String, kind: HomeSidePanelActionKind) = call("add_action:$cardId:${kind.name}")
+    fun moveAction(cardId: String, actionId: String, destination: Int) =
+        call("move_action:$cardId:$actionId:$destination")
     fun runAction(cardId: String, actionId: String, kind: HomeSidePanelActionKind) =
         call("run:$cardId:$actionId")
     fun runAction(kind: HomeSidePanelActionKind) = call(if (kind == HomeSidePanelActionKind.SCAN) "scan" else "action:${kind.name}")

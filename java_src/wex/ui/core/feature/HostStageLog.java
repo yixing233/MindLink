@@ -42,7 +42,7 @@ final class HostStageLog {
     /** Framework API level of the running hook container; recorded so the desktop can show it. */
     private static String xposedApi() {
         try {
-            int version = de.robv.android.xposed.XposedBridge.getXposedVersion();
+            int version = dev.mindlink.xposed.XposedBridge.getXposedVersion();
             return version > 0 ? Integer.toString(version) : "none";
         } catch (Throwable unavailable) {
             return "none";
