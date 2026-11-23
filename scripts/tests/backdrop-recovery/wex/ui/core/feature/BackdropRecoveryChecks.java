@@ -9,6 +9,9 @@ import android.os.SystemClock;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import com.tencent.mm.dynamicbackground.view.DynamicBackgroundGLSurfaceView;
+import com.tencent.mm.plugin.multitask.ui.bg.DynamicBgContainer;
+import com.tencent.mm.ui.conversation.MainUIView;
 import java.lang.reflect.Field;
 import java.util.List;
 
@@ -38,6 +41,7 @@ public final class BackdropRecoveryChecks {
         run("effect creation/installation failures recover with requested params", BackdropRecoveryChecks::effectFailureRecovery);
         run("layer endRecording failure is contained and recovers on the next draw", BackdropRecoveryChecks::layerRecordingFailure);
         run("overlapping SurfaceView prevents reuse; removal restores recording/effect", BackdropRecoveryChecks::surfaceAvailabilityRecovery);
+        run("home pull wallpaper does not block sampling the conversation UI", BackdropRecoveryChecks::conversationWallpaper);
         run("off-ROI pager/list trees over 768 do not spend the safety budget", BackdropRecoveryChecks::roiPrunesUnrelatedTrees);
         run("intersecting Texture and unclipped overflow remain unsafe; incomplete walks fail closed", BackdropRecoveryChecks::roiSafety);
         run("source outside the sample never publishes an empty success and recovers after layout", BackdropRecoveryChecks::outsideSource);
@@ -492,6 +496,52 @@ public final class BackdropRecoveryChecks {
         check(base(layer, f, new Canvas(), 8f, 1f, true), "removing surface captures the current source again");
         check(f.source.drawCalls == 2 && f.sampler.revision() == 2L && glass.beginCalls == 2 && glass.successfulEffectSets == 2,
                 "structural availability recovery captures fresh content, never resurrects pre-surface pixels");
+    }
+
+    private static void conversationWallpaper() {
+        ViewGroup unrelated = new ViewGroup();
+        DynamicBgContainer unrelatedBackground = new DynamicBgContainer();
+        unrelatedBackground.add(new DynamicBackgroundGLSurfaceView());
+        unrelated.add(unrelatedBackground);
+        Fixture unrelatedFixture = new Fixture(unrelated);
+        check(!unrelatedFixture.prepare() && unrelatedFixture.sampler.reason() == ViewBackdropSampler.Reason.SURFACE,
+                "unrelated host remains blocked by the GL surface");
+        unrelatedFixture.sampler.stop();
+
+        MainUIView home = new MainUIView();
+        DynamicBgContainer wallpaper = new DynamicBgContainer();
+        DynamicBackgroundGLSurfaceView gl = new DynamicBackgroundGLSurfaceView();
+        wallpaper.add(gl);
+        home.add(wallpaper);
+        home.children.remove(wallpaper);
+        View list = new View();
+        list.content = "list";
+        home.add(list);
+        Fixture f = new Fixture(home);
+        home.add(f.consumer);
+        f.sampler.source(home, list);
+        check(f.prepare(), "conversation backdrop is available before the pull");
+        home.add(wallpaper);
+        wallpaper.shown = true;
+        list.content = "pulled";
+        f.sampler.sourceContentChanged();
+        check(f.prepare() && hasContent(f.active(), "pulled"),
+                "pull keeps sampling fresh native content with the wallpaper present");
+        SurfaceView media = new SurfaceView();
+        home.add(media);
+        check(!f.prepare() && f.sampler.reason() == ViewBackdropSampler.Reason.SURFACE,
+                "other overlapping surfaces are still rejected");
+        home.children.remove(media);
+        ViewGroup ordinary = new ViewGroup();
+        ordinary.add(new DynamicBackgroundGLSurfaceView());
+        home.add(ordinary);
+        check(!f.prepare() && f.sampler.reason() == ViewBackdropSampler.Reason.SURFACE,
+                "the same GL class outside the conversation wallpaper branch is still rejected");
+        home.children.remove(ordinary);
+        list.content = "settled";
+        check(f.prepare() && hasContent(f.active(), "settled"),
+                "return to the list captures current pixels");
+        f.sampler.stop();
     }
 
     private static void roiPrunesUnrelatedTrees() {

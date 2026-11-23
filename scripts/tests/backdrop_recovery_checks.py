@@ -31,7 +31,7 @@ def main():
     sources += [ROOT / "scripts/tests/wex/ui/core/feature/BackdropCaptureStateChecks.java"]
     sources += [ROOT / "java_src/wex/ui/core/feature" / (name + ".java") for name in
                 ("BackdropCaptureState", "ViewBackdropSampler", "LiquidGlassLayer", "LiquidGlassShaders",
-                 "ChatGlassSurface")]
+                 "ChatGlassSurface", "ConversationPullWallpaperGuard")]
     with tempfile.TemporaryDirectory(prefix="mindlink-backdrop-recovery-") as temporary:
         classes = Path(temporary) / "classes"
         classes.mkdir()
@@ -49,7 +49,8 @@ def main():
         if args.compile_only:
             return 0
         print("Scope: controllable host Canvas/RenderNode/SystemClock doubles; no GPU/device claim", flush=True)
-        for check in ("BackdropCaptureStateChecks", "BackdropRecoveryChecks", "ChatGlassSurfaceChecks"):
+        for check in ("BackdropCaptureStateChecks", "BackdropRecoveryChecks", "ChatGlassSurfaceChecks",
+                      "ConversationPullWallpaperGuardChecks"):
             command = [str(executables["java"]), "-ea", "-cp", str(classes),
                        "wex.ui.core.feature." + check]
             result = subprocess.run(command, cwd=ROOT, capture_output=True, text=True,

@@ -479,7 +479,7 @@ def grouping_checks(jdk, cases=None, repeat=1, output=None):
                     ROOT / "scripts/tests/menu/android/os/Looper.java"]
         sources += [ROOT / ("java_src/wex/ui/core/feature/" + name + ".java") for name in
                     ["ConversationGroupingFeature", "ConversationListBridge",
-                     "ConversationGroupTabsHost", "ConversationGroupBar",
+                     "ConversationGroupTabsHost", "ConversationGroupBar", "ConversationPullWallpaperGuard",
                      "ConversationAdapterSnapshotReader", "ConversationPositions"]]
         sources += [ROOT / "scripts/tests/wex/ui/core/feature/ConversationPositionsChecks.java"]
         subprocess.run([str(jdk / "bin/javac.exe"), "-encoding", "UTF-8", "-d", str(out),
@@ -488,7 +488,7 @@ def grouping_checks(jdk, cases=None, repeat=1, output=None):
                         "wex.ui.core.feature.ConversationPositionsChecks"], check=True, timeout=30)
         selected = cases or ["epoch", "mutations", "click", "guards", "notify-failure",
                              "snapshot-failure", "fields", "transition", "selection", "reentry",
-                             "host-lifecycle", "tab-updates", "origin-fallback"]
+                             "host-lifecycle", "pull-wallpaper", "tab-updates", "origin-fallback"]
         for iteration in range(repeat):
             for case in selected:
                 print(f"GROUPING {iteration + 1}/{repeat}: {case}", flush=True)
@@ -629,7 +629,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--jdk", type=Path)
     parser.add_argument("--grouping-only", action="store_true")
-    parser.add_argument("--grouping-case", action="append", choices=["epoch", "mutations", "click",
+    parser.add_argument("--grouping-case", action="append", choices=["epoch", "mutations", "click", "pull-wallpaper",
                         "guards", "notify-failure", "snapshot-failure", "fields", "transition", "selection", "reentry",
                         "host-lifecycle", "tab-updates"])
     parser.add_argument("--grouping-repeat", type=int, default=1)

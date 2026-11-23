@@ -150,6 +150,16 @@ final class NavigationContactsChecks {
         int requests = h.root.layoutRequests + h.list.layoutRequests;
         for (int i = 0; i < 20; i++) h.frame();
         check(requests == h.root.layoutRequests + h.list.layoutRequests, "real-path settled padding does not loop layout requests");
+        int endPadding = h.list.getPaddingBottom();
+        for (float displacement : new float[]{120f, 47f, -24f, 0f}) {
+            h.inner.setTranslationY(displacement);
+            h.frame();
+            check(h.root.getPaddingBottom() == 0 && h.list.getPaddingBottom() == endPadding,
+                    "bounce must preserve the expanded viewport and the settled end padding: " + displacement);
+            check(h.inner.getTranslationY() == displacement, "viewport repair leaves native bounce motion alone");
+        }
+        check(requests == h.root.layoutRequests + h.list.layoutRequests && h.listBottom() == 2610,
+                "after springback the list reaches the same bottom with no relayout from the gesture");
         h.inner.setTranslationY(7f);
         wex.ui.core.WexStore.INSTANCE.floating = false; NavigationBarFeature.refresh(); h.hostLayout();
         check(h.root.getPaddingBottom() == 168 && h.list.getHeight() == 2164 && h.inner.getTranslationY() == 7f && h.list.getPaddingBottom() == 12,

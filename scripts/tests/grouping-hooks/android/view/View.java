@@ -16,6 +16,7 @@ public class View {
     private int visibility = VISIBLE, width = 400, height = 48;
     private float x, y;
     private float alpha = 1f;
+    private android.graphics.drawable.Drawable background;
     public Rect clipBounds;
     private OnClickListener click;
     private OnLongClickListener longClick;
@@ -69,7 +70,9 @@ public class View {
     public void setVisibility(int value) { visibility = value; }
     public int getVisibility() { return visibility; }
     public void setElevation(float value) { }
-    public void setBackgroundColor(int value) { }
+    public void setBackgroundColor(int value) { background = new android.graphics.drawable.ColorDrawable(value); }
+    public void setBackground(android.graphics.drawable.Drawable value) { background = value; }
+    public android.graphics.drawable.Drawable getBackground() { return background; }
     public void setPadding(int l, int t, int r, int b) { }
     public void setSelected(boolean value) { selected = value; }
     public boolean isSelected() { return selected; }

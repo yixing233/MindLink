@@ -65,6 +65,8 @@ public class View {
     public boolean isLayoutRequested() { return layoutRequested; }
     public int getVisibility() { return visibility; }
     public float getAlpha() { return alpha; }
+    public void setAlpha(float value) { alpha = value; }
+    public void setVisibility(int value) { visibility = value; }
     public void getLocationInWindow(int[] result) { result[0] = x; result[1] = y; }
     public boolean getLocalVisibleRect(Rect result) { result.set(0, 0, width, height); return isShown(); }
     public Runnable onDraw, onInvalidatedFrame;

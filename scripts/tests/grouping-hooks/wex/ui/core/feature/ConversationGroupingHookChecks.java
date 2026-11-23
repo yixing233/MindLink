@@ -888,10 +888,67 @@ public final class ConversationGroupingHookChecks {
             case "selection": selection(); break;
             case "reentry": reentry(); break;
             case "host-lifecycle": hostLifecycle(); break;
+            case "pull-wallpaper": pullWallpaper(); break;
             case "tab-updates": tabUpdates(); break;
             case "origin-fallback": originFallback(); break;
             default: throw new IllegalArgumentException(args[0]);
         }
+    }
+    static void pullWallpaper() throws Exception {
+        setup(); initializeGeometry();
+        java.lang.reflect.Field actionBarField = ConversationListBridge.class.getDeclaredField("actionBarField");
+        actionBarField.setAccessible(true);
+        actionBarField.set(null, com.tencent.mm.ui.conversation.ConversationListView.class.getField("actionBar"));
+
+        com.tencent.mm.ui.conversation.MainUIView page = new com.tencent.mm.ui.conversation.MainUIView(CONTEXT);
+        com.tencent.mm.plugin.multitask.ui.bg.DynamicBgContainer wallpaper =
+                new com.tencent.mm.plugin.multitask.ui.bg.DynamicBgContainer(CONTEXT);
+        com.tencent.mm.dynamicbackground.view.DynamicBackgroundGLSurfaceView surface =
+                new com.tencent.mm.dynamicbackground.view.DynamicBackgroundGLSurfaceView(CONTEXT);
+        wallpaper.addView(surface, new ViewGroup.LayoutParams(400, 600));
+        page.addView(wallpaper, new ViewGroup.LayoutParams(400, 600));
+        android.widget.FrameLayout listParent = new android.widget.FrameLayout(CONTEXT);
+        page.addView(listParent, new ViewGroup.LayoutParams(400, 600));
+        com.tencent.mm.ui.conversation.ConversationListView list =
+                new com.tencent.mm.ui.conversation.ConversationListView(CONTEXT);
+        list.headers = 0; list.sizeForTest(400, 600);
+        list.setBackgroundColor(0xffededed);
+        View actionBar = new View(CONTEXT); actionBar.sizeForTest(400, 72); list.actionBar = actionBar;
+        listParent.addView(list, new ViewGroup.LayoutParams(400, 600));
+        ConversationGroupTabsHost host = new ConversationGroupTabsHost(list); host.install(); host.sizeForTest(400, 48);
+
+        host.onPreDraw();
+        check(surface.getVisibility() == View.INVISIBLE && host.getVisibility() == View.VISIBLE,
+                "the exact fullscreen pull layer is suppressed without hiding group tabs");
+        Field headerField = ConversationGroupTabsHost.class.getDeclaredField("header");
+        headerField.setAccessible(true);
+        View header = (View) headerField.get(host);
+        check(header.getBackground() instanceof android.graphics.drawable.ColorDrawable
+                        && ((android.graphics.drawable.ColorDrawable) header.getBackground()).getColor() == 0xffededed,
+                "native header must cover the host's purple onDraw wash with the list background");
+        check(header.getBackground() != list.getBackground(),
+                "header must not steal the list drawable's callback or bounds");
+        Object background = header.getBackground();
+        host.onPreDraw();
+        check(header.getBackground() == background, "unchanged frames retain the header background");
+        ((android.graphics.drawable.ColorDrawable) list.getBackground()).setColor(0xff191919);
+        host.onPreDraw();
+        check(((android.graphics.drawable.ColorDrawable) header.getBackground()).getColor() == 0xff191919,
+                "an in-place night-theme change updates the header before drawing");
+        list.setBackground(null); host.onPreDraw();
+        check(header.getBackground() == null, "removed list background cannot leave an obsolete header fill");
+        wallpaper.removeView(surface);
+        host.onPreDraw();
+        check(surface.getVisibility() == View.VISIBLE && host.getVisibility() == View.VISIBLE,
+                "removing the pull layer restores GL and keeps the group capsule at its native anchor");
+        check(ConversationGroupCard.glassRefreshes > 0, "the restored capsule refreshes its backdrop after the pull layer closes");
+
+        wallpaper.addView(surface, new ViewGroup.LayoutParams(400, 600));
+        host.onPreDraw();
+        check(surface.getVisibility() == View.INVISIBLE, "a later pull suppresses the recreated GL surface");
+        host.dispose();
+        check(surface.getVisibility() == View.VISIBLE, "disposing the host restores a surface it suppressed");
+        System.out.println("PASS pull-wallpaper: GL visibility and group capsule restore across the pull lifecycle");
     }
 }
 class MissingMuted { public String field_username = "dummy-missing"; public int field_unReadCount = 1; }

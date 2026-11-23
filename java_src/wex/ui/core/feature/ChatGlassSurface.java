@@ -38,6 +38,7 @@ final class ChatGlassSurface extends Drawable {
     private final LiquidGlassDecoration decoration = new LiquidGlassDecoration();
     private final RectF rect = new RectF();
     private final Rect bounds = new Rect();
+    private final int[] backdropAt = new int[2], consumerAt = new int[2];
     private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
     private ViewBackdropSampler sampler;
     private View source, content, excluded;
@@ -103,6 +104,7 @@ final class ChatGlassSurface extends Drawable {
         if (bounds.width() <= 0 || bounds.height() <= 0) return;
         rect.set(bounds.left, bounds.top, bounds.right, bounds.bottom);
         if (mode == PLAIN || !canvas.isHardwareAccelerated()) { stopSampling(); plain(canvas); return; }
+        if (!directBackdropCoversCard()) { stopSampling(); plain(canvas); return; }
         if (!bind()) { plain(canvas); return; }
         keepFresh();
         LiquidGlassLayer layer = layer();
@@ -110,6 +112,19 @@ final class ChatGlassSurface extends Drawable {
         if (mode == LIQUID && sampled) {
             decoration.highlight(canvas, rect, radius, density, 0.75f, 0f, -1f, -45f);
         }
+    }
+
+    private boolean directBackdropCoversCard() {
+        View fixed = backdropSource == null ? null : backdropSource.get();
+        if (fixed == null || backdropContent == null || backdropContent.get() != fixed
+                || contains(fixed, consumer)) return true;
+        // A notification chat initially starts below the title. Sampling that partial
+        // overlap feeds empty pixels into the lens until the chat finishes its layout.
+        fixed.getLocationInWindow(backdropAt);
+        consumer.getLocationInWindow(consumerAt);
+        int x = consumerAt[0] - backdropAt[0], y = consumerAt[1] - backdropAt[1];
+        return x + bounds.left >= 0 && y + bounds.top >= 0
+                && x + bounds.right <= fixed.getWidth() && y + bounds.bottom <= fixed.getHeight();
     }
 
     /**
@@ -204,11 +219,19 @@ final class ChatGlassSurface extends Drawable {
         long area = 0L;
         for (int i = 0; i < group.getChildCount(); i++) {
             View child = group.getChildAt(i);
-            if (child == null || child == consumer || !child.isShown() || child.getAlpha() <= 0f) continue;
+            if (child == null || child == consumer || !child.isShown() || child.getAlpha() <= 0f
+                    || isConversationWallpaper(host, child)) continue;
             long candidate = (long) child.getWidth() * child.getHeight();
             if (candidate > area) { area = candidate; best = child; }
         }
         return best;
+    }
+
+    private static boolean isConversationWallpaper(View host, View child) {
+        if (!"com.tencent.mm.ui.conversation.MainUIView".equals(host.getClass().getName())) return false;
+        String name = child.getClass().getName();
+        return "com.tencent.mm.plugin.multitask.ui.bg.DynamicBgContainer".equals(name)
+                || "com.tencent.mm.dynamicbackground.view.GradientColorBackgroundView".equals(name);
     }
 
     private void plain(Canvas canvas) {

@@ -1,5 +1,6 @@
 original/
 META-INF/
+!unknown/META-INF/
 *.jks
 *.keystore
 *.apk

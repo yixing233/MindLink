@@ -74,11 +74,8 @@ public final class ContactsViewportSupport {
 
         int cap = Math.min(pager.getHeight() / 4,
                 reserveHeight > 0 ? reserveHeight + dp(list, 8) : dp(list, 88));
-        int[] location = new int[2];
-        pager.getLocationInWindow(location);
-        int targetBottom = location[1] + pager.getHeight() - pager.getPaddingBottom();
-        list.getLocationInWindow(location);
-        int missing = targetBottom - (location[1] + list.getHeight());
+        int targetBottom = NavigationBottomSpace.layoutTop(pager) + pager.getHeight() - pager.getPaddingBottom();
+        int missing = targetBottom - (NavigationBottomSpace.layoutTop(list) + list.getHeight());
         if (missing < -1 && !page.edits.isEmpty()) {
             restore(owner);
             return true;

@@ -369,10 +369,8 @@ final class NavigationBarViews {
             // Contacts (page 1) still own a real bottom reserve through the viewport probe;
             // that list is a RecyclerView under the contacts fragment, not the conversation
             // ListView, and its reserve is settled once rather than rewritten per frame.
-            int[] barPosition = new int[2], position = new int[2];
-            bar.getLocationInWindow(barPosition); list.getLocationInWindow(position);
-            int surfaceTop = barPosition[1] + Math.round(bar.surface.top);
-            int extra = Math.max(0, position[1] + list.getHeight() - surfaceTop + bar.dp(6));
+            int surfaceTop = NavigationBottomSpace.layoutTop(bar) + Math.round(bar.surface.top);
+            int extra = Math.max(0, NavigationBottomSpace.layoutTop(list) + list.getHeight() - surfaceTop + bar.dp(6));
             PaddingState state = paddings.get(list);
             if (state == null) { state = new PaddingState(list); paddings.put(list, state); }
             // Contacts use the now-expanded viewport rather than retaining an obsolete larger end reserve.

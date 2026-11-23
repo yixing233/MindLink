@@ -1,5 +1,6 @@
 package wex.ui.core.feature;
 
+import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -30,6 +31,7 @@ import java.util.WeakHashMap;
 
 import dev.mindlink.xposed.XC_MethodHook;
 import dev.mindlink.xposed.XposedBridge;
+import dev.mindlink.xposed.XposedHelpers;
 import wex.ui.core.WexStore;
 
 /**
@@ -198,7 +200,12 @@ final class HomeTopBarCards {
         /** Scroll containers given the bar as top padding: {original top, applied top, clipToPadding was on}. */
         final WeakHashMap<View, int[]> pads = new WeakHashMap<>();
         int lastBarBottom = Integer.MIN_VALUE;
+        WeakReference<View> pagerRef, underlayPage;
         long nextScan;
+        boolean holdingReveal;
+        int revealFrames;
+        float originalTransitionAlpha;
+        ValueAnimator reveal;
         /** Frames still scanned unthrottled after the overlay was switched on, while the pages relayout. */
         int eager;
         boolean dumped;
@@ -254,17 +261,110 @@ final class HomeTopBarCards {
             watch(toolbar);
             syncTitle(toolbar);
             if (cards.layout(toolbar) && geometryLogs++ < 4) log("geometry " + cards.describe());
-            if (overlayContent) underlayOrRelease(toolbar); else releaseUnderlay();
+            if (overlayContent) syncUnderlay(toolbar, toolbar.isShown()); else releaseUnderlay();
             toolbar.invalidate();
         }
 
-        /**
-         * A bar with no card content (the "我" tab: no title, no search, no "+") belongs to a page
-         * whose own header runs to the window top. That page is never padded, and padding a
-         * scan left on it is given back. Requires {@link Cards#layout} to have run this frame.
-         */
-        private void underlayOrRelease(View toolbar) {
-            if (cards.empty()) releaseOnScreen(); else underlay(toolbar);
+        private void syncUnderlay(View toolbar, boolean shown) {
+            Activity activity = activityRef.get();
+            View content = activity == null ? null : activity.findViewById(android.R.id.content);
+            if (content == null || content.getWidth() <= 0) return;
+            View pager = pagerRef == null ? null : pagerRef.get();
+            if (pager == null || !pager.isAttachedToWindow() || pager.getRootView() != content.getRootView()) {
+                pager = homePager(content);
+                if (pager == null) return;
+                pagerRef = new WeakReference<>(pager);
+            }
+            View bar = toolbar.getParent() instanceof View ? (View) toolbar.getParent() : null;
+            if (bar == null) return;
+
+            // The host can repaint this while "Me" is showing, before the next toolbar has any
+            // content. Keep the two native backgrounds transparent independently of the scan.
+            Drawable background = bar.getBackground();
+            if (background != null) {
+                clearedBar = new WeakReference<>(bar); barBackground = background;
+                bar.setBackground(null);
+            }
+            holdStatusStrip();
+
+            View page = alignedPage(pager);
+            if (page == null) {
+                if (reveal != null) holdReveal(toolbar);
+                revealFrames = 0;
+                return;
+            }
+            int slot = (page.getLeft() - pager.getPaddingLeft()) / page.getWidth();
+            if (underlayPage == null || underlayPage.get() != page) {
+                underlayPage = new WeakReference<>(page);
+                nextScan = 0L;
+                eager = Math.max(eager, 2);
+                revealFrames = 0;
+                cards.refreshGlass();
+            }
+            // Only the fourth home page owns its header. An empty toolbar elsewhere can be
+            // transient, so never use it to remove the incoming page's padding.
+            if (slot == 3) {
+                holdReveal(toolbar);
+                releaseOnScreen();
+            } else if (shown && !cards.empty()) {
+                if (page.getPaddingTop() != 0 && frosted.containsKey(page)) nextScan = 0L;
+                underlay(activity, content, bar, page);
+                if (holdingReveal && reveal == null && selectedPage(pager, slot)) {
+                    // Let the inset pass lay out the destination before the glass samples it.
+                    if (revealFrames++ == 0 || revealFrames < 4 && (page.isLayoutRequested() || toolbar.isLayoutRequested()))
+                        toolbar.postInvalidateOnAnimation();
+                    else revealToolbar(toolbar);
+                }
+            } else {
+                nextScan = 0L;
+                revealFrames = 0;
+            }
+        }
+
+        private static boolean selectedPage(View pager, int slot) {
+            try { return ((Number) XposedHelpers.callMethod(pager, "getCurrentItem")).intValue() == slot; }
+            catch (RuntimeException | LinkageError unavailable) { return true; }
+        }
+
+        private void holdReveal(View toolbar) {
+            if (reveal != null) { reveal.cancel(); reveal = null; }
+            if (!holdingReveal) originalTransitionAlpha = toolbar.getTransitionAlpha();
+            holdingReveal = true;
+            if (toolbar.getTransitionAlpha() != 0f) toolbar.setTransitionAlpha(0f);
+        }
+
+        private void revealToolbar(View toolbar) {
+            if (!ValueAnimator.areAnimatorsEnabled()) { finishReveal(toolbar); return; }
+            // Fade the native actions and the card drawable together, leaving host alpha alone.
+            ValueAnimator animation = ValueAnimator.ofFloat(0f, originalTransitionAlpha);
+            reveal = animation;
+            animation.setDuration(140L);
+            animation.addUpdateListener(frame -> {
+                if (reveal != frame) return;
+                if (frame.getAnimatedFraction() >= 1f) finishReveal(toolbar);
+                else toolbar.setTransitionAlpha((Float) frame.getAnimatedValue());
+            });
+            animation.start();
+        }
+
+        private void finishReveal(View toolbar) {
+            if (reveal != null) { ValueAnimator animation = reveal; reveal = null; animation.cancel(); }
+            if (holdingReveal && toolbar != null) toolbar.setTransitionAlpha(originalTransitionAlpha);
+            holdingReveal = false;
+            revealFrames = 0;
+        }
+
+        private static View alignedPage(View pager) {
+            if (!(pager instanceof ViewGroup)) return null;
+            int width = pager.getWidth() - pager.getPaddingLeft() - pager.getPaddingRight();
+            int left = pager.getScrollX() + pager.getPaddingLeft();
+            ViewGroup group = (ViewGroup) pager;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                View child = group.getChildAt(i);
+                if (width > 0 && child.getWidth() == width && child.getLeft() == left && child.isShown())
+                    return child;
+            }
+            return null;
         }
 
         private void watch(View toolbar) {
@@ -278,22 +378,20 @@ final class HomeTopBarCards {
         @Override public boolean onPreDraw() {
             View toolbar = toolbarRef.get();
             if (toolbar == null || cards == null) return true;
-            if (!toolbar.isShown() || toolbar.getWidth() <= 0) {
-                toolbarHidden = true;
-                // The "我" tab hides the action bar: its page owns the top and must not keep
-                // padding or a lifted container from a scan made while it was beside the bar.
-                if (overlayContent) releaseOnScreen();
-                return true;
-            }
             Drawable current = toolbar.getBackground();
             if (current != cards) {
                 // WeChat replaced the toolbar background (theme or tab change): keep it underneath.
                 cards.wrap(current);
                 toolbar.setBackground(cards);
             }
+            if (!toolbar.isShown() || toolbar.getWidth() <= 0) {
+                toolbarHidden = true;
+                if (overlayContent) syncUnderlay(toolbar, false);
+                return true;
+            }
             syncTitle(toolbar);
             boolean moved = cards.layout(toolbar);
-            if (overlayContent) { underlayOrRelease(toolbar); holdStatusStrip(); }
+            if (overlayContent) syncUnderlay(toolbar, true);
             if (moved) toolbar.invalidate();
             settleGlass(toolbar);
             return true;
@@ -403,10 +501,8 @@ final class HomeTopBarCards {
          * host reset (group switch, closing the pull-down page, layout changes) one bar height
          * too low, and the host then slid the action bar down by the same amount.</p>
          */
-        private void underlay(View toolbar) {
-            View bar = toolbar.getParent() instanceof View ? (View) toolbar.getParent() : null;
-            Activity activity = activityRef.get();
-            if (bar == null || activity == null || !bar.isShown() || bar.getHeight() <= 0) return;
+        private void underlay(Activity activity, View content, View bar, View page) {
+            if (!bar.isShown() || bar.getHeight() <= 0) return;
             int[] at = new int[2];
             bar.getLocationInWindow(at);
             int barTop = at[1];
@@ -416,21 +512,6 @@ final class HomeTopBarCards {
             if (eager > 0) eager--;
             lastBarBottom = barBottom; nextScan = now + SCAN_MS;
 
-            View content = activity.findViewById(android.R.id.content);
-            // Only the tab pages are padded. A chat opened inside LauncherUI also lives under
-            // content and must never be touched; without the pager nothing is changed at all,
-            // since overlay mode alone would hide the top of every page under the bar.
-            View pager = content == null ? null : homePager(content);
-            if (pager == null || content.getWidth() <= 0) {
-                if (!dumped) { dumped = true; log("underlay: 未找到首页分页容器，保持原样"); }
-                return;
-            }
-            Drawable background = bar.getBackground();
-            if (background != null) {
-                // WeChat may set it again (theme switch): keep the latest one for restoring.
-                clearedBar = new WeakReference<>(bar); barBackground = background;
-                bar.setBackground(null);
-            }
             boolean first = windowHeader == null;
             windowHeader = FloatingHeaderStyle.applyWindowHeader(null, bar, activity, windowHeader);
             if (first) eager = 6; // the content moves up only on the next layout
@@ -440,17 +521,16 @@ final class HomeTopBarCards {
             boolean report = !dumped && eager == 0;
             StringBuilder covered = report ? new StringBuilder() : null;
             StringBuilder padded = report ? new StringBuilder() : null;
-            ArrayDeque<View> queue = new ArrayDeque<>(); queue.add(pager);
+            int layoutBarBottom = NavigationBottomSpace.layoutTop(bar) + bar.getHeight();
+            ArrayDeque<View> queue = new ArrayDeque<>(); queue.add(page);
             for (int visited = 0; !queue.isEmpty() && visited < 400; visited++) {
                 View view = queue.removeFirst();
                 if (!view.isShown() || view.getWidth() <= 0 || view.getHeight() <= 0) continue;
                 if (CHATTING.equals(view.getClass().getName())) { chatting = new WeakReference<>(view); continue; }
+                // The host translates or stretches the list during a bounce; neither changes its inset.
+                int top = NavigationBottomSpace.layoutTop(view);
+                if (top >= layoutBarBottom) continue;
                 view.getLocationInWindow(at);
-                // Children stay inside their parent, so nothing below the bar needs a look.
-                if (at[1] >= barBottom) continue;
-                // The pager keeps neighbouring pages laid out beside the current one ("我" next to
-                // "发现"). Only the page on screen is the bar's: an off-screen "我" page, which has
-                // no action bar and starts at the window top, used to get the bar as top padding.
                 if (!centredOnScreen(view, at, content.getWidth())) continue;
                 if (is(view.getClass(), CONVERSATION_LIST)) {
                     // Host-managed offset (see above). Drop padding an older build may have left.
@@ -458,7 +538,7 @@ final class HomeTopBarCards {
                     if (state != null) unpad(view, state);
                     hideDivider(view);
                     hideReplica((ViewGroup) view);
-                    if (padded != null) padded.append(" native:").append(view.getClass().getSimpleName()).append('@').append(at[1]);
+                    if (padded != null) padded.append(" native:").append(view.getClass().getSimpleName()).append('@').append(top);
                     continue;
                 }
                 if (is(view.getClass(), FROSTED) && view.getPaddingTop() > 0 && !containsList(view)) {
@@ -467,12 +547,12 @@ final class HomeTopBarCards {
                     // status bar. Drop that padding; the list inside then starts at the window top
                     // and gets the bar as its own top padding on the next scan.
                     liftFrosted(view);
-                    if (padded != null) padded.append(" frosted@").append(at[1]);
+                    if (padded != null) padded.append(" frosted@").append(top);
                 }
                 if (scroller(view)) {
-                    if (view.getWidth() >= content.getWidth() * 0.6f && at[1] + view.getHeight() > barBottom) {
-                        pad((ViewGroup) view, barBottom - at[1]);
-                        if (padded != null) padded.append(' ').append(view.getClass().getSimpleName()).append('@').append(at[1]);
+                    if (view.getWidth() >= content.getWidth() * 0.6f && top + view.getHeight() > layoutBarBottom) {
+                        pad((ViewGroup) view, layoutBarBottom - top);
+                        if (padded != null) padded.append(' ').append(view.getClass().getSimpleName()).append('@').append(top);
                     }
                     continue;
                 }
@@ -481,7 +561,7 @@ final class HomeTopBarCards {
                     for (int i = 0; i < group.getChildCount(); i++) queue.addLast(group.getChildAt(i));
                 } else if (covered != null && covered.length() < 400) {
                     // A fixed view the bar now hides (banner, header…): reported once for tuning.
-                    covered.append(' ').append(view.getClass().getSimpleName()).append('@').append(at[1]).append('+').append(view.getHeight());
+                    covered.append(' ').append(view.getClass().getSimpleName()).append('@').append(top).append('+').append(view.getHeight());
                 }
             }
             if (report) {
@@ -761,7 +841,9 @@ final class HomeTopBarCards {
             if (bar != null && bar.getBackground() == null && barBackground != null) bar.setBackground(barBackground);
             clearedBar = null; barBackground = null;
             lastBarBottom = Integer.MIN_VALUE; nextScan = 0L; eager = 0;
+            pagerRef = underlayPage = null;
             View toolbar = toolbarRef.get();
+            finishReveal(toolbar);
             if (toolbar != null) toolbar.removeCallbacks(glassRetry);
             if (cards != null && cards.transparent(false) && toolbar != null) toolbar.invalidateOutline();
         }
@@ -906,6 +988,7 @@ final class HomeTopBarCards {
         /** Re-sample the backdrop now (the bar came back to rest after the host moved it). */
         void refreshGlass() {
             glass.refresh();
+            if (bandBackdrop != null) bandBackdrop.refresh();
             invalidateSelf();
         }
 

@@ -6,6 +6,10 @@ import android.graphics.RenderNode;
 import android.graphics.drawable.Drawable;
 import android.view.View;
 import android.view.ViewGroup;
+import com.tencent.mm.dynamicbackground.view.DynamicBackgroundGLSurfaceView;
+import com.tencent.mm.dynamicbackground.view.GradientColorBackgroundView;
+import com.tencent.mm.plugin.multitask.ui.bg.DynamicBgContainer;
+import com.tencent.mm.ui.conversation.MainUIView;
 
 /**
  * Host-JVM contract for the chat card material: it must reuse the bottom-bar keys, sample the
@@ -19,6 +23,7 @@ public final class ChatGlassSurfaceChecks {
         RenderNode.reset();
         modeKeys();
         liquidDrawsTheRealBackdrop();
+        conversationWallpaperCannotReplaceList();
         plainAndSoftwareFallbacks();
         missingContentFallsBack();
         translucentHostFallsBack();
@@ -26,6 +31,7 @@ public final class ChatGlassSurfaceChecks {
         nestedConsumerExcludesItsBranch();
         independentPillLayers();
         explicitConsumerSourceIsExcluded();
+        notificationBackdropCoversCard();
         System.out.println("GREEN chat glass surface: " + assertions
                 + " assertions (shared keys, backdrop wiring, plain/software/structure fallbacks, idempotent release)");
     }
@@ -36,6 +42,37 @@ public final class ChatGlassSurfaceChecks {
         tree.glass.draw(new Canvas());
         check(tree.host.drawCalls == 0 && tree.consumer.drawCalls == 0 && tree.content.drawCalls == 1,
                 "explicit backdrop containing the consumer resolves to its excluded sibling");
+        tree.glass.stop();
+    }
+
+    private static void notificationBackdropCoversCard() {
+        Tree tree = new Tree();
+        tree.consumer.y = 146;
+        tree.consumer.height = 144;
+        tree.content.y = 278;
+        tree.content.height = 522;
+        tree.glass.setBounds(0, 0, 400, 144);
+        tree.glass.backdrop(tree.content, tree.content);
+        Canvas opening = new Canvas();
+        tree.glass.draw(opening);
+        check(opening.renderedNodes.isEmpty() && tree.content.drawCalls == 0,
+                "notification opening must not sample a backdrop covering only the bottom of the pill");
+        check(opening.rectColors.get(0) == 0xFFF7F7F7,
+                "notification opening paints the complete neutral card while the chat is inset");
+        tree.content.y = 144;
+        tree.content.height = 656;
+        Canvas ready = new Canvas();
+        tree.glass.draw(ready);
+        check(!ready.renderedNodes.isEmpty() && tree.content.drawCalls == 1,
+                "notification glass resumes as soon as the chat covers the pill, without a delay");
+        tree.content.y = 278;
+        Canvas moved = new Canvas();
+        tree.glass.draw(moved);
+        check(moved.renderedNodes.isEmpty(), "a partial backdrop never replays the previous glass snapshot");
+        tree.content.y = 144;
+        Canvas recovered = new Canvas();
+        tree.glass.draw(recovered);
+        check(!recovered.renderedNodes.isEmpty(), "glass recovers after the backdrop returns");
         tree.glass.stop();
     }
 
@@ -119,6 +156,34 @@ public final class ChatGlassSurfaceChecks {
         check(tree.content.drawCalls == 1, "an unchanged frame reuses the recorded backdrop instead of re-recording");
         check(!next.renderedNodes.isEmpty(), "the reused frame still draws the material");
         tree.glass.stop();
+    }
+
+    private static void conversationWallpaperCannotReplaceList() {
+        MainUIView host = new MainUIView();
+        host.height = 800;
+        host.background = new Drawable();
+        DynamicBgContainer wallpaper = new DynamicBgContainer();
+        wallpaper.height = 800;
+        wallpaper.add(new DynamicBackgroundGLSurfaceView());
+        host.add(wallpaper);
+        GradientColorBackgroundView gradient = new GradientColorBackgroundView();
+        gradient.height = 800;
+        host.add(gradient);
+        View list = new View();
+        list.height = 600;
+        host.add(list);
+        View card = new View();
+        card.height = 60;
+        host.add(card);
+        ChatGlassSurface glass = new ChatGlassSurface(card);
+        glass.setBounds(0, 0, 280, 60);
+        glass.configure(0xFFF7F7F7, 24f, 1f, false, ChatGlassSurface.LIQUID, 8);
+        Canvas canvas = new Canvas();
+        glass.draw(canvas);
+        check(!canvas.renderedNodes.isEmpty() && list.drawCalls == 1 && wallpaper.drawCalls == 0
+                        && gradient.drawCalls == 0,
+                "group card samples the list even when GL and gradient pull backgrounds precede it");
+        glass.stop();
     }
 
     private static void plainAndSoftwareFallbacks() {

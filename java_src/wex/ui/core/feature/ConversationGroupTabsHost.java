@@ -1,6 +1,8 @@
 package wex.ui.core.feature;
 
 import android.graphics.Rect;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
@@ -20,6 +22,7 @@ final class ConversationGroupTabsHost extends FrameLayout implements ViewTreeObs
     private final View spacer;
     private final ConversationGroupBar bar;
     private final View card;
+    private final ConversationPullWallpaperGuard wallpaperGuard = new ConversationPullWallpaperGuard();
     private final int[] parentPosition = new int[2], listPosition = new int[2], headerPosition = new int[2];
     private final Rect visible = new Rect();
     private ViewTreeObserver observer;
@@ -92,6 +95,7 @@ final class ConversationGroupTabsHost extends FrameLayout implements ViewTreeObs
     @Override protected void onDetachedFromWindow() {
         if (observer != null && observer.isAlive()) observer.removeOnPreDrawListener(this);
         observer = null;
+        wallpaperGuard.restore();
         if (down != null) down.recycle(); down = null;
         super.onDetachedFromWindow();
     }
@@ -104,10 +108,18 @@ final class ConversationGroupTabsHost extends FrameLayout implements ViewTreeObs
     }
 
     @Override public boolean onPreDraw() {
-        if (disposed || !list.isShown() || getHeight() == 0 || !(getParent() instanceof ViewGroup)) {
+        if (disposed) {
+            if (wallpaperGuard.restore()) ConversationGroupCard.refreshGlass(card);
             hideTabs();
             return true;
         }
+        if (!list.isShown() || getHeight() == 0 || !(getParent() instanceof ViewGroup)) {
+            if (wallpaperGuard.restore()) ConversationGroupCard.refreshGlass(card);
+            hideTabs();
+            return true;
+        }
+        syncHeaderBackground();
+        if (wallpaperGuard.hideForConversationList(list)) ConversationGroupCard.refreshGlass(card);
         View parent = (View) getParent();
         parent.getLocationInWindow(parentPosition);
         list.getLocationInWindow(listPosition);
@@ -143,6 +155,18 @@ final class ConversationGroupTabsHost extends FrameLayout implements ViewTreeObs
             if (wasHidden) ConversationGroupCard.refreshGlass(card);
         }
         return true;
+    }
+
+    private void syncHeaderBackground() {
+        // ConversationListView.onDraw paints a purple pull-transition wash underneath its
+        // rows. Our native header needs the same backing as those rows; leaving it transparent
+        // exposes that wash both on screen and in the floating card's live glass capture.
+        Drawable background = list.getBackground(), current = header.getBackground();
+        if (background instanceof ColorDrawable) {
+            int color = ((ColorDrawable) background).getColor();
+            if (!(current instanceof ColorDrawable) || ((ColorDrawable) current).getColor() != color)
+                header.setBackgroundColor(color);
+        } else if (current != null) header.setBackground(null);
     }
 
     private void hideTabs() {
@@ -189,6 +213,7 @@ final class ConversationGroupTabsHost extends FrameLayout implements ViewTreeObs
     void dispose() {
         if (disposed) return;
         disposed = true;
+        wallpaperGuard.restore();
         ConversationGroupCard.release(card);
         list.removeOnAttachStateChangeListener(listListener);
         list.removeHeaderView(header);

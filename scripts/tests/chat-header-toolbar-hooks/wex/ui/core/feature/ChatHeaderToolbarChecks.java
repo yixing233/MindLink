@@ -241,8 +241,8 @@ public final class ChatHeaderToolbarChecks {
             check(pills.size() == expected, "expected " + expected + " pills mode " + mode + " got " + pills.size());
             android.graphics.RectF leftPill = pills.get(0), titlePill = pills.get(1);
             android.graphics.RectF rightPill = pills.size() > 2 ? pills.get(2) : new android.graphics.RectF();
-            check(Math.abs(leftPill.left - gap) < 0.6f && Math.abs(leftPill.right - (60f + gap)) < 0.6f
-                    && left.getTranslationX() == 8f + gap, "left pill keeps an internal inset and native hit host moves with it");
+            check(Math.abs(leftPill.left) < 0.6f && Math.abs(leftPill.right - 60f) < 0.6f
+                    && left.getTranslationX() == 8f, "left pill aligns with the card margin and its native hit host moves with it");
             check(leftPill.height() == 60f, "left pill spans full header height mode " + mode);
             // Title pill spans between the reserves; hidden empty slot must not shrink it.
             check(titlePill.left <= (600-titleWidth)/2f && titlePill.right >= (600+titleWidth)/2f,
@@ -254,15 +254,17 @@ public final class ChatHeaderToolbarChecks {
             check(Math.abs(titlePill.left + titlePill.right - 600f) < 0.6f, "title pill symmetric about screen center mode " + mode + " got " + titlePill.left + ".." + titlePill.right);
             check(Math.abs((titlePill.left - leftPill.right) - gap) < 0.6f, "left side gap honors component gap mode " + mode + " got " + (titlePill.left - leftPill.right));
             if (mode != 1) {
-                // Visible action content 556..600 → circle center 578.
-                check(Math.abs(rightPill.left - (578f - 30f)) < 0.6f && Math.abs(rightPill.right - (578f + 30f)) < 0.6f, "right circle centered on visible menu action mode " + mode + " got " + rightPill.left + ".." + rightPill.right);
-                check(rightPill.left - titlePill.right >= gap, "symmetric title keeps at least the configured right gap");
+                check(Math.abs(rightPill.left - 540f) < 0.6f && Math.abs(rightPill.right - 600f) < 0.6f,
+                        "right pill aligns with the opposite card margin mode " + mode);
+                check(right.getTranslationX() == -8f, "menu icon and hit host follow the aligned right pill");
+                check(Math.abs(rightPill.left - titlePill.right - gap) < 0.6f, "both title gaps equal the component setting");
             } else {
                 check(rightPill.isEmpty(), "no right circle without visible actions mode " + mode + " got " + rightPill.left + ".." + rightPill.right);
                 check(titlePill.right >= 512f, "empty menu host reserves no right space (title pill expands) mode " + mode + " got right=" + titlePill.right);
             }
             restore.invoke(null, state);
             check(left.getTranslationX() == 0f, "disable restores native return-button position");
+            check(right.getTranslationX() == 0f, "disable restores native menu position");
             check(titleRule.width==-2&&title.getMaxWidth()==Integer.MAX_VALUE,"split restore returns native title width constraints");
             check(parts.getClipChildren() && parts.getClipToPadding()
                     && toolbar.getClipChildren() && header.getClipChildren(), "split disable restores ancestor clips");
@@ -270,9 +272,8 @@ public final class ChatHeaderToolbarChecks {
             decor.removeView(island); decor.detach();
         }
 
-        // A title longer than the centred pill takes the room the narrower side leaves unused
-        // (left reserve 76, right reserve 60 here): the pill spans 76..540, the title host is
-        // shifted to its centre. A short title goes back to the centred, symmetric pill.
+        // Two menu actions reserve more room on the right. A long title uses the space
+        // between the aligned edge cards; a short title stays centred on the page.
         {
             LauncherUI activity = new LauncherUI();
             ViewGroup decor = root(activity); decor.attach();
@@ -294,15 +295,18 @@ public final class ChatHeaderToolbarChecks {
             LinearLayout menuHost = new LinearLayout(activity);
             ViewGroup action = new ViewGroup(activity);
             menuHost.addView(action, new ViewGroup.LayoutParams(44, 60));
-            right.addView(menuHost, new ViewGroup.LayoutParams(44, 60));
+            ViewGroup secondAction = new ViewGroup(activity);
+            menuHost.addView(secondAction, new ViewGroup.LayoutParams(44, 60));
+            right.addView(menuHost, new ViewGroup.LayoutParams(88, 60));
             RelativeLayout.LayoutParams leftRule = new RelativeLayout.LayoutParams(100, 60); leftRule.addRule(RelativeLayout.ALIGN_PARENT_TOP);
             parts.addView(left, 0, leftRule);
             parts.addView(title, 1, titleRule);
-            RelativeLayout.LayoutParams rightRule = new RelativeLayout.LayoutParams(44, 60); rightRule.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+            RelativeLayout.LayoutParams rightRule = new RelativeLayout.LayoutParams(88, 60); rightRule.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
             parts.addView(right, 2, rightRule);
             header.measure(View.MeasureSpec.makeMeasureSpec(600, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(60, View.MeasureSpec.EXACTLY));
             header.layout(0, 0, 600, 60);
-            right.layout(556, 0, 600, 60); menuHost.layout(0, 0, 44, 60); action.layout(0, 0, 44, 60);
+            right.layout(512, 0, 600, 60); menuHost.layout(0, 0, 88, 60);
+            action.layout(0, 0, 44, 60); secondAction.layout(44, 0, 88, 60);
             title.layout(100, 0, 500, 60);
             Object state = apply.invoke(null, header, null, corner, gap, elevation);
             check(state != null, "long-title separated state built");
@@ -313,18 +317,18 @@ public final class ChatHeaderToolbarChecks {
             java.lang.reflect.Field pillField = decoration.getClass().getDeclaredField("title");
             pillField.setAccessible(true);
             android.graphics.RectF pill = (android.graphics.RectF) pillField.get(decoration);
-            check(Math.abs(pill.left - 76f) < 0.6f && Math.abs(pill.right - 540f) < 0.6f,
+            check(Math.abs(pill.left - 68f) < 0.6f && Math.abs(pill.right - 488f) < 0.6f,
                     "long title pill spans from the left circle to the right one, got " + pill.left + ".." + pill.right);
-            check(titleRule.width == 448 && title.getMaxWidth() == 448, "long title host gets the whole pill minus the inner gaps, got " + titleRule.width);
-            check(Math.abs(title.getTranslationX() - 8f) < 0.6f, "long title host is centred in the wider pill, got dx=" + title.getTranslationX());
+            check(titleRule.width == 404 && title.getMaxWidth() == 404, "long title host gets the whole pill minus the inner gaps, got " + titleRule.width);
+            check(Math.abs(title.getTranslationX() + 22f) < 0.6f, "long title host is centred in the wider pill, got dx=" + title.getTranslationX());
             // A short title goes back to the symmetric pill and the native position.
             title.setText("1234567890");
             title.layout(300 - titleRule.width / 2, 0, 300 + titleRule.width / 2, 60);
             state = apply.invoke(null, header, state, corner, gap, elevation);
             pill = (android.graphics.RectF) pillField.get(decorationOf(state));
-            check(Math.abs(pill.left - 76f) < 0.6f && Math.abs(pill.right - 524f) < 0.6f,
+            check(Math.abs(pill.left - 112f) < 0.6f && Math.abs(pill.right - 488f) < 0.6f,
                     "short title keeps the centred pill, got " + pill.left + ".." + pill.right);
-            check(titleRule.width == 432 && title.getTranslationX() == 0f, "short title host is centred again, got w=" + titleRule.width + " dx=" + title.getTranslationX());
+            check(titleRule.width == 360 && title.getTranslationX() == 0f, "short title host is centred again, got w=" + titleRule.width + " dx=" + title.getTranslationX());
             restore.invoke(null, state);
             check(titleRule.width == -2 && title.getTranslationX() == 0f && title.getMaxWidth() == Integer.MAX_VALUE,
                     "restore returns native title width, position and limit");
@@ -505,7 +509,7 @@ public final class ChatHeaderToolbarChecks {
             int expectedPadding = Math.max(2, Math.round(30f));
             check(decorationParams.leftMargin == -expectedPadding && decorationParams.topMargin == -expectedPadding,
                 "white-bar: decoration outdented by negative shadow margins got " + decorationParams.leftMargin + "/" + decorationParams.topMargin + " expected -" + expectedPadding);
-            check(layer.getLayoutParams().width == 608 + expectedPadding * 2 && layer.getLayoutParams().height == 60 + expectedPadding * 2,
+            check(layer.getLayoutParams().width == 600 + expectedPadding * 2 && layer.getLayoutParams().height == 60 + expectedPadding * 2,
                 "white-bar: decoration enlarged by shadow padding got " + layer.getLayoutParams().width + "x" + layer.getLayoutParams().height);
 
             // Dark-mode stroke: WeKit strokes each pill 1dp 0x24FFFFFF in dark mode. The
@@ -530,7 +534,68 @@ public final class ChatHeaderToolbarChecks {
             restore.invoke(null, state);
             decor.removeView(island); decor.detach();
         }
-        System.out.println("GREEN separated-geometry: " + checks + " assertions (real FloatingHeaderStyle pill geometry: icon-centered circles, visible-action reserves, no title clipping, per-frame host neutralization, shadow outdent)");
+        notificationHeaderGeometry();
+        System.out.println("GREEN separated-geometry: " + checks + " assertions (real FloatingHeaderStyle pill geometry: icon-centered circles, visible-action reserves, no title clipping, per-frame host neutralization, shadow outdent, notification parent measurement)");
+    }
+
+    private static void notificationHeaderGeometry() throws Exception {
+        ChattingUI activity = new ChattingUI();
+        ViewGroup decor = root(activity); decor.attach();
+        ActionBarContainer header = new ActionBarContainer(activity);
+        // Notification ChattingMainUI uses ActionBarOverlayLayout: it measures its
+        // known native children, but lays out every child using its measured size.
+        ViewGroup overlay = new ViewGroup(activity) {
+            @Override protected void onMeasure(int width, int height) {
+                header.measure(View.MeasureSpec.makeMeasureSpec(View.MeasureSpec.getSize(width) - 24, View.MeasureSpec.EXACTLY),
+                        View.MeasureSpec.makeMeasureSpec(60, View.MeasureSpec.EXACTLY));
+                setMeasuredDimension(View.MeasureSpec.getSize(width), View.MeasureSpec.getSize(height));
+            }
+        };
+        decor.addView(overlay); overlay.setPadding(7, 11, 0, 0);
+        overlay.addView(header, margin(12, 45, 12, 0));
+        androidx.appcompat.widget.Toolbar toolbar = new androidx.appcompat.widget.Toolbar(activity);
+        RelativeLayout parts = new RelativeLayout(activity);
+        header.addView(toolbar, new ViewGroup.LayoutParams(-1, 60));
+        toolbar.addView(parts, new ViewGroup.LayoutParams(-1, 60));
+        View back = new View(activity), menu = new View(activity);
+        TextView title = new TextView(activity); title.setText("Notification chat");
+        RelativeLayout.LayoutParams titleRule = new RelativeLayout.LayoutParams(-2, 60);
+        titleRule.addRule(RelativeLayout.CENTER_IN_PARENT);
+        RelativeLayout.LayoutParams menuRule = new RelativeLayout.LayoutParams(60, 60);
+        menuRule.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+        parts.addView(back, new RelativeLayout.LayoutParams(60, 60));
+        parts.addView(title, titleRule); parts.addView(menu, menuRule);
+        Method apply = FloatingHeaderStyle.class.getDeclaredMethod("applySeparated", View.class, FloatingHeaderStyle.SeparatedState.class, int.class, int.class, int.class);
+        apply.setAccessible(true);
+        Method restore = FloatingHeaderStyle.class.getDeclaredMethod("restoreSeparated", FloatingHeaderStyle.SeparatedState.class);
+        restore.setAccessible(true);
+        Object state = null;
+        for (int width : new int[]{600, 600, 720}) {
+            overlay.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+                    View.MeasureSpec.makeMeasureSpec(900, View.MeasureSpec.EXACTLY));
+            overlay.layout(20, 30, 20 + width, 930);
+            state = apply.invoke(null, header, state, 24, 8, 4);
+            check(state != null, "notification header has a separated decoration");
+            View decoration = decorationOf(state);
+            View layer = (View) decoration.getParent();
+            check(layer.getMeasuredWidth() == layer.getLayoutParams().width
+                            && layer.getMeasuredHeight() == layer.getLayoutParams().height
+                            && decoration.getWidth() == layer.getLayoutParams().width
+                            && decoration.getHeight() == layer.getLayoutParams().height,
+                    "notification parent must not leave the glass layer at zero or stale size");
+            int[] layerAt = new int[2], rootAt = new int[2];
+            layer.getLocationInWindow(layerAt); parts.getLocationInWindow(rootAt);
+            check(layerAt[0] == rootAt[0] - 30 && layerAt[1] == rootAt[1] - 30,
+                    "notification glass follows the title through parent padding and resize");
+            android.graphics.Canvas canvas = new android.graphics.Canvas();
+            Method draw = decoration.getClass().getDeclaredMethod("onDraw", android.graphics.Canvas.class);
+            draw.setAccessible(true); draw.invoke(decoration, canvas);
+            check(!canvas.roundPaints.isEmpty(), "notification glass paints in the current frame");
+        }
+        restore.invoke(null, state);
+        check(overlay.getChildCount() == 1 && overlay.getChildAt(0) == header,
+                "notification decoration cleanup leaves the native title in place");
+        decor.removeView(overlay); decor.detach();
     }
 
     private static void init() throws Exception {        FloatingChatHeaderFeature.init(ChatHeaderToolbarChecks.class.getClassLoader());

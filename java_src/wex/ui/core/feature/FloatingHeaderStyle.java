@@ -124,12 +124,13 @@ final class FloatingHeaderStyle {
         final List<Visual> ancestors = new ArrayList<>();
         final List<ClipState> clips = new ArrayList<>();
         final TitleState title;
-        final BackPosition back;
+        final EdgePosition back, menu;
         int geometryLogs; String geometrySignature;
         SeparatedState(View h, RelativeLayout r, FrameLayout l, SeparatedDecoration d, List<Visual> v){
             header=h;root=r;layer=l;decoration=d;visuals=v;
             title = new TitleState(d.titleHost);
-            back = new BackPosition(d.backHost);
+            back = new EdgePosition(d.backHost, false);
+            menu = new EdgePosition(d.menuHost, true);
             int depth=0;
             for (View current = r; current != null && depth++ < 32;
                     current = current.getParent() instanceof View ? (View) current.getParent() : null) {
@@ -196,19 +197,27 @@ final class FloatingHeaderStyle {
         }
     }
 
-    private static final class BackPosition {
-        final View view; float original, applied;
-        BackPosition(View view) { this.view=view;original=applied=view.getTranslationX(); }
+    /** Keep the painted outer edges on the header margin, moving the native hit hosts with them. */
+    private static final class EdgePosition {
+        final View view; final boolean right; float original, applied;
+        EdgePosition(View view, boolean right) {
+            this.view=view;this.right=right;original=applied=view.getTranslationX();
+        }
         void apply(SeparatedDecoration decoration) {
             float current=view.getTranslationX();
             if(current!=applied)original=current;
-            decoration.backIcon(view,decoration.left);
-            float center=decoration.left.isEmpty()?decoration.bounds(view).centerX():decoration.left.centerX();
-            float nativeCenter=center-current+original;
-            float density=decoration.getResources().getDisplayMetrics().density;
-            float inset=decoration.gap*density;
-            float targetCenter=inset+decoration.root.getHeight()/2f;
-            float next=original+Math.max(0f,targetCenter-nativeCenter);
+            float delta;
+            if(right){
+                decoration.right.setEmpty();
+                decoration.menuActions(view,decoration.root.getHeight());
+                if(decoration.right.isEmpty()){restore();applied=view.getTranslationX();return;}
+                delta=decoration.root.getWidth()-decoration.right.right;
+            }else{
+                decoration.backIcon(view,decoration.left);
+                float center=decoration.left.isEmpty()?decoration.bounds(view).centerX():decoration.left.centerX();
+                delta=decoration.root.getHeight()/2f-center;
+            }
+            float next=current+delta;
             if(current!=next)view.setTranslationX(next);
             applied=next;
         }
@@ -795,6 +804,7 @@ final class FloatingHeaderStyle {
         state.decoration.update(corner, gap, elevation, shadowPadding);
         if (state.root.getWidth() <= 0 || state.root.getHeight() <= 0) return;
         state.back.apply(state.decoration);
+        state.menu.apply(state.decoration);
         state.decoration.geometry();
         // Long titles take the room the centred pill leaves unused on the narrower side; short
         // ones stay centred. Decided against the centred width (see TitleState.overflows).
@@ -849,6 +859,13 @@ final class FloatingHeaderStyle {
             }
             state.layer.setLayoutParams(params);
         }
+        // ActionBarOverlayLayout measures only its native content and action bar. A
+        // sibling decoration otherwise stays 0x0 on notification entry even with valid
+        // LayoutParams. Size our own layer before drawing, using the live title origin.
+        state.layer.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY));
+        int x = layerLeft + parent.getPaddingLeft(), y = layerTop + parent.getPaddingTop();
+        state.layer.layout(x, y, x + width, y + height);
         android.graphics.RectF shadow=new android.graphics.RectF(rootOrigin[0]+left,rootOrigin[1]+top,rootOrigin[0]+right,rootOrigin[1]+bottom);
         state.syncClips();
         for(ClipState clip:state.clips)clip.apply(shadow);
@@ -870,6 +887,7 @@ final class FloatingHeaderStyle {
         }
         state.title.restore();
         state.back.restore();
+        state.menu.restore();
         for (Visual visual : state.visuals) visual.restore();
         for (Visual visual : state.ancestors) visual.restore();
         for (ClipState clip : state.clips) clip.restore();

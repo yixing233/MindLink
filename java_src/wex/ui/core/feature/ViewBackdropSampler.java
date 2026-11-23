@@ -439,10 +439,28 @@ final class ViewBackdropSampler implements ViewTreeObserver.OnPreDrawListener,
             if (!intersects && (group == null || group.getClipChildren())) continue;
             if (visited == TREE_BUDGET) return Reason.TREE_BUDGET;
             visited++;
-            if (intersects && (view instanceof SurfaceView || view instanceof TextureView)) return Reason.SURFACE;
+            if (intersects && (view instanceof SurfaceView || view instanceof TextureView)
+                    && !conversationPullWallpaper(view, source)) return Reason.SURFACE;
             if (group != null) for (int i = 0; i < group.getChildCount(); i++) queue.addLast(group.getChildAt(i));
         }
         return Reason.READY;
+    }
+
+    /**
+     * The conversation page owns this full-window decorative GL surface. It has no Canvas
+     * content to sample, so it must not suppress sampling of the native list behind it.
+     */
+    private static boolean conversationPullWallpaper(View surface, View source) {
+        if (!"com.tencent.mm.dynamicbackground.view.DynamicBackgroundGLSurfaceView".equals(surface.getClass().getName())
+                || !(surface.getParent() instanceof View)
+                || !"com.tencent.mm.plugin.multitask.ui.bg.DynamicBgContainer".equals(surface.getParent().getClass().getName()))
+            return false;
+        View page = surface.getParent().getParent() instanceof View ? (View) surface.getParent().getParent() : null;
+        if (page == null || !"com.tencent.mm.ui.conversation.MainUIView".equals(page.getClass().getName())) return false;
+        for (View current = page; current != null;
+             current = current.getParent() instanceof View ? (View) current.getParent() : null)
+            if (current == source) return true;
+        return false;
     }
 
     private void recordParent(RecordingCanvas capture, View source, View content) {
