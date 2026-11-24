@@ -55,7 +55,10 @@ final class SettingsPanelModel {
         flag("home_side_panel_enabled", false);
         flag("top_profile_enabled", false);
         flag("top_search_bar", true);
-        flag(HomeTopBarCards.KEY_ENABLED, true, HomeTopBarCards::refresh);
+        flag(HomeTopBarCards.KEY_ENABLED, true, () -> {
+            HomeTopBarCards.refresh();
+            NativeTopBarCards.refresh();
+        });
         flag(HomeTopBarCards.KEY_HIDE_TITLE, true, HomeTopBarCards::refresh);
         flag(HomeTopBarCards.KEY_OVERLAY, true, HomeTopBarCards::refresh);
         flag(HomeTopBarCards.KEY_PROGRESSIVE, true, HomeTopBarCards::refresh);
@@ -205,6 +208,7 @@ final class SettingsPanelModel {
         // So do the home top bar cards.
         HomeTopBarCards.refresh();
         MomentsTopBarCards.refresh();
+        NativeTopBarCards.refresh();
     }
 
     /** Stored opacity percent, or "" when the material default applies. */

@@ -1098,6 +1098,7 @@ final class FloatingHeaderStyle {
     }
 
     static void restoreWindowHeader(WindowHeaderState state){if(state==null)return;View overlay=state.overlay.get(),body=state.body.get();if(overlay!=null&&state.overlayMode!=null)invokeOverlayMode(overlay,state.overlayMode);if(body!=null&&body.getPaddingTop()==0)body.setPadding(body.getPaddingLeft(),state.bodyTop,body.getPaddingRight(),body.getPaddingBottom());}
+    static Boolean isOverlayMode(View overlay) { return readOverlayMode(overlay); }
     private static Boolean readOverlayMode(View overlay){if(overlay==null)return null;try{java.lang.reflect.Method m=overlay.getClass().getMethod("isInOverlayMode");Object value=m.invoke(overlay);return value instanceof Boolean?(Boolean)value:null;}catch(Throwable ignored){return null;}}
     private static void invokeOverlayMode(View overlay,boolean enabled){if(overlay==null)return;try{java.lang.reflect.Method m=overlay.getClass().getMethod("setOverlayMode",boolean.class);m.invoke(overlay,enabled);}catch(Throwable ignored){}}
 

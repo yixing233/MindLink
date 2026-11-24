@@ -1,5 +1,6 @@
 package dev.mindlink.ui
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.RowScope
@@ -23,7 +24,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
@@ -34,8 +34,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -156,15 +156,18 @@ internal fun LiquidTopBarButton(
         tooltip = { PlainTooltip { Text(label) } },
         state = rememberTooltipState(),
     ) {
-        IconButton(
+        Surface(
             onClick = onClick,
             enabled = enabled,
-            modifier = Modifier.size(diameter).shadow(if (enabled) 2.dp else 0.dp, CircleShape),
-            colors = IconButtonDefaults.iconButtonColors(
-                containerColor = palette.surfaceContainerHigh.copy(alpha = .93f),
-                contentColor = palette.onSurface,
-                disabledContainerColor = palette.surfaceContainer,
-            ),
-        ) { Icon(icon, contentDescription = label, modifier = Modifier.size(22.dp)) }
+            modifier = Modifier.size(diameter),
+            shape = CircleShape,
+            color = if (enabled) palette.surfaceContainerHigh else palette.surfaceContainer,
+            contentColor = if (enabled) palette.onSurface else palette.onSurface.copy(alpha = 0.38f),
+            shadowElevation = if (enabled) 2.dp else 0.dp,
+        ) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Icon(icon, contentDescription = label, modifier = Modifier.size(22.dp))
+            }
+        }
     }
 }

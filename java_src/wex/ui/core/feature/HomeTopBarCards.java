@@ -26,7 +26,11 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 
 import dev.mindlink.xposed.XC_MethodHook;
@@ -68,6 +72,9 @@ final class HomeTopBarCards {
     private static final String PROFILE_TAG = "w\u0435\u0445_top_profile";
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
     private static final WeakHashMap<Activity, Session> SESSIONS = new WeakHashMap<>();
+    private static final WeakHashMap<View, int[]> LIFTED_TOP = new WeakHashMap<>();
+    private static final WeakHashMap<View, Boolean> OWNED_OVERLAYS = new WeakHashMap<>();
+    private static int selfPaddingDepth, selfOverlayDepth;
     private static boolean initialized;
     /** Read on init and on {@link #refresh()} only: pre-draw never touches the settings store. */
     private static volatile boolean enabled;
@@ -84,12 +91,20 @@ final class HomeTopBarCards {
         if (initialized) return;
         initialized = true;
         readConfig();
+        installPaddingGuard();
+        installOverlayGuard();
         XC_MethodHook resumed = new XC_MethodHook() {
             @Override protected void afterHookedMethod(MethodHookParam param) {
                 if (param.hasThrowable() || !(param.thisObject instanceof Activity)) return;
                 Activity activity = (Activity) param.thisObject;
                 // One store read per home resume: a notification cold start may read before storage mounts.
-                if (LAUNCHER.equals(activity.getClass().getName())) MAIN.post(() -> { readConfig(); attach(activity, 0); });
+                if (LAUNCHER.equals(activity.getClass().getName())) {
+                    Session existing = SESSIONS.get(activity);
+                    if (existing != null && existing.alive() && enabled && overlayContent) {
+                        existing.recheckUnderlayNow();
+                    }
+                    MAIN.post(() -> { readConfig(); attach(activity, 0); });
+                }
             }
         };
         XposedBridge.hookAllMethods(Activity.class, "onResume", resumed);
@@ -114,6 +129,68 @@ final class HomeTopBarCards {
             readConfig();
             for (Session session : new ArrayList<>(SESSIONS.values())) session.sync();
         });
+    }
+
+    private static boolean isMainThread() { return Looper.myLooper() == Looper.getMainLooper(); }
+
+    private static void setPaddingTop(View view, int top) {
+        selfPaddingDepth++;
+        try {
+            view.setPadding(view.getPaddingLeft(), top, view.getPaddingRight(), view.getPaddingBottom());
+        } finally {
+            selfPaddingDepth--;
+        }
+    }
+
+    private static void installPaddingGuard() {
+        XC_MethodHook guard = new XC_MethodHook() {
+            @Override protected void beforeHookedMethod(MethodHookParam param) {
+                if (!isMainThread() || selfPaddingDepth > 0 || LIFTED_TOP.isEmpty()
+                        || !(param.thisObject instanceof View)) return;
+                int[] saved = LIFTED_TOP.get(param.thisObject);
+                if (saved == null) return;
+                if (param.args != null && param.args.length >= 2 && param.args[1] instanceof Integer) {
+                    int top = (Integer) param.args[1];
+                    if (top != 0) {
+                        saved[0] = top;
+                        param.args[1] = 0;
+                    }
+                }
+            }
+        };
+        try {
+            XposedBridge.hookMethod(View.class.getDeclaredMethod("setPadding",
+                    int.class, int.class, int.class, int.class), guard);
+        } catch (Throwable ignored) { }
+        try {
+            XposedBridge.hookMethod(View.class.getDeclaredMethod("setPaddingRelative",
+                    int.class, int.class, int.class, int.class), guard);
+        } catch (Throwable ignored) { }
+        try {
+            Method internal = View.class.getDeclaredMethod("internalSetPadding",
+                    int.class, int.class, int.class, int.class);
+            internal.setAccessible(true);
+            XposedBridge.hookMethod(internal, guard);
+        } catch (Throwable ignored) { }
+    }
+
+    private static void installOverlayGuard() {
+        try {
+            Class<?> overlayType = Class.forName("androidx.appcompat.widget.ActionBarOverlayLayout",
+                    false, HostTargetResolver.hostClassLoader());
+            Method setOverlay = overlayType.getDeclaredMethod("setOverlayMode", boolean.class);
+            setOverlay.setAccessible(true);
+            XposedBridge.hookMethod(setOverlay, new XC_MethodHook() {
+                @Override protected void beforeHookedMethod(MethodHookParam param) {
+                    if (!isMainThread() || selfOverlayDepth > 0 || OWNED_OVERLAYS.isEmpty()
+                            || !(param.thisObject instanceof View)) return;
+                    if (OWNED_OVERLAYS.containsKey(param.thisObject) && param.args != null
+                            && param.args.length == 1 && Boolean.FALSE.equals(param.args[0])) {
+                        param.args[0] = Boolean.TRUE;
+                    }
+                }
+            });
+        } catch (Throwable ignored) { }
     }
 
     private static void readConfig() {
@@ -195,6 +272,9 @@ final class HomeTopBarCards {
         int hiddenVisibility = View.VISIBLE;
         // ---- content under the bar (top_cards_overlay) ----
         FloatingHeaderStyle.WindowHeaderState windowHeader;
+        WeakReference<View> trackedOverlay, trackedBody;
+        int[] trackedBodyTop;
+        int preDrawSkips;
         /** The ActionBarContainer whose background we removed, and that background. */
         WeakReference<View> clearedBar;
         Drawable barBackground;
@@ -266,18 +346,78 @@ final class HomeTopBarCards {
             toolbar.invalidate();
         }
 
-        private void syncUnderlay(View toolbar, boolean shown) {
+        void recheckUnderlayNow() {
+            View toolbar = toolbarRef.get();
+            if (toolbar == null || cards == null || !overlayContent) return;
+            nextScan = 0L;
+            eager = Math.max(eager, 4);
+            syncUnderlay(toolbar, toolbar.isShown());
+        }
+
+        private void untrackWindowHeader() {
+            View prevOverlay = trackedOverlay == null ? null : trackedOverlay.get();
+            if (prevOverlay != null) OWNED_OVERLAYS.remove(prevOverlay);
+            trackedOverlay = null;
+            View prevBody = trackedBody == null ? null : trackedBody.get();
+            if (prevBody != null) LIFTED_TOP.remove(prevBody);
+            trackedBody = null;
+            trackedBodyTop = null;
+        }
+
+        private void trackWindowHeader(FloatingHeaderStyle.WindowHeaderState state) {
+            View nextOverlay = state == null ? null : state.overlay.get();
+            View prevOverlay = trackedOverlay == null ? null : trackedOverlay.get();
+            if (prevOverlay != nextOverlay) {
+                if (prevOverlay != null) OWNED_OVERLAYS.remove(prevOverlay);
+                trackedOverlay = nextOverlay == null ? null : new WeakReference<>(nextOverlay);
+            }
+            if (nextOverlay != null) OWNED_OVERLAYS.put(nextOverlay, Boolean.TRUE);
+
+            View nextBody = state == null ? null : state.body.get();
+            View prevBody = trackedBody == null ? null : trackedBody.get();
+            if (prevBody != nextBody) {
+                if (prevBody != null) LIFTED_TOP.remove(prevBody);
+                trackedBody = nextBody == null ? null : new WeakReference<>(nextBody);
+                trackedBodyTop = nextBody == null ? null : new int[]{state.bodyTop};
+            } else if (nextBody != null && trackedBodyTop == null) {
+                trackedBodyTop = new int[]{state.bodyTop};
+            }
+            if (nextBody != null) LIFTED_TOP.put(nextBody, trackedBodyTop);
+        }
+
+        private boolean underlayDrifted(View page, View bar) {
+            if (windowHeader != null) {
+                View body = windowHeader.body.get();
+                if (body != null && body.getPaddingTop() != 0) return true;
+                View overlay = windowHeader.overlay.get();
+                if (overlay != null && Boolean.FALSE.equals(FloatingHeaderStyle.isOverlayMode(overlay))) return true;
+            }
+            for (View view : frosted.keySet()) {
+                if (view.isAttachedToWindow() && view.getPaddingTop() != 0 && isDescendant(view, page)) return true;
+            }
+            int layoutBarBottom = bar.isShown() && bar.getHeight() > 0
+                    ? NavigationBottomSpace.layoutTop(bar) + bar.getHeight() : 0;
+            for (Map.Entry<View, int[]> entry : pads.entrySet()) {
+                View view = entry.getKey();
+                if (!view.isAttachedToWindow() || !isDescendant(view, page)) continue;
+                if (view.getPaddingTop() != entry.getValue()[1]) return true;
+                if (layoutBarBottom > 0 && NavigationBottomSpace.layoutTop(view) >= layoutBarBottom) return true;
+            }
+            return false;
+        }
+
+        private boolean syncUnderlay(View toolbar, boolean shown) {
             Activity activity = activityRef.get();
             View content = activity == null ? null : activity.findViewById(android.R.id.content);
-            if (content == null || content.getWidth() <= 0) return;
+            if (content == null || content.getWidth() <= 0) return false;
             View pager = pagerRef == null ? null : pagerRef.get();
             if (pager == null || !pager.isAttachedToWindow() || pager.getRootView() != content.getRootView()) {
                 pager = homePager(content);
-                if (pager == null) return;
+                if (pager == null) return false;
                 pagerRef = new WeakReference<>(pager);
             }
             View bar = toolbar.getParent() instanceof View ? (View) toolbar.getParent() : null;
-            if (bar == null) return;
+            if (bar == null) return false;
 
             // The host can repaint this while "Me" is showing, before the next toolbar has any
             // content. Keep the two native backgrounds transparent independently of the scan.
@@ -292,7 +432,7 @@ final class HomeTopBarCards {
             if (page == null) {
                 if (reveal != null) holdReveal(toolbar);
                 revealFrames = 0;
-                return;
+                return false;
             }
             int slot = (page.getLeft() - pager.getPaddingLeft()) / page.getWidth();
             if (underlayPage == null || underlayPage.get() != page) {
@@ -307,18 +447,24 @@ final class HomeTopBarCards {
             if (slot == 3) {
                 holdReveal(toolbar);
                 releaseOnScreen();
+                return false;
             } else if (shown && !cards.empty()) {
-                if (page.getPaddingTop() != 0 && frosted.containsKey(page)) nextScan = 0L;
-                underlay(activity, content, bar, page, slot);
+                if (underlayDrifted(page, bar)) {
+                    nextScan = 0L;
+                    eager = Math.max(eager, 2);
+                }
+                boolean mutated = underlay(activity, content, bar, page, slot);
                 if (holdingReveal && reveal == null && selectedPage(pager, slot)) {
                     // Let the inset pass lay out the destination before the glass samples it.
                     if (revealFrames++ == 0 || revealFrames < 4 && (page.isLayoutRequested() || toolbar.isLayoutRequested()))
                         toolbar.postInvalidateOnAnimation();
                     else revealToolbar(toolbar);
                 }
+                return mutated;
             } else {
                 nextScan = 0L;
                 revealFrames = 0;
+                return false;
             }
         }
 
@@ -387,14 +533,20 @@ final class HomeTopBarCards {
             }
             if (!toolbar.isShown() || toolbar.getWidth() <= 0) {
                 toolbarHidden = true;
+                preDrawSkips = 0;
                 if (overlayContent) syncUnderlay(toolbar, false);
                 return true;
             }
             syncTitle(toolbar);
             boolean moved = cards.layout(toolbar);
-            if (overlayContent) syncUnderlay(toolbar, true);
+            boolean layoutMutated = overlayContent && syncUnderlay(toolbar, true);
             if (moved) toolbar.invalidate();
             settleGlass(toolbar);
+            if (layoutMutated && preDrawSkips < 2) {
+                preDrawSkips++;
+                return false;
+            }
+            preDrawSkips = 0;
             return true;
         }
 
@@ -428,8 +580,9 @@ final class HomeTopBarCards {
                 if (!view.isAttachedToWindow()) continue;
                 view.getLocationInWindow(at);
                 if (!centredOnScreen(view, at, width)) continue;
+                LIFTED_TOP.remove(view);
                 if (view.getPaddingTop() == 0)
-                    view.setPadding(view.getPaddingLeft(), entry.getValue()[0], view.getPaddingRight(), view.getPaddingBottom());
+                    setPaddingTop(view, entry.getValue()[0]);
                 it.remove(); changed = true;
             }
             if (changed) {
@@ -502,19 +655,58 @@ final class HomeTopBarCards {
          * host reset (group switch, closing the pull-down page, layout changes) one bar height
          * too low, and the host then slid the action bar down by the same amount.</p>
          */
-        private void underlay(Activity activity, View content, View bar, View page, int slot) {
-            if (!bar.isShown() || bar.getHeight() <= 0) return;
+        private boolean underlay(Activity activity, View content, View bar, View page, int slot) {
+            if (!bar.isShown() || bar.getHeight() <= 0) return false;
             int[] at = new int[2];
             bar.getLocationInWindow(at);
             int barTop = at[1];
             int barBottom = at[1] + bar.getHeight();
             long now = SystemClock.uptimeMillis();
-            if (barBottom == lastBarBottom && now < nextScan && eager == 0) return;
+            if (barBottom == lastBarBottom && now < nextScan && eager == 0) return false;
             if (eager > 0) eager--;
             lastBarBottom = barBottom; nextScan = now + SCAN_MS;
 
             boolean first = windowHeader == null;
-            windowHeader = FloatingHeaderStyle.applyWindowHeader(null, bar, activity, windowHeader);
+            View prevOverlay = windowHeader == null ? null : windowHeader.overlay.get();
+            View prevBody = windowHeader == null ? null : windowHeader.body.get();
+            Boolean wasOverlayMode = prevOverlay != null ? FloatingHeaderStyle.isOverlayMode(prevOverlay) : null;
+            int prevBodyTop = prevBody != null ? prevBody.getPaddingTop() : 0;
+
+            boolean mutated = false;
+            selfPaddingDepth++;
+            selfOverlayDepth++;
+            try {
+                windowHeader = FloatingHeaderStyle.applyWindowHeader(null, bar, activity, windowHeader);
+            } finally {
+                selfOverlayDepth--;
+                selfPaddingDepth--;
+            }
+            if (windowHeader != null) {
+                View curOverlay = windowHeader.overlay.get();
+                View curBody = windowHeader.body.get();
+                if (first) {
+                    if (curOverlay != null && Boolean.FALSE.equals(windowHeader.overlayMode)
+                            && Boolean.TRUE.equals(FloatingHeaderStyle.isOverlayMode(curOverlay))) {
+                        mutated = true;
+                    }
+                    if (curBody != null && windowHeader.bodyTop != 0 && curBody.getPaddingTop() == 0) {
+                        mutated = true;
+                    }
+                } else {
+                    if (curOverlay != null && Boolean.FALSE.equals(wasOverlayMode)
+                            && Boolean.TRUE.equals(FloatingHeaderStyle.isOverlayMode(curOverlay))) {
+                        mutated = true;
+                    }
+                    if (curBody != null && prevBodyTop != 0 && curBody.getPaddingTop() == 0) {
+                        mutated = true;
+                    }
+                }
+                if (trackedBody != null && curBody == trackedBody.get()
+                        && trackedBodyTop != null && prevBodyTop != 0) {
+                    trackedBodyTop[0] = prevBodyTop;
+                }
+            }
+            trackWindowHeader(windowHeader);
             if (first) eager = 6; // the content moves up only on the next layout
             // Only with the bar at rest: during a pull it slides down and the strip is not its own.
             if (bar.getTranslationY() == 0f && barTop > 0) findStatusMasks(content, bar, barTop);
@@ -545,17 +737,19 @@ final class HomeTopBarCards {
                     if (padded != null) padded.append(" native:").append(view.getClass().getSimpleName()).append('@').append(top);
                     continue;
                 }
-                if (is(view.getClass(), FROSTED) && view.getPaddingTop() > 0 && !containsList(view)) {
+                if (is(view.getClass(), FROSTED) && !containsList(view)) {
                     // Contacts / Discover: the page sits below the bar inside the frosted container's
                     // top padding (status bar + action bar), so nothing ever ran under the bar or the
                     // status bar. Drop that padding; the list inside then starts at the window top
                     // and gets the bar as its own top padding on the next scan.
-                    liftFrosted(view);
-                    if (padded != null) padded.append(" frosted@").append(top);
+                    if (liftFrosted(view)) {
+                        mutated = true;
+                        if (padded != null) padded.append(" frosted@").append(top);
+                    }
                 }
                 if (scroller(view)) {
                     if (view.getWidth() >= content.getWidth() * 0.6f && top + view.getHeight() > layoutBarBottom) {
-                        pad((ViewGroup) view, layoutBarBottom - top + topGap);
+                        if (pad((ViewGroup) view, layoutBarBottom - top + topGap)) mutated = true;
                         if (padded != null) padded.append(' ').append(view.getClass().getSimpleName()).append('@').append(top);
                     }
                     continue;
@@ -576,6 +770,7 @@ final class HomeTopBarCards {
                         + " statusBar=" + Integer.toHexString(statusOwned ? statusColor : activity.getWindow().getStatusBarColor())
                         + " masks=" + masks.size());
             }
+            return mutated;
         }
 
         private static final String CHATTING = "com.tencent.mm.pluginsdk.ui.chat.ChattingUILayout";
@@ -635,12 +830,23 @@ final class HomeTopBarCards {
         WeakReference<View> dividerList;
         int dividerAlpha;
 
-        private void liftFrosted(View view) {
+        private boolean liftFrosted(View view) {
             int top = view.getPaddingTop();
-            // The host may write its padding again (insets, multi-window): keep its latest value.
-            frosted.put(view, new int[]{top});
-            view.setPadding(view.getPaddingLeft(), 0, view.getPaddingRight(), view.getPaddingBottom());
-            eager = Math.max(eager, 3); // the page moves up on the next layout; pad its list then
+            int[] state = frosted.get(view);
+            if (state == null) {
+                state = new int[]{top};
+                frosted.put(view, state);
+            } else if (top != 0) {
+                // The host may write its padding again (insets, multi-window): keep its latest value.
+                state[0] = top;
+            }
+            LIFTED_TOP.put(view, state);
+            if (top != 0) {
+                setPaddingTop(view, 0);
+                eager = Math.max(eager, 3); // the page moves up on the next layout; pad its list then
+                return true;
+            }
+            return false;
         }
 
         /** The chats page manages its own offset; never lift a frosted container holding it. */
@@ -782,7 +988,7 @@ final class HomeTopBarCards {
             return is(type, "androidx.recyclerview.widget.RecyclerView") || is(type, "androidx.core.widget.NestedScrollView");
         }
 
-        private void pad(ViewGroup view, int inset) {
+        private boolean pad(ViewGroup view, int inset) {
             int[] state = pads.get(view);
             if (state == null) {
                 state = new int[]{view.getPaddingTop(), Integer.MIN_VALUE, view.getClipToPadding() ? 1 : 0};
@@ -791,10 +997,14 @@ final class HomeTopBarCards {
                 state[0] = view.getPaddingTop(); // the host rewrote its own padding
             }
             int wanted = state[0] + Math.max(0, inset);
-            if (view.getPaddingTop() != wanted)
+            boolean changed = false;
+            if (view.getPaddingTop() != wanted) {
                 view.setPadding(view.getPaddingLeft(), wanted, view.getPaddingRight(), view.getPaddingBottom());
+                changed = true;
+            }
             state[1] = wanted;
             if (view.getClipToPadding()) view.setClipToPadding(false);
+            return changed;
         }
 
         /** Gives a padded container back its own top padding and clip, unless the host changed them. */
@@ -823,8 +1033,9 @@ final class HomeTopBarCards {
             pads.clear();
             for (java.util.Map.Entry<View, int[]> entry : frosted.entrySet()) {
                 View view = entry.getKey();
+                LIFTED_TOP.remove(view);
                 if (view.getPaddingTop() == 0)
-                    view.setPadding(view.getPaddingLeft(), entry.getValue()[0], view.getPaddingRight(), view.getPaddingBottom());
+                    setPaddingTop(view, entry.getValue()[0]);
             }
             frosted.clear();
             showDivider();
@@ -839,12 +1050,26 @@ final class HomeTopBarCards {
                     && activity.getWindow().getStatusBarColor() == Color.TRANSPARENT)
                 activity.getWindow().setStatusBarColor(statusColor);
             statusOwned = false; chatting = null;
-            FloatingHeaderStyle.restoreWindowHeader(windowHeader);
+            View body = trackedBody == null ? null : trackedBody.get();
+            int latestBodyTop = trackedBodyTop == null ? 0 : trackedBodyTop[0];
+            untrackWindowHeader();
+            selfPaddingDepth++;
+            selfOverlayDepth++;
+            try {
+                FloatingHeaderStyle.restoreWindowHeader(windowHeader);
+            } finally {
+                selfOverlayDepth--;
+                selfPaddingDepth--;
+            }
+            if (body != null && latestBodyTop > 0 && body.getPaddingTop() != latestBodyTop
+                    && windowHeader != null && body.getPaddingTop() == windowHeader.bodyTop) {
+                setPaddingTop(body, latestBodyTop);
+            }
             windowHeader = null;
             View bar = clearedBar == null ? null : clearedBar.get();
             if (bar != null && bar.getBackground() == null && barBackground != null) bar.setBackground(barBackground);
             clearedBar = null; barBackground = null;
-            lastBarBottom = Integer.MIN_VALUE; nextScan = 0L; eager = 0;
+            lastBarBottom = Integer.MIN_VALUE; nextScan = 0L; eager = 0; preDrawSkips = 0;
             pagerRef = underlayPage = null;
             View toolbar = toolbarRef.get();
             finishReveal(toolbar);
@@ -920,9 +1145,20 @@ final class HomeTopBarCards {
     }
 
     private static final class ClipState {
-        final ViewGroup view; final boolean clip;
-        ClipState(ViewGroup view) { this.view = view; clip = view.getClipChildren(); }
-        void restore() { if (!view.getClipChildren() && clip) view.setClipChildren(true); }
+        final ViewGroup view; final boolean clip, padding;
+        ClipState(ViewGroup view) {
+            this.view = view;
+            clip = view.getClipChildren();
+            padding = view.getClipToPadding();
+        }
+        void release() {
+            if (view.getClipChildren()) view.setClipChildren(false);
+            if (view.getClipToPadding()) view.setClipToPadding(false);
+        }
+        void restore() {
+            if (!view.getClipChildren() && clip) view.setClipChildren(true);
+            if (!view.getClipToPadding() && padding) view.setClipToPadding(true);
+        }
     }
 
     /**
@@ -933,9 +1169,9 @@ final class HomeTopBarCards {
         private final ChatGlassSurface glass;
         private final LiquidGlassDecoration leftShadow = new LiquidGlassDecoration();
         private final List<LiquidGlassDecoration> rightShadows = new ArrayList<>();
-        private final List<RectF> rightButtons = new ArrayList<>(), nextButtons = new ArrayList<>();
-        private final List<View> rightIcons = new ArrayList<>(), nextIcons = new ArrayList<>();
-        private final WeakHashMap<View, Float> hiddenIcons = new WeakHashMap<>();
+        final List<RectF> rightButtons = new ArrayList<>();
+        private final List<RectF> nextButtons = new ArrayList<>();
+        private final WeakHashMap<View, IconShift> shiftedIcons = new WeakHashMap<>();
         final RectF left = new RectF(), right = new RectF();
         private final RectF nextLeft = new RectF(), nextRight = new RectF();
         private final float density;
@@ -991,7 +1227,7 @@ final class HomeTopBarCards {
         void stop() {
             glass.stop(); leftShadow.release(); band.release(); releaseBandBackdrop();
             for (LiquidGlassDecoration shadow : rightShadows) shadow.release();
-            restoreHiddenIcons();
+            restoreShiftedIcons();
         }
 
         /** No card content at all: the bar of a page with its own full-height header ("我"). */
@@ -1014,7 +1250,7 @@ final class HomeTopBarCards {
         boolean layout(View toolbar) {
             int width = toolbar.getWidth(), height = toolbar.getHeight();
             nextLeft.setEmpty(); nextRight.setEmpty();
-            nextButtons.clear(); nextIcons.clear();
+            nextButtons.clear();
             if (width > 0 && height > 0) {
                 float top = toolbar.getPaddingTop(), bottom = height - toolbar.getPaddingBottom();
                 float available = Math.max(0f, bottom - top);
@@ -1044,13 +1280,16 @@ final class HomeTopBarCards {
                     if (!nextLeft.isEmpty() && !nextRight.isEmpty() && nextLeft.right > nextRight.left - edge)
                         nextLeft.right = nextRight.left - edge;
                     if (nextLeft.width() < nextLeft.height()) nextLeft.setEmpty();
+                } else {
+                    restoreShiftedIcons();
                 }
+            } else {
+                restoreShiftedIcons();
             }
             if (nextLeft.equals(left) && nextRight.equals(right)
-                    && nextButtons.equals(rightButtons) && nextIcons.equals(rightIcons)) return false;
+                    && nextButtons.equals(rightButtons)) return false;
             left.set(nextLeft); right.set(nextRight);
             rightButtons.clear(); rightButtons.addAll(nextButtons);
-            rightIcons.clear(); rightIcons.addAll(nextIcons);
             while (rightShadows.size() < rightButtons.size()) rightShadows.add(new LiquidGlassDecoration());
             while (rightShadows.size() > rightButtons.size()) rightShadows.remove(rightShadows.size() - 1).release();
             return true;
@@ -1074,11 +1313,9 @@ final class HomeTopBarCards {
             return run.width() > 0f && run.height() > 0f ? run : null;
         }
 
-        /** Keep equal-sized circles centered in the native action slots. */
+        /** Keep equal-sized circles centered in the native action slots and translate inner icons to match. */
         private void actions(View toolbar, View profile, int width, float centerY, float cardHeight) {
-            restoreHiddenIcons();
-            List<RectF> anchors = new ArrayList<>();
-            List<View> icons = new ArrayList<>();
+            List<ActionSlot> slots = new ArrayList<>();
             ArrayDeque<View> queue = new ArrayDeque<>(); queue.add(toolbar);
             for (int visited = 0; !queue.isEmpty() && visited < 160; visited++) {
                 View view = queue.removeFirst();
@@ -1086,10 +1323,7 @@ final class HomeTopBarCards {
                 if (view != toolbar && view.isClickable() && view.getWidth() <= width * 0.35f) {
                     RectF b = bounds(toolbar, view);
                     if (b.centerX() > width * 0.55f) {
-                        anchors.add(new RectF(b));
-                        View icon = firstIcon(view);
-                        icons.add(icon);
-                        hideIcon(icon);
+                        slots.add(new ActionSlot(new RectF(b), view, firstIcon(view)));
                     }
                     continue; // an action's own children are part of it
                 }
@@ -1098,8 +1332,8 @@ final class HomeTopBarCards {
                     for (int i = 0; i < group.getChildCount(); i++) queue.addLast(group.getChildAt(i));
                 }
             }
-            anchors.sort((a, b) -> Float.compare(a.centerX(), b.centerX()));
-            if (anchors.isEmpty()) return;
+            slots.sort((a, b) -> Float.compare(a.anchor.centerX(), b.anchor.centerX()));
+            if (slots.isEmpty()) { restoreShiftedIcons(); return; }
 
             // Match the left card's height while preserving only the visual hairline between
             // adjacent actions. These are the native 144px hit slots, so an 8dp constraint here
@@ -1107,62 +1341,104 @@ final class HomeTopBarCards {
             float edge = 4f * density;
             float gap = Math.max(2f, Math.round(density * 2f));
             float radius = cardHeight / 2f;
-            for (int i = 0; i < anchors.size(); i++) {
-                RectF anchor = anchors.get(i);
+            for (int i = 0; i < slots.size(); i++) {
+                RectF anchor = slots.get(i).anchor;
                 float x = anchor.centerX();
                 radius = Math.min(radius, Math.min(x - edge, width - edge - x));
-                if (i > 0) radius = Math.min(radius, (x - anchors.get(i - 1).centerX() - gap) / 2f);
+                if (i > 0) radius = Math.min(radius, (x - slots.get(i - 1).anchor.centerX() - gap) / 2f);
             }
-            if (radius < 12f * density) { restoreHiddenIcons(); return; }
-            for (int i = 0; i < anchors.size(); i++) {
-                RectF anchor = anchors.get(i);
-                float x = anchor.centerX();
-                float y = anchor.centerY();
-                RectF circle = new RectF(x - radius, y - radius, x + radius, y + radius);
+            if (radius < 12f * density) { restoreShiftedIcons(); return; }
+
+            Set<View> activeIcons = new HashSet<>();
+            for (int i = 0; i < slots.size(); i++) {
+                ActionSlot slot = slots.get(i);
+                float x = slot.anchor.centerX();
+                RectF circle = new RectF(x - radius, centerY - radius, x + radius, centerY + radius);
                 nextRight.union(circle);
                 nextButtons.add(circle);
-                nextIcons.add(icons.get(i));
+                View icon = slot.icon;
+                if (icon != null && icon != slot.action) {
+                    activeIcons.add(icon);
+                    IconShift shift = shiftedIcons.get(icon);
+                    if (shift == null) {
+                        shift = new IconShift(icon, toolbar);
+                        shiftedIcons.put(icon, shift);
+                    }
+                    shift.align(toolbar, circle);
+                }
+            }
+            for (Iterator<Map.Entry<View, IconShift>> it = shiftedIcons.entrySet().iterator(); it.hasNext(); ) {
+                Map.Entry<View, IconShift> entry = it.next();
+                if (!activeIcons.contains(entry.getKey())) {
+                    entry.getValue().restore();
+                    it.remove();
+                }
             }
         }
 
-        private void hideIcon(View icon) {
-            if (icon == null) return;
-            if (!hiddenIcons.containsKey(icon)) hiddenIcons.put(icon, icon.getAlpha());
-            if (icon.getAlpha() != 0f) icon.setAlpha(0f);
+        private void restoreShiftedIcons() {
+            for (IconShift shift : shiftedIcons.values()) shift.restore();
+            shiftedIcons.clear();
         }
 
-        private void restoreHiddenIcons() {
-            for (java.util.Map.Entry<View, Float> entry : hiddenIcons.entrySet()) {
-                View icon = entry.getKey();
-                if (icon != null) icon.setAlpha(entry.getValue());
+        private static final class ActionSlot {
+            final RectF anchor; final View action, icon;
+            ActionSlot(RectF anchor, View action, View icon) {
+                this.anchor = anchor; this.action = action; this.icon = icon;
             }
-            hiddenIcons.clear();
         }
 
-        private void drawIcon(Canvas canvas, View icon, RectF circle) {
-            if (!(icon instanceof ImageView)) return;
-            Drawable drawable = ((ImageView) icon).getDrawable();
-            if (drawable == null) return;
-            int size = Math.min(Math.round(24f * density), Math.min(icon.getWidth(), icon.getHeight()));
-            if (size <= 0) return;
-            Rect old = new Rect(drawable.getBounds());
-            int[] state = drawable.getState();
-            int level = drawable.getLevel();
-            drawable.setState(icon.getDrawableState());
-            drawable.setLevel(level);
-            try {
-                // The native glyphs are padded and their visible centers differ from the hit
-                // slot centers by 12px. Rebinding the drawable to this circle is what makes the
-                // glyph optically belong to the new floating button instead of inheriting that
-                // native asymmetry.
-                int left = Math.round(circle.centerX() - size / 2f);
-                int top = Math.round(circle.centerY() - size / 2f);
-                drawable.setBounds(left, top, left + size, top + size);
-                drawable.draw(canvas);
-            } finally {
-                drawable.setBounds(old);
-                drawable.setState(state);
-                drawable.setLevel(level);
+        private static final class IconShift {
+            final View icon;
+            float originalTx, appliedTx, originalTy, appliedTy;
+            final List<ClipState> clips = new ArrayList<>();
+            IconShift(View icon, View toolbar) {
+                this.icon = icon;
+                originalTx = appliedTx = icon.getTranslationX();
+                originalTy = appliedTy = icon.getTranslationY();
+                for (View current = icon.getParent() instanceof View ? (View) icon.getParent() : null;
+                     current != null && current != toolbar;
+                     current = current.getParent() instanceof View ? (View) current.getParent() : null) {
+                    if (current instanceof ViewGroup) {
+                        ClipState state = new ClipState((ViewGroup) current);
+                        state.release();
+                        clips.add(state);
+                    }
+                }
+            }
+            void align(View toolbar, RectF circle) {
+                for (ClipState state : clips) state.release();
+                RectF ib = bounds(toolbar, icon);
+                float visX = ib.left + icon.getPaddingLeft()
+                        + (ib.width() - icon.getPaddingLeft() - icon.getPaddingRight()) / 2f;
+                float visY = ib.top + icon.getPaddingTop()
+                        + (ib.height() - icon.getPaddingTop() - icon.getPaddingBottom()) / 2f;
+                float curTx = icon.getTranslationX();
+                if (curTx != appliedTx) originalTx = curTx;
+                float dx = circle.centerX() - visX;
+                if (Math.abs(dx) > 0.25f) {
+                    float nextTx = curTx + dx;
+                    icon.setTranslationX(nextTx);
+                    appliedTx = nextTx;
+                } else {
+                    appliedTx = curTx;
+                }
+                float curTy = icon.getTranslationY();
+                if (curTy != appliedTy) originalTy = curTy;
+                float dy = circle.centerY() - visY;
+                if (Math.abs(dy) > 0.25f) {
+                    float nextTy = curTy + dy;
+                    icon.setTranslationY(nextTy);
+                    appliedTy = nextTy;
+                } else {
+                    appliedTy = curTy;
+                }
+            }
+            void restore() {
+                if (Math.abs(icon.getTranslationX() - appliedTx) < 0.1f) icon.setTranslationX(originalTx);
+                if (Math.abs(icon.getTranslationY() - appliedTy) < 0.1f) icon.setTranslationY(originalTy);
+                for (ClipState state : clips) state.restore();
+                clips.clear();
             }
         }
 
@@ -1260,7 +1536,6 @@ final class HomeTopBarCards {
             card(canvas, leftShadow, left, dark);
             for (int i = 0; i < rightButtons.size(); i++) {
                 card(canvas, rightShadows.get(i), rightButtons.get(i), dark);
-                drawIcon(canvas, rightIcons.get(i), rightButtons.get(i));
             }
         }
 
