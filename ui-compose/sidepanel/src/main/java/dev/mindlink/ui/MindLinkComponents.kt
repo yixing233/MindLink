@@ -3,6 +3,10 @@ package dev.mindlink.ui
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -19,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
@@ -30,16 +35,22 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun MindLinkPage(content: @Composable ColumnScope.() -> Unit) {
+fun MindLinkPage(header: @Composable ColumnScope.() -> Unit, content: @Composable (Dp) -> Unit) {
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
-        Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing), content = content)
+        LiquidTopScaffold(
+            Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)),
+            header, content,
+        )
     }
 }
 
@@ -52,12 +63,12 @@ fun MindLinkTopBar(
     actions: @Composable RowScope.() -> Unit = {},
 ) {
     TopAppBar(
-        title = { Text(title, style = MaterialTheme.typography.titleLarge) },
-        modifier = modifier,
+        title = { Text(title, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        modifier = modifier.padding(horizontal = 12.dp),
         navigationIcon = navigation,
         actions = actions,
         windowInsets = WindowInsets(0, 0, 0, 0),
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent, scrolledContainerColor = Color.Transparent),
     )
 }
 
@@ -127,5 +138,33 @@ fun MindLinkIconButton(icon: ImageVector, label: String, onClick: () -> Unit, mo
         IconButton(onClick = onClick, modifier = modifier) {
             Icon(icon, contentDescription = label)
         }
+    }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+internal fun LiquidTopBarButton(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    enabled: Boolean = true,
+    diameter: Dp = 48.dp,
+) {
+    val palette = MaterialTheme.colorScheme
+    TooltipBox(
+        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+        tooltip = { PlainTooltip { Text(label) } },
+        state = rememberTooltipState(),
+    ) {
+        IconButton(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = Modifier.size(diameter).shadow(if (enabled) 2.dp else 0.dp, CircleShape),
+            colors = IconButtonDefaults.iconButtonColors(
+                containerColor = palette.surfaceContainerHigh.copy(alpha = .93f),
+                contentColor = palette.onSurface,
+                disabledContainerColor = palette.surfaceContainer,
+            ),
+        ) { Icon(icon, contentDescription = label, modifier = Modifier.size(22.dp)) }
     }
 }

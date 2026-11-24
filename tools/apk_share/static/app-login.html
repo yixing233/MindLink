@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f6f7fb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>MindLink 构建产物</title>
+<link rel="stylesheet" href="/static/antd-reset.css">
+<style>
+:root{--b1:#6366f1;--b2:#8b5cf6;--ink:#1b2033;--muted:#6b7280}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang SC","Microsoft YaHei",sans-serif;background:#f3f5fb;color:var(--ink);-webkit-text-size-adjust:100%}
+.wrap{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:max(24px,env(safe-area-inset-top)) 20px max(24px,env(safe-area-inset-bottom));background:radial-gradient(1200px 600px at 20% -10%,#e5e9ff 0,transparent 60%),radial-gradient(900px 500px at 110% 110%,#efe7ff 0,transparent 55%),#f6f7fb}
+.card{width:100%;max-width:380px;background:#fff;border:1px solid #eaecf4;border-radius:20px;padding:30px 26px 24px;box-shadow:0 20px 50px rgba(38,44,96,.10)}
+.logo{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:20px;background:linear-gradient(135deg,var(--b1),var(--b2));box-shadow:0 8px 20px rgba(99,102,241,.35);margin-bottom:16px}
+h1{font-size:19px;margin:0 0 6px;color:var(--ink)}p.sub{margin:0 0 22px;color:var(--muted);font-size:13px}
+.foot{margin-top:18px;color:#9aa1b2;font-size:12px;text-align:center}
+/* iOS 上输入框字号小于 16px 会触发页面缩放，这里锁住 */
+.card input.ant-input{font-size:16px}
+.card .ant-btn{height:46px;font-size:16px}
+@media (max-width:420px){
+  .wrap{align-items:flex-start;padding-top:12vh}
+  .card{padding:26px 20px 22px;border-radius:18px}
+  .logo{width:42px;height:42px;border-radius:13px;font-size:18px}
+  h1{font-size:18px}
+}
+@media (max-height:520px){ .wrap{align-items:flex-start;padding-top:16px} }
+</style></head><body><div class="wrap"><div class="card">
+<div class="logo">M</div><h1>MindLink 构建产物</h1><p class="sub">临时分发页面，请输入访问密码</p>
+<div id="root"></div><div class="foot">仅供本人临时下载 · 访问会过期</div>
+</div></div>
+<script src="/static/react.min.js"></script>
+<script src="/static/react-dom.min.js"></script>
+<script src="/static/dayjs.min.js"></script>
+<script src="/static/antd.min.js"></script>
+<script>
+const h = React.createElement;
+const { ConfigProvider, Input, Button, Alert } = antd;
+function Login() {
+  const [value, setValue] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState("");
+  function submit() {
+    if (!value) { setError("请输入密码"); return; }
+    setLoading(true); setError("");
+    fetch("/api/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: value }) })
+      .then(async r => { const d = await r.json().catch(() => ({}));
+        if (r.ok) { location.replace("/"); return; }
+        setError(d.error || "密码错误"); setLoading(false); })
+      .catch(() => { setError("网络异常，请重试"); setLoading(false); });
+  }
+  return h(ConfigProvider, { theme: { token: { colorPrimary: "#6366f1", borderRadius: 12, controlHeightLG: 46 } } },
+    h("div", null,
+      h(Input.Password, { size: "large", placeholder: "访问密码", value, autoFocus: true,
+        autoComplete: "current-password", inputMode: "text",
+        onChange: e => setValue(e.target.value), onPressEnter: submit, style: { marginBottom: 12 } }),
+      error ? h(Alert, { type: "error", showIcon: true, message: error, style: { marginBottom: 12 } }) : null,
+      h(Button, { type: "primary", size: "large", block: true, loading, onClick: submit }, "进入")
+    ));
+}
+ReactDOM.createRoot(document.getElementById("root")).render(h(Login));
+</script></body></html>

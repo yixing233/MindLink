@@ -56,8 +56,13 @@ final class ProgressiveTopBlur {
      */
     void draw(Canvas canvas, ViewBackdropSampler sampler, int width, int top, int bottom,
               float density, boolean dark, float alpha) {
+        draw(canvas, sampler, 0, width, top, bottom, density, dark, alpha);
+    }
+
+    void draw(Canvas canvas, ViewBackdropSampler sampler, int left, int width, int top, int bottom,
+              float density, boolean dark, float alpha) {
         if (width <= 0 || bottom <= top || alpha <= 0f) return;
-        region.set(0, top, width, bottom);
+        region.set(left, top, left + width, bottom);
         int w = region.width(), h = region.height();
         boolean sampled = sampler != null && !failed && canvas.isHardwareAccelerated()
                 && sampler.prepare(canvas, region);

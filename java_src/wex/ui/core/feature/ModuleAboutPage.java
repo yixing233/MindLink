@@ -19,14 +19,14 @@ final class ModuleAboutPage {
     static void build(LinearLayout root,Activity activity,ModuleDashboardState state,Consumer<ModulePageState.Page> open,Runnable repository){
         FrameLayout hero=new FrameLayout(activity);hero.setTag("mdl_about_hero");hero.setMinimumHeight(ModulePreferenceViews.dp(activity,310));
         LinearLayout brand=ModulePreferenceViews.column(activity);brand.setGravity(Gravity.CENTER_HORIZONTAL);brand.setTranslationY(-ModulePreferenceViews.dp(activity,40));brand.setPadding(ModulePreferenceViews.dp(activity,18),0,ModulePreferenceViews.dp(activity,18),0);
-        ImageView icon=new ImageView(activity);icon.setContentDescription("MindLink 图标");icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        ImageView icon=new ImageView(activity);icon.setContentDescription("WeLiquid 图标");icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
         try{Drawable own=activity.getPackageManager().getApplicationIcon(activity.getPackageName());icon.setImageDrawable(own);}catch(Exception ignored){}
         brand.addView(icon,new LinearLayout.LayoutParams(ModulePreferenceViews.dp(activity,128),ModulePreferenceViews.dp(activity,128)));
-        TextView name=ModulePreferenceViews.text(activity,"MindLink",32,true,SettingsTheme.ink(activity));name.setGravity(Gravity.CENTER);name.setPadding(0,ModulePreferenceViews.dp(activity,14),0,0);brand.addView(name,new LinearLayout.LayoutParams(-1,-2));
+        TextView name=ModulePreferenceViews.text(activity,"WeLiquid",32,true,SettingsTheme.ink(activity));name.setGravity(Gravity.CENTER);name.setPadding(0,ModulePreferenceViews.dp(activity,14),0,0);brand.addView(name,new LinearLayout.LayoutParams(-1,-2));
         TextView version=ModulePreferenceViews.text(activity,state.moduleVersion,14,true,SettingsTheme.sub(activity));version.setTag("mdl_about_version");version.setGravity(Gravity.CENTER);version.setPadding(0,ModulePreferenceViews.dp(activity,18),0,0);brand.addView(version,new LinearLayout.LayoutParams(-1,-2));
         FrameLayout.LayoutParams center=new FrameLayout.LayoutParams(-1,-2);center.gravity=Gravity.CENTER;hero.addView(brand,center);root.addView(hero,ModulePreferenceViews.block(activity));
         LinearLayout identity=ModulePreferenceViews.panel(activity,true);
-        ModulePreferenceViews.row(identity,activity,"project","MindLink","基于 Wex 改进，功能实现参考并移植自 WeKit",repository);root.addView(identity,ModulePreferenceViews.block(activity));
+        ModulePreferenceViews.row(identity,activity,"project","WeLiquid","基于 Wex 改进，功能实现参考并移植自 WeKit",repository);root.addView(identity,ModulePreferenceViews.block(activity));
         LinearLayout info=ModulePreferenceViews.panel(activity,true);
         ModulePreferenceViews.info(info,activity,"设备型号",state.device);ModulePreferenceViews.info(info,activity,"Android 版本",state.androidVersion);
         ModulePreferenceViews.info(info,activity,"微信版本",state.wechatVersion);ModulePreferenceViews.info(info,activity,"兼容性参考基线","微信 8.0.76 (3141)；不代表全部功能已验证");root.addView(info,ModulePreferenceViews.block(activity));
@@ -36,7 +36,7 @@ final class ModuleAboutPage {
         LinearLayout notices=ModulePreferenceViews.panel(activity,true);
         ModulePreferenceViews.row(notices,activity,"privacy","隐私与安全","本地存储、资料读取与联网范围",()->open.accept(ModulePageState.Page.PRIVACY));
         ModulePreferenceViews.row(notices,activity,"credits","开源致谢","Wex、WeKit 与第三方组件",()->open.accept(ModulePageState.Page.CREDITS));root.addView(notices,ModulePreferenceViews.block(activity));
-        TextView footer=ModulePreferenceViews.text(activity,"MindLink · GPL-3.0",14,false,SettingsTheme.sub(activity));footer.setPadding(ModulePreferenceViews.dp(activity,12),0,0,ModulePreferenceViews.dp(activity,12));root.addView(footer,new LinearLayout.LayoutParams(-1,-2));
+        TextView footer=ModulePreferenceViews.text(activity,"WeLiquid · GPL-3.0",14,false,SettingsTheme.sub(activity));footer.setPadding(ModulePreferenceViews.dp(activity,12),0,0,ModulePreferenceViews.dp(activity,12));root.addView(footer,new LinearLayout.LayoutParams(-1,-2));
     }
     static String document(Activity activity,ModulePageState.Page page){
         String path=page==ModulePageState.Page.LICENSE?"mindlink/LICENSE.txt":page==ModulePageState.Page.CREDITS?"mindlink/THIRD-PARTY-NOTICES.md":"mindlink/README.md";

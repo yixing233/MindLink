@@ -734,7 +734,10 @@ final class FloatingHeaderStyle {
         layer.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
         layer.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         SeparatedDecoration decoration = new SeparatedDecoration(header.getContext(), root, classified);
-        if (backdrop != null) decoration.glass.backdrop(backdrop, backdrop);
+        if (backdrop != null) {
+            decoration.glass.backdrop(backdrop, backdrop);
+            decoration.bandBackdrop.backdrop(backdrop, backdrop);
+        }
         layer.addView(decoration, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         SeparatedState next = new SeparatedState(header, root, layer, decoration, visuals);
         removeShadowLayers(headerParent, header, layer);
@@ -821,6 +824,11 @@ final class FloatingHeaderStyle {
         painted.union(state.decoration.left);
         if(!state.decoration.title.isEmpty())painted.union(state.decoration.title);
         if(!state.decoration.right.isEmpty())painted.union(state.decoration.right);
+        int[] rootOrigin = new int[2];
+        state.root.getLocationInWindow(rootOrigin);
+        int bandTop = -Math.max(0, Math.min(rootOrigin[1], Math.round(128f * density)));
+        int bandBottom = bandTop + Math.round((state.root.getHeight() - bandTop) * ProgressiveTopBlur.HEIGHT_FACTOR);
+        painted.union(0, bandTop, state.root.getWidth(), bandBottom);
         int left=(int)Math.floor(painted.left)-shadowPadding, top=(int)Math.floor(painted.top)-shadowPadding;
         int right=(int)Math.ceil(painted.right)+shadowPadding, bottom=(int)Math.ceil(painted.bottom)+shadowPadding;
         state.decoration.offsetX=-left;state.decoration.offsetY=-top;
@@ -842,9 +850,8 @@ final class FloatingHeaderStyle {
         int height = bottom-top;
         ViewGroup parent = state.layer.getParent() instanceof ViewGroup ? (ViewGroup) state.layer.getParent() : null;
         if (parent == null) return;
-        int[] parentOrigin=new int[2], rootOrigin=new int[2];
+        int[] parentOrigin=new int[2];
         parent.getLocationInWindow(parentOrigin);
-        state.root.getLocationInWindow(rootOrigin);
         int layerLeft=left+rootOrigin[0]-parentOrigin[0]-parent.getPaddingLeft();
         int layerTop=top+rootOrigin[1]-parentOrigin[1]-parent.getPaddingTop();
         boolean marginsDiffer = !(params instanceof ViewGroup.MarginLayoutParams)
@@ -879,9 +886,11 @@ final class FloatingHeaderStyle {
     static void restoreSeparated(SeparatedState state) {
         if (state == null) return;
         state.decoration.glass.stop();
+        state.decoration.bandBackdrop.stop();
+        state.decoration.band.release();
         state.decoration.leftShadow.release();
         state.decoration.titleShadow.release();
-        state.decoration.rightShadow.release();
+        for (LiquidGlassDecoration shadow : state.decoration.rightShadows) shadow.release();
         if (state.layer.getParent() instanceof ViewGroup) {
             ((ViewGroup) state.layer.getParent()).removeView(state.layer);
         }
@@ -926,14 +935,19 @@ final class FloatingHeaderStyle {
     private static final class SeparatedDecoration extends View {
         final RelativeLayout root; final android.graphics.Paint stroke=new android.graphics.Paint(1);
         final ChatGlassSurface glass=new ChatGlassSurface(this);
-        final LiquidGlassDecoration leftShadow=new LiquidGlassDecoration(), titleShadow=new LiquidGlassDecoration(), rightShadow=new LiquidGlassDecoration();
+        final ChatGlassSurface bandBackdrop=new ChatGlassSurface(this);
+        final ProgressiveTopBlur band=new ProgressiveTopBlur();
+        final LiquidGlassDecoration leftShadow=new LiquidGlassDecoration(), titleShadow=new LiquidGlassDecoration();
+        final List<LiquidGlassDecoration> rightShadows = new ArrayList<>();
+        final List<android.graphics.RectF> rightButtons = new ArrayList<>();
+        final List<Float> rightCenters = new ArrayList<>();
         final android.graphics.RectF left=new android.graphics.RectF(),title=new android.graphics.RectF(),right=new android.graphics.RectF();
         /** The symmetric title pill; {@link #title} equals it unless {@link #wide}. */
         final android.graphics.RectF centred=new android.graphics.RectF();
         /** The title does not fit the centred pill: span everything between the circles. */
         boolean wide;
         final View backHost,titleHost,menuHost;
-        int corner,gap,elevation,shadowPadding,offsetX,offsetY; float strokeWidth; int strokeColor;
+        int corner,gap,elevation,shadowPadding,offsetX,offsetY,windowY; float strokeWidth; int strokeColor;
         SeparatedDecoration(android.content.Context context,RelativeLayout root,View[] parts){super(context);this.root=root;setLayerType(LAYER_TYPE_HARDWARE,null);setClickable(false);backHost=parts[0];titleHost=parts[1];menuHost=parts[2];stroke.setStyle(android.graphics.Paint.Style.STROKE);}
         void update(int c,int g,int e,int padding){corner=c;gap=g;elevation=e;shadowPadding=padding;invalidate();}
         /** WeKit strokes pills 1dp 0x24FFFFFF in dark mode only; light mode keeps shadow-only definition. */
@@ -946,7 +960,7 @@ final class FloatingHeaderStyle {
             root.getLocationInWindow(rootAt); getLocationInWindow(selfAt);
             int x=rootAt[0]-selfAt[0],y=rootAt[1]-selfAt[1];
             if(x+root.getWidth()<=0||y+root.getHeight()<=0||x>=getWidth()||y>=getHeight()) return false;
-            offsetX=x;offsetY=y;return true;
+            offsetX=x;offsetY=y;windowY=rootAt[1];return true;
         }
 
         @Override protected void onDraw(android.graphics.Canvas canvas){
@@ -958,13 +972,19 @@ final class FloatingHeaderStyle {
             // Geometry is relative to the native root; the drawing layer starts outside it.
             left.offset(offsetX,offsetY);
             if(!title.isEmpty())title.offset(offsetX,offsetY);
-            if(!right.isEmpty())right.offset(offsetX,offsetY);
+            for (android.graphics.RectF button : rightButtons) button.offset(offsetX,offsetY);
             int color=sampleColor(root);boolean dark=SettingsTheme.isDark(root.getContext());
-            glass.configure(color, corner * d, d, SettingsTheme.isDark(root.getContext()),
-                    ChatGlassSurface.mode(), ChatGlassSurface.blurRadiusDp(ChatGlassSurface.mode()));
-            pill(canvas, leftShadow, left, corner * d, d, dark);
-            pill(canvas, titleShadow, title, corner * d, d, dark);
-            pill(canvas, rightShadow, right, corner * d, d, dark);
+            int material = ChatGlassSurface.mode(), blur = ChatGlassSurface.blurRadiusDp(material);
+            int top = -Math.max(0, Math.min(windowY, Math.round(128f * d)));
+            int bottom = top + Math.round((root.getHeight() - top) * ProgressiveTopBlur.HEIGHT_FACTOR);
+            band.draw(canvas, bandBackdrop.sharedSampler(), offsetX, root.getWidth(), offsetY + top, offsetY + bottom, d, dark, 1f);
+            pill(canvas, leftShadow, left, left.height() / 2, d, dark, color, material, blur);
+            pill(canvas, titleShadow, title, corner * d, d, dark, color, material, blur);
+            for (int i = 0; i < rightButtons.size(); i++) {
+                if (rightShadows.size() == i) rightShadows.add(new LiquidGlassDecoration());
+                android.graphics.RectF button = rightButtons.get(i);
+                pill(canvas, rightShadows.get(i), button, button.height() / 2, d, dark, color, material, blur);
+            }
             if(strokeWidth>0f){stroke.setStrokeWidth(strokeWidth);stroke.setColor(strokeColor);draw(canvas,stroke);}
         }
         void geometry(){
@@ -1004,9 +1024,11 @@ final class FloatingHeaderStyle {
             }
             out.setEmpty();
         }
-        /** Union of visible action circles under the right host; empty slots (INVISIBLE, no content) skipped.
-         *  The right part wraps one menu container (WeChat's WXActionMenuView); actions live inside it. */
+        /** Paint visible actions separately and reserve the whole group when sizing the title. */
         void menuActions(View host,float diameter){
+            rightButtons.clear();
+            rightCenters.clear();
+            right.setEmpty();
             if(!(host instanceof ViewGroup))return;
             ViewGroup group=(ViewGroup)host,menu=group;
             for(int i=0;i<group.getChildCount();i++){
@@ -1016,8 +1038,18 @@ final class FloatingHeaderStyle {
             for(int i=0;i<menu.getChildCount();i++){
                 View action=menu.getChildAt(i);
                 if(!visibleMenuAction(action))continue;
-                android.graphics.RectF b=bounds(action);float center=b.centerX();
-                android.graphics.RectF card=new android.graphics.RectF(center-diameter/2,0,center+diameter/2,diameter);
+                rightCenters.add(bounds(action).centerX());
+            }
+            rightCenters.sort(Float::compare);
+            float spacing = 4f * getResources().getDisplayMetrics().density;
+            for (int i = 0; i < rightCenters.size(); i++) {
+                float center = rightCenters.get(i), size = diameter;
+                if (i > 0) size = Math.min(size, center - rightCenters.get(i - 1) - spacing);
+                if (i + 1 < rightCenters.size()) size = Math.min(size, rightCenters.get(i + 1) - center - spacing);
+                if (size <= 0f) continue;
+                android.graphics.RectF card = new android.graphics.RectF(center - size / 2f, (diameter - size) / 2f,
+                        center + size / 2f, (diameter + size) / 2f);
+                rightButtons.add(card);
                 if(right.isEmpty())right.set(card);else right.union(card);
             }
         }
@@ -1038,10 +1070,11 @@ final class FloatingHeaderStyle {
             }
             return false;
         }
-        void draw(android.graphics.Canvas c,android.graphics.Paint p){float r=corner*getResources().getDisplayMetrics().density;if(!left.isEmpty())c.drawRoundRect(left,left.height()/2,left.height()/2,p);if(!title.isEmpty())c.drawRoundRect(title,r,r,p);if(!right.isEmpty())c.drawRoundRect(right,right.height()/2,right.height()/2,p);}
+        void draw(android.graphics.Canvas c,android.graphics.Paint p){float r=corner*getResources().getDisplayMetrics().density;if(!left.isEmpty())c.drawRoundRect(left,left.height()/2,left.height()/2,p);if(!title.isEmpty())c.drawRoundRect(title,r,r,p);for(android.graphics.RectF button:rightButtons)c.drawRoundRect(button,button.height()/2,button.height()/2,p);}
         private void pill(android.graphics.Canvas canvas, LiquidGlassDecoration shadow, android.graphics.RectF rect,
-                          float radius, float density, boolean dark) {
+                          float radius, float density, boolean dark, int color, int material, int blur) {
             if (rect.isEmpty()) return;
+            glass.configure(color, radius, density, dark, material, blur);
             shadow.dropShadow(canvas, rect, radius, density, dark);
             glass.setBounds((int)Math.floor(rect.left),(int)Math.floor(rect.top),
                     (int)Math.ceil(rect.right),(int)Math.ceil(rect.bottom));

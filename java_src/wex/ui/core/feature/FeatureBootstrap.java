@@ -92,6 +92,14 @@ public final class FeatureBootstrap {
                 HomeTopBarCards.init();
             }
         });
+        start("朋友圈顶栏卡片", new Initializer() {
+            @Override public void run() {
+                MomentsTopBarCards.init(selectedHostLoader(lpparam));
+            }
+        });
+        start("通用顶栏卡片", new Initializer() {
+            @Override public void run() { NativeTopBarCards.init(); }
+        });
     }
 
     private static ClassLoader selectedHostLoader(XC_LoadPackage.LoadPackageParam load) {

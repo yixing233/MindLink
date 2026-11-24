@@ -48,7 +48,7 @@ sealed interface HomeSidePanelStatusUiState {
 }
 
 sealed interface HomeSidePanelCardRuntimeState {
-    data class Weather(val state: WeatherUiState) : HomeSidePanelCardRuntimeState
+    data class Weather(val state: WeatherUiState, val editor: WeatherPlaceEditor = WeatherPlaceEditor()) : HomeSidePanelCardRuntimeState
     data class Wallet(val state: HomeSidePanelWalletUiState) : HomeSidePanelCardRuntimeState
     data class Hitokoto(val state: HitokotoUiState) : HomeSidePanelCardRuntimeState
 }
@@ -116,10 +116,17 @@ class HomeSidePanelState(snapshot: Bundle, images: Map<String, Bitmap>, callback
     fun addCard(type: String) = call("add_card:$type")
     fun updateLunar(id: String) = call("update_lunar:$id")
     fun updateWalletMask(id: String) = call("update_wallet_mask:$id")
-    fun updateWeatherCity(id: String, cityCode: String) {
-        dev.mindlink.compose.WeatherCityPayload.CODE = cityCode
-        call("update_weather_city:$id")
+    private fun input(key: String, data: Bundle) {
+        checkMain()
+        if (!active || disposed) return
+        @Suppress("UNCHECKED_CAST")
+        (callbacks[key] as? java.util.function.Consumer<Bundle>)?.accept(data)
     }
+    fun locateWeather(id: String) = call("locate_weather:$id")
+    fun searchWeatherCity(id: String, query: String) = input("search_weather_city:$id", Bundle().apply { putString("query", query) })
+    fun selectWeatherCity(id: String, token: String, index: Int) = input("select_weather_city:$id", Bundle().apply {
+        putString("token", token); putInt("index", index)
+    })
     fun updateHitokoto(id: String, settings: HitokotoSettings) {
         val payload = dev.mindlink.compose.PendingHitokotoSettings.get()
         payload.categories = settings.categories.joinToString(",") { it }
@@ -179,9 +186,13 @@ private fun readSnapshot(values: Bundle, images: Map<String, Bitmap>): HomeSideP
             "date_time" -> DateTimeCardConfig(id, card.boolean("showLunarCalendar", false))
             "weather" -> {
                 val state = readWeatherState(card.bundle("state"))
-                runtime[id] = HomeSidePanelCardRuntimeState.Weather(state)
+                val editor = card.optionalBundle("placeEditor")
+                runtime[id] = HomeSidePanelCardRuntimeState.Weather(state, if (editor == null) WeatherPlaceEditor() else WeatherPlaceEditor(
+                    editor.boolean("current", false), editor.boolean("busy", false), editor.string("message", ""),
+                    editor.string("token", ""), editor.bundles("choices").map(::readCity),
+                ))
                 @Suppress("DEPRECATION") val configuredCity = card.get("city")
-                val city = weatherCardSnapshot(state)?.city ?: (configuredCity as? Bundle)?.let(::readCity)
+                val city = (configuredCity as? Bundle)?.let(::readCity) ?: weatherCardSnapshot(state)?.city
                 WeatherCardConfig(id, city)
             }
             "wallet" -> {
@@ -267,6 +278,7 @@ private fun readStatus(value: Bundle, images: Map<String, Bitmap>): HomeSidePane
 private fun readCity(value: Bundle) = WeatherCity(
     value.string("countryCode"), value.string("province"), value.string("city"),
     value.optionalString("district"), value.string("cityNum"), value.optionalDouble("latitude"), value.optionalDouble("longitude"),
+    value.string("source", ""), value.optionalDouble("accuracy"),
 )
 
 private fun readWeatherSnapshot(value: Bundle) = WeatherSnapshot(

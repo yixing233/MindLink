@@ -34,12 +34,14 @@ final class HomeSidePanelData {
             }, new ThreadPoolExecutor.AbortPolicy());
     private static final Set<String> ACTIVE = ConcurrentHashMap.newKeySet();
     private static final ConcurrentHashMap<String, Attempt> ATTEMPTS = new ConcurrentHashMap<>();
+    private static final Object WEATHER_CACHE_LOCK = new Object();
+    private static final ConcurrentHashMap<String, String> WEATHER_TARGETS = new ConcurrentHashMap<>();
 
     private HomeSidePanelData() { }
 
     // Keep the old renderer entry points for its Java editor/legacy callers, not as the Compose model.
     static String weather(HomeSidePanelLayout.Card card) {
-        String fingerprint = safe(card.weatherCity).trim();
+        String fingerprint = weatherFingerprint(resolvedCity(card.weatherCity));
         Bundle state = weatherState(card, true);
         Cache cache = read("weather", card.id, fingerprint);
         return cache == null ? state.getString("message", "加载中...") : cache.display;
@@ -52,17 +54,19 @@ final class HomeSidePanelData {
     }
 
     static Bundle weatherState(HomeSidePanelLayout.Card card, boolean requestIfExpired) {
-        String configuredCity = safe(card.weatherCity).trim();
-        String fingerprint = configuredCity;
+        String configuredCity = resolvedCity(card.weatherCity);
+        String fingerprint = weatherFingerprint(configuredCity);
+        trackWeather(card.id, fingerprint);
         String requestKey = "weather:" + card.id + ":" + fingerprint;
         Cache cached = read("weather", card.id, fingerprint);
-        boolean valid = validCity(configuredCity);
+        boolean valid = !fingerprint.isEmpty();
         boolean consent = LocationPrivacy.isEnabled();
         if (valid && consent && requestIfExpired && stale(cached, WEATHER_TTL)) {
             request(requestKey, "天气", false,
                     () -> fetchWeather(card.id, configuredCity, fingerprint));
         }
-        return state("天气", cached, requestKey, consent, valid ? null : "城市代码无效，请在编辑页设置城市");
+        return state("天气", cached, requestKey, consent, valid ? null : WeatherLocation.CURRENT.equals(card.weatherCity)
+                ? "请在天气设置中获取当前位置" : "请选择城市或区县");
     }
 
     static Bundle hitokotoState(HomeSidePanelLayout.Card card, boolean requestIfExpired) {
@@ -83,9 +87,11 @@ final class HomeSidePanelData {
         if (card == null || !LocationPrivacy.isEnabled()) {
             HomeSidePanelFeature.refreshOpenDrawers(); return;
         }
-        String city = safe(card.weatherCity).trim();
-        if (validCity(city)) request("weather:" + card.id + ":" + city, "天气", true,
-                () -> fetchWeather(card.id, city, city));
+        String city = resolvedCity(card.weatherCity);
+        String fingerprint = weatherFingerprint(city);
+        trackWeather(card.id, fingerprint);
+        if (!fingerprint.isEmpty()) request("weather:" + card.id + ":" + fingerprint, "天气", true,
+                () -> fetchWeather(card.id, city, fingerprint));
         HomeSidePanelFeature.refreshOpenDrawers();
     }
 
@@ -128,13 +134,37 @@ final class HomeSidePanelData {
 
     private static void fetchWeather(String id, String configuredCity, String fingerprint) throws Exception {
         JSONObject city = city(configuredCity);
-        String endpoint = weatherEndpoint("0", "0") + "&locationKey=" + encode("weathercn:" + city.getString("cityNum"));
-        JSONObject snapshot = parseWeather(get(endpoint, "weatherapi.market.xiaomi.com"),
+        JSONObject snapshot = parseWeather(get(weatherEndpoint(city), "weatherapi.market.xiaomi.com"),
                 city, System.currentTimeMillis());
         String display = weatherName(snapshot.getString("weatherCode")) + "  "
                 + snapshot.getString("temperature") + "°  " + snapshot.getString("high") + "°/"
                 + snapshot.getString("low") + "°  体感 " + snapshot.getString("feelsLike") + "°";
-        write("weather", id, fingerprint, display, snapshot);
+        // A superseded city request may finish last; it must not replace the currently selected place.
+        synchronized (WEATHER_CACHE_LOCK) {
+            if (fingerprint.equals(WEATHER_TARGETS.get(id))) write("weather", id, fingerprint, display, snapshot);
+        }
+    }
+
+    private static void trackWeather(String id, String fingerprint) {
+        synchronized (WEATHER_CACHE_LOCK) { WEATHER_TARGETS.put(id, fingerprint); }
+    }
+
+    static String weatherEndpoint(JSONObject city) throws Exception {
+        String code = city.getString("cityNum");
+        return code.isEmpty()
+                ? weatherEndpoint(String.valueOf(city.getDouble("latitude")), String.valueOf(city.getDouble("longitude")))
+                : weatherEndpoint("0", "0") + "&locationKey=" + encode("weathercn:" + code);
+    }
+
+    static String weatherFingerprint(String configuredCity) {
+        try {
+            JSONObject city = city(configuredCity);
+            // Keep legacy cache identity, but ignore fix time and accuracy for coordinate places.
+            if (!city.getString("cityNum").isEmpty()) return configuredCity;
+            city.remove("accuracy");
+            city.remove("locatedAt");
+            return city.toString();
+        } catch (Exception ignored) { return ""; }
     }
 
     /** Xiaomi v3 parameters verified against CrabTab's src/utils/weather.ts (9e1f0f7).
@@ -313,9 +343,15 @@ final class HomeSidePanelData {
                 : new JSONObject().put("cityNum", value));
     }
 
+    static String resolvedCity(String configured) {
+        return WeatherLocation.CURRENT.equals(configured) ? WeatherLocation.saved() : safe(configured).trim();
+    }
+
     private static JSONObject normalizeCity(JSONObject source) throws Exception {
-        String cityNum = required(source, "cityNum");
-        if (!cityNum.matches("[0-9]{9}")) throw new IllegalArgumentException("Invalid city number");
+        String cityNum = source.optString("cityNum", "").trim();
+        boolean coordinates = !source.isNull("latitude") && !source.isNull("longitude");
+        if ((!cityNum.isEmpty() && !cityNum.matches("[0-9]{9}")) || cityNum.isEmpty() && !coordinates
+                || source.isNull("latitude") != source.isNull("longitude")) throw new IllegalArgumentException("Invalid weather place");
         JSONObject result = new JSONObject().put("cityNum", cityNum);
         for (String name : new String[]{"countryCode", "province", "city", "district"}) {
             Object value = source.opt(name);
@@ -334,6 +370,14 @@ final class HomeSidePanelData {
                 result.put(name, coordinate);
             }
         }
+        String origin = source.optString("source", "");
+        if ("current".equals(origin) || "manual".equals(origin)) result.put("source", origin);
+        if (source.has("accuracy")) {
+            double accuracy = source.getDouble("accuracy");
+            if (!Double.isFinite(accuracy) || accuracy <= 0) throw new IllegalArgumentException("Invalid accuracy");
+            result.put("accuracy", accuracy);
+        }
+        if (source.has("locatedAt")) result.put("locatedAt", source.getLong("locatedAt"));
         return result;
     }
 
@@ -395,7 +439,6 @@ final class HomeSidePanelData {
         return result;
     }
 
-    private static boolean validCity(String value) { try { city(value); return true; } catch (Exception ignored) { return false; } }
     private static boolean validHitokoto(HomeSidePanelLayout.Card card) {
         Integer min = card.hitokotoMinLength, max = card.hitokotoMaxLength;
         if (min != null && min < 0 || max != null && max < 0 || min != null && max != null && max < min) return false;

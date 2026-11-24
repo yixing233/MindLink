@@ -2,7 +2,7 @@
 #
 # 用法（工程根目录）：
 #   powershell -ExecutionPolicy Bypass -File scripts/build.ps1
-# 产物：build/full-build-<时间与编号>/MindLink-1.0.apk；不覆盖旧候选。
+# 产物：build/full-build-<时间与编号>/WeLiquid-1.0.apk；不覆盖旧候选。
 # 可指定已安装 BaselineApk、BaselineSha256 与 ScopedPreparation，仅替换批准的功能类。
 #
 # 可用环境变量覆盖自动探测：
@@ -317,7 +317,7 @@ if ($code -ne 0) { throw "zipalign 失败（退出码 $code）" }
 # ============================================================ 7. sign
 Write-Host '[7/7] 签名'
 if ($Unsigned) {
-  $final = "$BUILD\MindLink-1.0-unsigned.apk"
+  $final = "$BUILD\WeLiquid-1.0-unsigned.apk"
   Copy-Item -LiteralPath "$BUILD\aligned.apk" -Destination $final
   Write-Host "未签名构建完成（不能直接安装）：$final"
   Write-Host ("大小：{0:N2} MiB" -f ((Get-Item -LiteralPath $final).Length / 1MB))
@@ -325,7 +325,7 @@ if ($Unsigned) {
 }
 if (-not (Test-Path $KS)) { throw "原签名密钥缺失，停止签名" }
 
-$final = "$BUILD\MindLink-1.0.apk"
+$final = "$BUILD\WeLiquid-1.0.apk"
 if (Test-Path $final) { Remove-Item $final -Force }
 $code = Invoke-Tool -Exe $JAVA -Arguments @(
   "-jar", $APKSIGNER, "sign",

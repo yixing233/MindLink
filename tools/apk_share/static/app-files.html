@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f6f7fb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>MindLink 构建产物</title>
+<link rel="stylesheet" href="/static/antd-reset.css">
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--line:#eaecf4;--line2:#f1f2f7;--ink:#1b2033;--muted:#8a90a3;--b1:#6366f1;--b2:#8b5cf6}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+.page{overflow-x:hidden;min-height:100vh;padding-bottom:calc(20px + env(safe-area-inset-bottom));background:radial-gradient(1100px 520px at 12% -10%,#e7ebff 0,transparent 60%),radial-gradient(900px 480px at 108% 108%,#f0e8ff 0,transparent 55%),var(--bg)}
+.shell{max-width:880px;margin:0 auto;padding:0 16px}
+.topbar{position:sticky;top:0;z-index:20;background:rgba(246,247,251,.84);backdrop-filter:saturate(180%) blur(14px);-webkit-backdrop-filter:saturate(180%) blur(14px);border-bottom:1px solid rgba(234,236,244,.9);padding-top:env(safe-area-inset-top)}
+.topbar .shell{display:flex;align-items:center;justify-content:space-between;gap:12px;height:60px}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.logo{width:38px;height:38px;flex:none;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:17px;background:linear-gradient(135deg,var(--b1),var(--b2));box-shadow:0 8px 18px rgba(99,102,241,.28)}
+h1{font-size:16px;margin:0;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+h1 span{color:var(--muted);font-weight:400;font-size:12px;margin-left:6px}
+.panel{margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 18px 44px rgba(38,44,96,.08);overflow:hidden}
+.toolbar{display:flex;align-items:center;gap:10px;padding:14px 16px 12px;border-bottom:1px solid var(--line2)}
+.toolbar .grow{flex:1 1 auto;min-width:0}
+.meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 16px;color:#6b7280;font-size:12px;background:#fafbff;border-bottom:1px solid var(--line2)}
+.meta .spacer{flex:1 1 auto}
+.meta .link{background:none;border:0;padding:2px;color:var(--b1);font-size:12px;cursor:pointer}
+.dates{display:flex;gap:8px;overflow-x:auto;padding:10px 12px;border-bottom:1px solid var(--line2);scrollbar-width:none}
+.dates::-webkit-scrollbar{display:none}
+@media (min-width:641px){.dates{flex-wrap:wrap;overflow:visible;padding:12px 16px}}
+.chip{flex:none;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:999px;border:1px solid #e6e8f2;background:#f7f8fd;color:#4b5266;font-size:13px;cursor:pointer;font-family:inherit}
+.chip.on{background:linear-gradient(135deg,var(--b1),var(--b2));border-color:transparent;color:#fff}
+.chip i{font-style:normal;font-size:11px;opacity:.6}
+.bid{color:#aeb4c6;font-weight:500;font-size:11.5px;margin-left:6px}
+.datehead{display:flex;align-items:baseline;gap:8px;padding:14px 16px 8px;background:#fff}
+.datehead .dh-label{font-weight:700;font-size:13.5px;color:#3b4256}
+.datehead .dh-sub{color:#a3a9bd;font-size:11.5px}
+.batch{border-bottom:1px solid var(--line2)}
+.batch:last-child{border-bottom:none}
+.bhead{display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px 12px 8px;background:none;border:0;text-align:left;cursor:pointer;font:inherit;color:inherit}
+.bhead:hover{background:#fafbff}
+.chev{flex:none;display:flex;color:#a3a9bd;transition:transform .18s ease}
+.batch.open .chev{transform:rotate(90deg);color:var(--b1)}
+.bmain{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:3px}
+.bname{display:flex;align-items:center;flex-wrap:wrap;font-weight:600;font-size:14.5px;word-break:break-all}
+.bmeta{color:var(--muted);font-size:12px}
+.bdir{flex:none;max-width:34%;color:#b0b6c7;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+.bfiles{background:#fbfbfe;border-top:1px dashed #eef0f8}
+.frow{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #f4f5fa}
+.frow:last-child{border-bottom:none}
+.fmain{flex:1 1 auto;min-width:0}
+.fn{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13.5px;font-weight:500}
+.fname{word-break:break-all}
+.fs{color:var(--muted);font-size:11.5px;margin-top:2px}
+.fact{display:flex;align-items:center;gap:4px;flex:none}
+.loading{padding:56px 16px;text-align:center;color:var(--muted)}
+footer{text-align:center;color:#9aa1b2;font-size:12px;margin:16px 0 0;line-height:1.7;padding:0 16px}
+.ant-btn{height:38px}
+@media (max-width:640px){
+  .shell{padding:0 12px}
+  .topbar .shell{height:56px;gap:8px}
+  h1{font-size:15px}
+  h1 span{display:none}
+  .logo{width:34px;height:34px;border-radius:11px;font-size:15px}
+  .panel{margin-top:12px;border-radius:14px}
+  .toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:12px}
+  .toolbar .grow{min-width:0}
+  .toolbar .ant-input-affix-wrapper{height:44px;border-radius:12px}
+  .toolbar .refresh{width:44px;min-width:44px;height:44px;padding:0}
+  .toolbar .refresh .lbl{display:none}
+  .meta{padding:9px 12px;font-size:11.5px;gap:6px}
+  .dates{padding:9px 12px}
+  .bhead{padding:13px 12px;gap:8px}
+  .bdir{display:none}
+  .bname{font-size:14px}
+  .bmeta{font-size:11.5px}
+  .frow{padding:9px 12px;gap:8px}
+  .fname{font-size:13px}
+  .fact .cp{display:none}
+  .fact .dl{width:44px;min-width:44px;height:44px;padding:0}
+  .fact .dl .lbl{display:none}
+  footer{margin-top:12px}
+}
+
+.tabs{display:flex;gap:8px;margin-top:16px;padding:4px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 26px rgba(38,44,96,.05)}
+.tab{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;height:40px;border:0;border-radius:11px;background:none;color:#5b6277;font:inherit;font-size:14px;cursor:pointer}
+.tab i{font-style:normal;font-size:11px;color:#a3a9bd;background:#f1f2f8;border-radius:999px;padding:1px 7px}
+.tab.on{background:linear-gradient(135deg,var(--b1),var(--b2));color:#fff;font-weight:600;box-shadow:0 6px 16px rgba(99,102,241,.28)}
+.tab.on i{background:rgba(255,255,255,.22);color:#fff}
+.panel{margin-top:12px}
+.logtag{font-weight:500}
+.logstrip{margin:10px 12px 4px;padding:12px;border:1px solid #e6e9fb;background:linear-gradient(180deg,#f7f8ff,#fbfbff);border-radius:12px}
+.ls-head{display:flex;align-items:center;gap:6px;font-size:13.5px;flex-wrap:wrap}
+.ls-ico{display:flex;color:var(--b1)}
+.ls-sum{margin:6px 0 0;color:#5b6277;font-size:12.5px;line-height:1.6}
+.lchanges{margin:6px 0 0;padding-left:18px;color:#3f465c;font-size:13px;line-height:1.75}
+.lchanges li{margin:2px 0}
+.ls-tags{margin-top:8px}
+.hintbar{padding:10px 16px;background:#fafbff;border-bottom:1px solid var(--line2);color:#6b7280;font-size:12px}
+.logcard{border-bottom:1px solid var(--line2);padding:14px 16px}
+.logcard.picked{background:#f6f7ff}
+.lc-head{display:flex;align-items:flex-start;gap:10px}
+.lc-title{flex:1 1 auto;min-width:0}
+.lc-name{display:flex;align-items:center;flex-wrap:wrap;font-weight:600;font-size:14.5px;gap:4px}
+.lc-meta{color:var(--muted);font-size:12px;margin-top:3px}
+.lc-act{display:flex;align-items:center;gap:4px;flex:none}
+.lc-body{margin-top:8px}
+.lc-batch{margin-top:8px;color:#b0b6c7;font-size:11px;word-break:break-all}
+.lnote{margin:8px 0 0;padding:10px;background:#f7f8fd;border-radius:8px;font-size:12px;line-height:1.6;white-space:pre-wrap;word-break:break-word;max-height:220px;overflow:auto;color:#4b5266}
+.hint{padding:10px;color:#8a90a3;font-size:12px;text-align:center}
+.cmpbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));z-index:40;display:flex;align-items:center;gap:10px;padding:8px 12px;background:#fff;border:1px solid var(--line);border-radius:999px;box-shadow:0 12px 30px rgba(38,44,96,.18);font-size:12.5px;color:#5b6277}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cmp-col{background:#fafbff;border:1px solid #eef0f8;border-radius:10px;padding:10px}
+.cmp-h{font-weight:600;font-size:13.5px}
+.cmp-m{color:var(--muted);font-size:11.5px;margin-top:3px}
+.cmp-diff{grid-column:1 / -1;background:#fff;border:1px dashed #e2e5f2;border-radius:10px;padding:10px}
+.cd-title{font-weight:600;font-size:13px;margin-bottom:6px}
+.cd-row{font-size:12.5px;color:#4b5266;line-height:1.7;word-break:break-word}
+@media (max-width:640px){
+  .tabs{margin-top:12px;border-radius:12px}
+  .tab{height:40px;font-size:13.5px}
+  .logcard{padding:12px}
+  .lc-head{flex-wrap:wrap;gap:8px}
+  .lc-act{width:100%;justify-content:flex-end}
+  .lc-act .dl{height:40px}
+  .cmp{grid-template-columns:1fr}
+  .logstrip{margin:10px 10px 4px}
+  .hintbar{padding:9px 12px;font-size:11.5px}
+}
+.cmpsheet{margin:0;padding:12px 16px;background:#f8f9ff;border-bottom:1px solid var(--line2)}
+.cs-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.cs-title{font-weight:600;font-size:13.5px}
+.cmp-k{font-size:11px;color:#a3a9bd;margin-bottom:2px}
+.cd-act{display:flex;gap:8px;margin-top:8px}
+</style></head><body><div id="root"></div>
+<script src="/static/react.min.js"></script>
+<script src="/static/react-dom.min.js"></script>
+<script src="/static/dayjs.min.js"></script>
+<script src="/static/antd.min.js"></script>
+<script>
+const h = React.createElement;
+const { ConfigProvider, Input, Button, Tag, Spin, Empty, message, Tooltip, Checkbox } = antd;
+
+function svg(children, size) {
+  return h("svg", { viewBox: "0 0 24 24", width: size || 16, height: size || 16, fill: "none",
+    stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" }, children);
+}
+const Icon = {
+  download: () => svg([h("path", { key: 1, d: "M12 3v11" }), h("path", { key: 2, d: "m8 10 4 4 4-4" }), h("path", { key: 3, d: "M4 19h16" })]),
+  copy: () => svg([h("rect", { key: 1, x: 9, y: 9, width: 11, height: 11, rx: 2 }), h("path", { key: 2, d: "M5 15V5h10" })]),
+  search: () => svg([h("circle", { key: 1, cx: 11, cy: 11, r: 7 }), h("path", { key: 2, d: "m20 20-3.6-3.6" })]),
+  refresh: () => svg([h("path", { key: 1, d: "M20 12a8 8 0 1 1-2.3-5.7" }), h("path", { key: 2, d: "M20 4v4h-4" })]),
+  logout: () => svg([h("path", { key: 1, d: "M15 4h4v16h-4" }), h("path", { key: 2, d: "m10 8-4 4 4 4" }), h("path", { key: 3, d: "M6 12h9" })]),
+  chevron: () => svg([h("path", { key: 1, d: "m9 6 6 6-6 6" })]),
+  note: () => svg([h("path", { key: 1, d: "M7 3h7l4 4v14H7z" }), h("path", { key: 2, d: "M14 3v4h4" }), h("path", { key: 3, d: "M10 12h5" }), h("path", { key: 4, d: "M10 16h5" })]),
+  diff: () => svg([h("path", { key: 1, d: "M6 3v18" }), h("path", { key: 2, d: "M18 3v18" }), h("path", { key: 3, d: "m9 8 3-3 3 3" }), h("path", { key: 4, d: "m9 16 3 3 3-3" })])
+};
+
+function formatSize(bytes) {
+  if (!bytes) return "0 B";
+  const u = ["B", "KB", "MB", "GB"]; let i = 0, v = bytes;
+  while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; }
+  return (i === 0 ? v : v.toFixed(v < 10 ? 2 : 1)) + " " + u[i];
+}
+
+function batchInfo(dir, files) {
+  const ts = Math.max.apply(null, files.map(f => f.mtime));
+  const m = dir && dir.match(/(20\d{2})(\d{2})(\d{2})/);
+  const date = m ? m[1] + "-" + m[2] + "-" + m[3] : dayjs(ts * 1000).format("YYYY-MM-DD");
+  let title = "根目录散落文件", id = "";
+  if (dir) {
+    const hm = dir.match(/-([0-9a-f]{6,8})$/);
+    if (hm) id = hm[1].slice(-6);
+    title = dir.replace(/-?\d{8}-?/g, "-").replace(/-\d{6}(?=-|$)/g, "").replace(/-[0-9a-f]{6,8}$/, "");
+    title = title.replace(/^-+|-+$/g, "").replace(/-{2,}/g, "-") || "build";
+  }
+  return { date, title, id, time: dayjs(ts * 1000).format("HH:mm"), ts, isRoot: !dir };
+}
+
+function App() {
+  const [tab, setTab] = React.useState(location.hash === "#log" ? "log" : "files");
+  const [files, setFiles] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [logs, setLogs] = React.useState(null);
+  const [logLoading, setLogLoading] = React.useState(false);
+  const [query, setQuery] = React.useState("");
+  const [date, setDate] = React.useState("");
+  const [open, setOpen] = React.useState({});
+  const [logQuery, setLogQuery] = React.useState("");
+  const [picked, setPicked] = React.useState([]);
+  const [compare, setCompare] = React.useState(false);
+
+  function loadFiles() {
+    setLoading(true);
+    fetch("/api/files").then(async r => {
+      if (r.status === 401) { location.replace("/login"); return; }
+      const d = await r.json();
+      setFiles(d.files || []);
+    }).catch(() => message.error("加载失败，请重试"))
+      .finally(() => setLoading(false));
+  }
+  function loadLogs() {
+    setLogLoading(true);
+    fetch("/api/changelog").then(async r => {
+      if (r.status === 401) { location.replace("/login"); return; }
+      const d = await r.json();
+      setLogs(d.versions || []);
+    }).catch(() => message.error("更新日志加载失败"))
+      .finally(() => setLogLoading(false));
+  }
+  React.useEffect(() => { loadFiles(); loadLogs(); }, []);
+
+  const groups = React.useMemo(() => {
+    const map = {};
+    files.forEach(f => { const k = f.dir || ""; (map[k] = map[k] || []).push(f); });
+    return Object.keys(map).map(k => {
+      const fs = map[k].slice();
+      fs.sort((a, b) => (b.name === "MindLink-1.0.apk") - (a.name === "MindLink-1.0.apk") || a.name.localeCompare(b.name));
+      return Object.assign({ key: k || "root", files: fs, size: fs.reduce((s, f) => s + f.size, 0) }, batchInfo(k, fs));
+    }).sort((a, b) => b.ts - a.ts);
+  }, [files]);
+
+  const logByBatch = React.useMemo(() => {
+    const m = {};
+    (logs || []).forEach(v => { if (v.batch) m[v.batch] = v; });
+    return m;
+  }, [logs]);
+
+  const dates = React.useMemo(() => {
+    const m = {};
+    groups.forEach(g => { const d = m[g.date] = m[g.date] || { date: g.date, batches: 0, files: 0, size: 0 };
+      d.batches++; d.files += g.files.length; d.size += g.size; });
+    return Object.keys(m).map(k => m[k]).sort((a, b) => b.date.localeCompare(a.date));
+  }, [groups]);
+
+  const q = query.trim().toLowerCase();
+  const matched = React.useMemo(() => groups.filter(g => !date || g.date === date).map(g => {
+    if (!q) return g;
+    const fs = g.files.filter(f => (f.name + " " + f.dir).toLowerCase().includes(q));
+    return fs.length ? Object.assign({}, g, { files: fs }) : null;
+  }).filter(Boolean), [groups, q, date]);
+
+  const totalFiles = matched.reduce((s, g) => s + g.files.length, 0);
+  const totalSize = matched.reduce((s, g) => s + g.files.reduce((x, f) => x + f.size, 0), 0);
+  const newestKey = groups.length ? groups[0].key : "";
+
+  React.useEffect(() => {
+    if (!groups.length) return;
+    if (q) { const all = {}; matched.forEach(g => { all[g.key] = true; }); setOpen(all); return; }
+    setOpen(prev => Object.keys(prev).length ? prev : { [groups[0].key]: true });
+  }, [files.length, q, date]);
+
+  function toggle(key) { setOpen(prev => Object.assign({}, prev, { [key]: !prev[key] })); }
+  function expandAll(flag) { const next = {}; if (flag) matched.forEach(g => { next[g.key] = true; }); setOpen(next); }
+  function copy(text) {
+    (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject())
+      .then(() => message.success("下载链接已复制"))
+      .catch(() => message.info(text));
+  }
+  function logout() { fetch("/api/logout", { method: "POST" }).finally(() => location.replace("/login")); }
+
+  const logList = React.useMemo(() => {
+    const lq = logQuery.trim().toLowerCase();
+    return (logs || []).filter(v => {
+      if (!lq) return true;
+      const hay = (v.title || "") + " " + (v.version || "") + " " + (v.summary || "") + " "
+        + (v.changes || []).join(" ") + " " + (v.tags || []).join(" ") + " " + (v.batch || "");
+      return hay.toLowerCase().includes(lq);
+    });
+  }, [logs, logQuery]);
+
+  function gotoBatch(v) {
+    setTab("files"); setQuery(""); setDate(v.date || ""); setOpen({ [v.batch]: true });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  function togglePick(v) {
+    setPicked(prev => prev.includes(v.batch) ? prev.filter(x => x !== v.batch)
+      : (prev.length >= 2 ? [prev[1], v.batch] : prev.concat([v.batch])));
+  }
+
+  function fileTags(file) {
+    const out = [];
+    if (file.name === "MindLink-1.0.apk") out.push(h(Tag, { key: "m", color: "purple", style: { marginInlineEnd: 0 } }, "主包"));
+    if (/unsigned/i.test(file.name)) out.push(h(Tag, { key: "u", color: "orange", style: { marginInlineEnd: 0 } }, "未签名"));
+    if (/\.zip$/i.test(file.name)) out.push(h(Tag, { key: "z", style: { marginInlineEnd: 0 } }, "压缩包"));
+    return out;
+  }
+
+  function fileRow(f) {
+    return h("div", { className: "frow", key: f.id },
+      h("div", { className: "fmain" },
+        h("div", { className: "fn" }, h("span", { className: "fname" }, f.name), fileTags(f)),
+        h("div", { className: "fs" }, formatSize(f.size) + " · " + dayjs(f.mtime * 1000).format("MM-DD HH:mm"))),
+      h("div", { className: "fact" },
+        h(Tooltip, { title: "复制直链" },
+          h(Button, { className: "cp", type: "text", size: "small", onClick: () => copy(location.origin + f.url),
+            icon: h(Icon.copy), title: "复制直链" })),
+        h(Button, { className: "dl", type: "primary", href: f.url, icon: h(Icon.download) },
+          h("span", { className: "lbl" }, "下载"))));
+  }
+
+  const filesBody = loading
+    ? h("div", { className: "loading" }, h(Spin, null), h("div", { style: { marginTop: 12 } }, "加载文件列表…"))
+    : !matched.length
+      ? h("div", { style: { padding: 40 } }, h(Empty, { description: q || date ? "没有匹配的构建产物" : "暂无构建产物" }))
+      : matched.map((g, gi) => {
+          const isOpen = !!open[g.key];
+          const log = logByBatch[g.key];
+          const datehead = (gi === 0 || matched[gi - 1].date !== g.date)
+            ? h("div", { className: "datehead", key: "d-" + g.date },
+                h("span", { className: "dh-label" }, dayjs(g.date).format("M月D日")),
+                h("span", { className: "dh-sub" }, (function () {
+                  const same = matched.filter(x => x.date === g.date);
+                  return same.length + " 个批次 · " + formatSize(same.reduce((vv, x) => vv + x.size, 0));
+                })()))
+            : null;
+          const head = h("button", { className: "bhead", type: "button", onClick: () => toggle(g.key), key: "h",
+              "aria-expanded": isOpen },
+            h("span", { className: "chev" }, h(Icon.chevron)),
+            h("span", { className: "bmain" },
+              h("span", { className: "bname" }, g.title,
+                g.id ? h("span", { className: "bid" }, "#" + g.id) : null,
+                g.key === newestKey ? h(Tag, { color: "purple", style: { marginInlineStart: 6, marginInlineEnd: 0 } }, "最新") : null,
+                log ? h(Tag, { className: "logtag", color: "geekblue", style: { marginInlineStart: 6, marginInlineEnd: 0 } },
+                  log.version || "更新日志") : null),
+              h("span", { className: "bmeta" }, g.time + " · " + g.files.length + " 个包 · " + formatSize(g.size))),
+            h("span", { className: "bdir" }, g.isRoot ? "" : g.files[0].dir));
+          const strip = isOpen && log ? h("div", { className: "logstrip", key: "s" },
+            h("div", { className: "ls-head" },
+              h("span", { className: "ls-ico" }, h(Icon.note)),
+              h("b", null, log.title || "更新日志"),
+              log.version ? h(Tag, { color: "geekblue", style: { marginInlineEnd: 0 } }, log.version) : null),
+            log.summary ? h("p", { className: "ls-sum" }, log.summary) : null,
+            (log.changes || []).length ? h("ul", { className: "lchanges" }, log.changes.map((c, i) => h("li", { key: i }, c))) : null,
+            (log.tags || []).length ? h("div", { className: "ls-tags" }, log.tags.map((t, i) => h(Tag, { key: i, style: { marginInlineEnd: 6 } }, t))) : null) : null;
+          return [datehead, h("div", { className: "batch" + (isOpen ? " open" : ""), key: g.key }, head,
+            isOpen ? h("div", { className: "bfiles", key: "f" }, strip, g.files.map(fileRow)) : null)];
+        });
+
+  const logsBody = logLoading
+    ? h("div", { className: "loading" }, h(Spin, null), h("div", { style: { marginTop: 12 } }, "加载更新日志…"))
+    : !(logs || []).length
+      ? h("div", { className: "loading" },
+          h(Empty, { description: "还没有更新日志" }),
+          h("div", { className: "hint" }, "在 tools/apk_share/changelog.json 里添加，或在构建目录放 CHANGELOG.md"))
+      : !logList.length
+        ? h("div", { style: { padding: 40 } }, h(Empty, { description: "没有匹配的日志" }))
+        : logList.map(v => h("div", { className: "logcard" + (picked.includes(v.batch) ? " picked" : ""), key: v.batch || v.title },
+            h("div", { className: "lc-head" },
+              h(Checkbox, { checked: picked.includes(v.batch), onChange: () => togglePick(v),
+                disabled: !picked.includes(v.batch) && picked.length >= 2, title: "选择用于对比" }),
+              h("div", { className: "lc-title" },
+                h("div", { className: "lc-name" },
+                  v.version ? h(Tag, { color: "geekblue", style: { marginInlineEnd: 6, marginInlineStart: 0 } }, v.version) : null,
+                  v.title || "未命名版本"),
+                h("div", { className: "lc-meta" },
+                  (v.date || "") + " " + (v.time ? dayjs(v.time * 1000).format("HH:mm") : "")
+                  + " · " + (v.count || 0) + " 个包 · " + formatSize(v.size || 0)
+                  + (v.available === false ? " · 产物已删除" : ""))),
+              h("div", { className: "lc-act" },
+                v.mainUrl ? h(Button, { className: "dl", type: "primary", href: v.mainUrl, icon: h(Icon.download) },
+                  h("span", { className: "lbl" }, "回档下载")) : null,
+                h(Button, { className: "gh", type: "text", size: "small", onClick: () => gotoBatch(v) }, "查看批次"))),
+            h("div", { className: "lc-body" },
+              v.summary ? h("p", { className: "ls-sum" }, v.summary) : null,
+              (v.changes || []).length ? h("ul", { className: "lchanges" }, v.changes.map((c, i) => h("li", { key: i }, c))) : null,
+              (v.tags || []).length ? h("div", { className: "ls-tags" }, v.tags.map((t, i) => h(Tag, { key: i, style: { marginInlineEnd: 6 } }, t))) : null,
+              v.note ? h("pre", { className: "lnote" }, v.note) : null,
+              v.batch ? h("div", { className: "lc-batch" }, "批次 " + v.batch) : null)));
+
+  const pa = picked.length === 2 ? (logs || []).find(x => x.batch === picked[0]) : null;
+  const pb = picked.length === 2 ? (logs || []).find(x => x.batch === picked[1]) : null;
+  function diffOf(a, b) {
+    const ca = (a && a.changes) || [], cb = (b && b.changes) || [];
+    const fa = (a && a.files) || [], fb = (b && b.files) || [];
+    const na = fa.map(f => f.name), nb = fb.map(f => f.name);
+    return {
+      onlyA: ca.filter(x => !cb.includes(x)), onlyB: cb.filter(x => !ca.includes(x)),
+      fileOnlyA: na.filter(x => !nb.includes(x)), fileOnlyB: nb.filter(x => !na.includes(x)),
+      sizeA: (a && a.size) || 0, sizeB: (b && b.size) || 0
+    };
+  }
+  const d = compare && pa && pb ? diffOf(pa, pb) : null;
+
+  const cmpSheet = d ? h("div", { className: "cmpsheet" },
+    h("div", { className: "cs-head" },
+      h("span", { className: "cs-title" }, "版本对比"),
+      h(Button, { size: "small", type: "text", onClick: () => setCompare(false) }, "收起")),
+    h("div", { className: "cmp" },
+      h("div", { className: "cmp-col" },
+        h("div", { className: "cmp-k" }, "版本 A"),
+        h("div", { className: "cmp-h" }, (pa.version || "") + " " + (pa.title || "")),
+        h("div", { className: "cmp-m" }, (pa.date || "") + " · " + (pa.count || 0) + " 个包 · " + formatSize(pa.size || 0)),
+        h("ul", { className: "lchanges" }, (pa.changes || []).map((c, i) => h("li", { key: i }, c)))),
+      h("div", { className: "cmp-col" },
+        h("div", { className: "cmp-k" }, "版本 B"),
+        h("div", { className: "cmp-h" }, (pb.version || "") + " " + (pb.title || "")),
+        h("div", { className: "cmp-m" }, (pb.date || "") + " · " + (pb.count || 0) + " 个包 · " + formatSize(pb.size || 0)),
+        h("ul", { className: "lchanges" }, (pb.changes || []).map((c, i) => h("li", { key: i }, c)))),
+      h("div", { className: "cmp-diff" },
+        h("div", { className: "cd-title" }, "差异（B 相对 A）"),
+        d.onlyB.length ? h("div", { className: "cd-row" }, h("b", null, "新增改动："), d.onlyB.join("；")) : null,
+        d.onlyA.length ? h("div", { className: "cd-row" }, h("b", null, "移除改动："), d.onlyA.join("；")) : null,
+        d.fileOnlyB.length ? h("div", { className: "cd-row" }, h("b", null, "新增文件："), d.fileOnlyB.join("、")) : null,
+        d.fileOnlyA.length ? h("div", { className: "cd-row" }, h("b", null, "缺失文件："), d.fileOnlyA.join("、")) : null,
+        !d.onlyA.length && !d.onlyB.length && !d.fileOnlyA.length && !d.fileOnlyB.length
+          ? h("div", { className: "cd-row" }, "两个版本的日志与文件清单一致") : null,
+        h("div", { className: "cd-row" }, h("b", null, "体积："), formatSize(d.sizeA) + " → " + formatSize(d.sizeB)),
+        pa.mainUrl && pb.mainUrl ? h("div", { className: "cd-row cd-act" },
+          h(Button, { size: "small", href: pa.mainUrl, icon: h(Icon.download) }, "下载 A"),
+          h(Button, { size: "small", href: pb.mainUrl, icon: h(Icon.download) }, "下载 B")) : null))) : null;
+
+  return h("div", { className: "page" },
+    h("div", { className: "topbar" }, h("div", { className: "shell" },
+      h("div", { className: "brand" },
+        h("div", { className: "logo" }, "M"),
+        h("h1", null, "MindLink 构建产物", h("span", null, "临时分发"))),
+      h(Button, { type: "text", onClick: logout, icon: h(Icon.logout) },
+        h("span", { className: "lbl" }, "退出")))),
+    h("div", { className: "shell" },
+      h("div", { className: "tabs" },
+        h("button", { type: "button", className: "tab" + (tab === "files" ? " on" : ""), onClick: () => { setTab("files"); if (location.hash) history.replaceState(null, "", location.pathname); } },
+          "安装包", h("i", null, String(files.length))),
+        h("button", { type: "button", className: "tab" + (tab === "log" ? " on" : ""), onClick: () => { setTab("log"); history.replaceState(null, "", "#log"); } },
+          "更新日志", h("i", null, String((logs || []).length)))),
+      h("div", { className: "panel" },
+        tab === "files"
+          ? [
+              h("div", { className: "toolbar", key: "tb" },
+                h("div", { className: "grow" },
+                  h(Input, { allowClear: true, size: "large", placeholder: "搜索安装包或批次",
+                    prefix: h(Icon.search), value: query, onChange: e => setQuery(e.target.value),
+                    onPressEnter: e => e.currentTarget.blur() })),
+                h(Button, { className: "refresh", type: "primary", ghost: true, size: "large",
+                  onClick: loadFiles, loading, icon: h(Icon.refresh), title: "刷新" },
+                  h("span", { className: "lbl" }, "刷新"))),
+              h("div", { className: "meta", key: "meta" },
+                h("span", null, matched.length + " 个批次"),
+                h("span", null, "·"),
+                h("span", null, totalFiles + " 个包"),
+                h("span", null, "·"),
+                h("span", null, "共 " + formatSize(totalSize)),
+                h("span", { className: "spacer" }),
+                h("button", { className: "link", type: "button",
+                  onClick: () => expandAll(!matched.some(g => open[g.key])) },
+                  matched.some(g => open[g.key]) ? "全部收起" : "全部展开")),
+              h("div", { className: "dates", key: "dates" },
+                h("button", { type: "button", className: "chip" + (date === "" ? " on" : ""), onClick: () => setDate("") }, "全部"),
+                dates.map(dd => h("button", { key: dd.date, type: "button",
+                  className: "chip" + (date === dd.date ? " on" : ""),
+                  onClick: () => setDate(date === dd.date ? "" : dd.date) },
+                  dd.date.slice(5).replace("-", "/"), h("i", null, String(dd.files))))),
+              h("div", { key: "body" }, filesBody)
+            ]
+          : [
+              h("div", { className: "toolbar", key: "tb2" },
+                h("div", { className: "grow" },
+                  h(Input, { allowClear: true, size: "large", placeholder: "搜索版本、标题或改动内容",
+                    prefix: h(Icon.search), value: logQuery, onChange: e => setLogQuery(e.target.value),
+                    onPressEnter: e => e.currentTarget.blur() })),
+                h(Button, { className: "refresh", type: "primary", ghost: true, size: "large",
+                  onClick: loadLogs, loading: logLoading, icon: h(Icon.refresh), title: "刷新" },
+                  h("span", { className: "lbl" }, "刷新"))),
+              h("div", { className: "hintbar", key: "hb" }, "勾选两个版本可对比差异；点「回档下载」拿回任意历史版本"),
+              cmpSheet ? h("div", { key: "cmp" }, cmpSheet) : null,
+              h("div", { key: "lbody" }, logsBody)
+            ]),
+      h("footer", null, "按批次归档 · 每批带更新日志", h("br"), "临时分享页面，请勿外传")),
+    picked.length ? h("div", { className: "cmpbar" },
+      h("span", null, "已选 " + picked.length + "/2"),
+      h(Button, { size: "small", type: "primary", disabled: picked.length !== 2,
+        icon: h(Icon.diff), onClick: () => setCompare(true) }, "对比差异"),
+      h(Button, { size: "small", type: "text", onClick: () => { setPicked([]); setCompare(false); } }, "清除")) : null);
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  h(ConfigProvider, { theme: { token: { colorPrimary: "#6366f1", borderRadius: 10 } } }, h(App)));
+</script></body></html>

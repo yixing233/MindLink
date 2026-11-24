@@ -14,7 +14,24 @@ data class WeatherCity(
     val cityNum: String,
     val latitude: Double? = null,
     val longitude: Double? = null,
+    val source: String = "",
+    val accuracy: Double? = null,
 )
+
+data class WeatherPlaceEditor(
+    val current: Boolean = false,
+    val busy: Boolean = false,
+    val message: String = "",
+    val token: String = "",
+    val choices: List<WeatherCity> = emptyList(),
+)
+
+fun weatherPlaceLabel(city: WeatherCity): String {
+    val name = listOf(city.province, city.city, city.district.orEmpty())
+        .filter(String::isNotBlank).distinct().joinToString(" · ").ifBlank { city.cityNum.ifBlank { "当前位置" } }
+    return if (city.source == "current" && city.district.isNullOrBlank()) "$name · 区县未识别" else name
+}
+
 data class WeatherSnapshot(
     val city: WeatherCity,
     val weatherCode: String,

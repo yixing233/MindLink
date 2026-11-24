@@ -27,8 +27,9 @@ public final class FeatureBootstrapChecks {
         check(BootstrapDoubles.arguments.get("profile")[0] == context,
                 "SelfProfile init receives original context");
         check(BootstrapDoubles.arguments.get("header")[0] == selected
-                        && BootstrapDoubles.arguments.get("footer")[0] == selected,
-                "Header/footer use selected loader, or initial fallback on load-only startup");
+                        && BootstrapDoubles.arguments.get("footer")[0] == selected
+                        && BootstrapDoubles.arguments.get("moments-top-cards")[0] == selected,
+                "Header/footer/Moments use selected loader, or initial fallback on load-only startup");
         check(load.classLoader == loadPackage().classLoader, "Bootstrap never mutates shared LoadPackageParam loader");
         if (attached) check(context.getApplicationContext() == null && selected != load.classLoader,
                 "Attached loader differs with null application context during attach");

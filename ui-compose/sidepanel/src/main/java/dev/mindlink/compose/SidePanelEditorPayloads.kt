@@ -3,12 +3,6 @@
 // Only mutable platform fields cross the bridge; no Kotlin collections or lambdas.
 package dev.mindlink.compose
 
-/** City code written by the weather settings page before invoking its host callback. */
-object WeatherCityPayload {
-    @JvmStatic
-    var CODE: String = ""
-}
-
 /** Hitokoto settings written by the hitokoto settings page before invoking its host callback. */
 object PendingHitokotoSettings {
     @JvmStatic

@@ -312,10 +312,12 @@ public final class ChatFooterHookChecks {
         resume(notified); Handler.finish();
         ChatFooter missed = new ChatFooter(notified); notifiedRoot.addView(missed, margins(0,0,0,0)); Handler.drain();
         check(missed.attachListeners.isEmpty(), "exhausted discovery misses a chat tree delivered late");
-        FloatingChatFooterFeature.adopt(missed); Handler.drain();
+        // Historical replay fixtures predate the hand-off API and never run this case.
+        java.lang.reflect.Method adopt = FloatingChatFooterFeature.class.getDeclaredMethod("adopt", View.class);
+        adopt.invoke(null, missed); Handler.drain();
         check(missed.attachListeners.size() == 1 && missed.getViewTreeObserver().listeners.size() == 1,
                 "header hand-off observes and watches the missed footer");
-        FloatingChatFooterFeature.adopt(missed); FloatingChatFooterFeature.adopt(missed); Handler.drain();
+        adopt.invoke(null, missed); adopt.invoke(null, missed); Handler.drain();
         check(missed.attachListeners.size() == 1 && missed.getViewTreeObserver().listeners.size() == 1,
                 "repeated hand-off every header frame stays idempotent");
         stop(notified);

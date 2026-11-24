@@ -341,7 +341,7 @@ final class ChatFooterOverlay {
         footer.getLocationOnScreen(footerAt); list.getLocationOnScreen(listAt);
         // Screen coordinates already include IME translation and viewport resize.
         // Reserving the lift again would leave an extra keyboard-sized blank tail.
-        // A bottom pull-bounce is excluded: it is a transient scroll of the host's pull view,
+        // A bottom pull-bounce is excluded: the host scrolls its pull view or translates its content,
         // and following it made the bounce settle behind the card before the tail returned.
         int obstruction = Math.max(0, Math.min(list.getHeight(),
                 listAt[1] + ChatTailSpacer.pullOffset(list, parent) + list.getHeight() - footerAt[1]));

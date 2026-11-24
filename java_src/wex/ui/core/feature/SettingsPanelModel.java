@@ -59,6 +59,8 @@ final class SettingsPanelModel {
         flag(HomeTopBarCards.KEY_HIDE_TITLE, true, HomeTopBarCards::refresh);
         flag(HomeTopBarCards.KEY_OVERLAY, true, HomeTopBarCards::refresh);
         flag(HomeTopBarCards.KEY_PROGRESSIVE, true, HomeTopBarCards::refresh);
+        flag(MomentsTopBarCards.KEY_ENABLED, true, MomentsTopBarCards::refresh);
+        flag(MomentsTopBarCards.KEY_PROGRESSIVE, true, MomentsTopBarCards::refresh);
         text("top_title", "");
         text("top_search_hint", "");
         // top_nickname / top_status / top_dot_color 已无功能读取，面板不再提供；已保存的值保持原样。
@@ -98,8 +100,8 @@ final class SettingsPanelModel {
         flag("nav_bar_dynamic_gravity_highlight", false, NavigationBarFeature::refresh);
 
         // ---------- 聊天 ----------
-        flag("floating_chat_header_enabled", false, FloatingChatHeaderFeature::refresh);
-        choice("floating_chat_header_layout_style", "INTEGRATED");
+        flag("floating_chat_header_enabled", true, FloatingChatHeaderFeature::refresh);
+        choice("floating_chat_header_layout_style", "SEPARATED");
         number("floating_chat_header_side_margin", 12, 0, 32, FloatingChatHeaderFeature::refresh);
         number("floating_chat_header_top_gap", 4, 0, 24, FloatingChatHeaderFeature::refresh);
         number("floating_chat_header_extra_gap", 8, 0, 24, FloatingChatHeaderFeature::refresh);
@@ -202,6 +204,7 @@ final class SettingsPanelModel {
         ConversationGroupingFeature.refreshHostLabels();
         // So do the home top bar cards.
         HomeTopBarCards.refresh();
+        MomentsTopBarCards.refresh();
     }
 
     /** Stored opacity percent, or "" when the material default applies. */

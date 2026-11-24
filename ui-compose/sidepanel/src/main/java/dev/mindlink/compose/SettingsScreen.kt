@@ -56,7 +56,9 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import dev.mindlink.ui.LiquidTopBarButton
 import dev.mindlink.ui.LucideIcons
 import dev.mindlink.ui.MindLinkCard
 import dev.mindlink.ui.MindLinkIconButton
@@ -98,15 +100,16 @@ internal fun SettingsScreen(state: SettingsState) {
             )
         }
 
-        MindLinkPage {
-            val page = state.currentPage?.let { state.pageOf(it) }
+        val page = state.currentPage?.let { state.pageOf(it) }
+        MindLinkPage(header = {
             Header(page?.title ?: "设置", onBack = if (page != null) ({ state.back(); Unit }) else null) { restarting = true }
             if (state.pending) {
                 PendingBar { restarting = true }
             }
+        }) { top ->
             AnimatedContent(
                 targetState = page?.id,
-                modifier = Modifier.fillMaxWidth().weight(1f),
+                modifier = Modifier.fillMaxSize(),
                 transitionSpec = {
                     val direction = if (state.forward) 1 else -1
                     (slideInHorizontally(tween(240)) { width -> direction * width / 5 } + fadeIn(tween(240))) togetherWith
@@ -115,7 +118,7 @@ internal fun SettingsScreen(state: SettingsState) {
                 label = "settings-page",
             ) { id ->
                 val target = id?.let { state.pageOf(it) }
-                if (target == null) Overview(state, overviewList, actions) else DetailPage(target, state, actions)
+                if (target == null) Overview(state, overviewList, actions, top) else DetailPage(target, state, actions, top)
             }
         }
 
@@ -179,9 +182,9 @@ internal fun SettingsScreen(state: SettingsState) {
 private fun Header(title: String, onBack: (() -> Unit)?, onRestart: () -> Unit) {
     MindLinkTopBar(
         title,
-        navigation = { if (onBack != null) MindLinkIconButton(LucideIcons.ArrowLeft, "返回", onBack) },
+        navigation = { if (onBack != null) LiquidTopBarButton(LucideIcons.ArrowLeft, "返回", onBack) },
     ) {
-        MindLinkIconButton(LucideIcons.RefreshCw, "重启微信", onRestart)
+        LiquidTopBarButton(LucideIcons.RefreshCw, "重启微信", onRestart)
     }
 }
 
@@ -206,12 +209,12 @@ private fun PendingBar(onRestart: () -> Unit) {
 // ---------------------------------------------------------------- 总览
 
 @Composable
-private fun Overview(state: SettingsState, list: LazyListState, actions: RowActions) {
+private fun Overview(state: SettingsState, list: LazyListState, actions: RowActions, top: Dp) {
     val groups = settingsGroups(state)
     LazyColumn(
         Modifier.fillMaxSize(),
         state = list,
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 28.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = top + 8.dp, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         item(key = "status") { StatusCard(state) }
@@ -239,7 +242,7 @@ private fun StatusCard(state: SettingsState) {
     ) {
         Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp)) {
             Text(
-                if (version.isBlank()) "MindLink" else "MindLink $version",
+                if (version.isBlank()) "WeLiquid" else "WeLiquid $version",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
@@ -327,12 +330,12 @@ private fun OverviewRow(page: SettingsPage, state: SettingsState, actions: RowAc
 // ---------------------------------------------------------------- 详情页
 
 @Composable
-private fun DetailPage(page: SettingsPage, state: SettingsState, actions: RowActions) {
+private fun DetailPage(page: SettingsPage, state: SettingsState, actions: RowActions, top: Dp) {
     val pageOn = page.master?.let { state.flag(it.key) } ?: true
     LazyColumn(
         Modifier.fillMaxSize(),
         state = rememberLazyListState(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 28.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = top + 8.dp, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         item(key = "intro") {

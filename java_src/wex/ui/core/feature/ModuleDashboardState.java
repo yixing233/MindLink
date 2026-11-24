@@ -78,7 +78,7 @@ final class ModuleDashboardState {
     }
 
     String summary(){
-        return "MindLink desktop diagnostics\nsource=desktop (host hooks not queried)\nmodule="+moduleVersion
+        return "WeLiquid desktop diagnostics\nsource=desktop (host hooks not queried)\nmodule="+moduleVersion
                 +"\nwechat="+wechatVersion+"\nandroid="+androidVersion+"\ndevice="+device
                 +"\nbaselineMatch="+verifiedWechat+"\nactivation=unknown\nlogReadable="+heartbeatReadable
                 +"\nlogUpdatedWithin24h="+heartbeatFresh+"\nsavedEnabledToggles="+(enabledCount==null?"unknown":enabledCount)+"\n";

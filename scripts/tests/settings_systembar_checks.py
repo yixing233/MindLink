@@ -68,13 +68,26 @@ public void show(){showing=true;window.ready=true;root.getRootView().attachRootF
 public void dismiss(){showing=false;dismisses++;root.getRootView().attachRootForTest(null);root.detachForTest();}}
 """
     sources["dev/mindlink/xposed/XposedBridge.java"] = "package dev.mindlink.xposed;public class XposedBridge {public static void log(String s){}}"
-    sources["wex/ui/core/WexStore.java"] = "package wex.ui.core;public class WexStore {public static final WexStore INSTANCE=new WexStore();}"
+    sources["wex/ui/core/WexStore.java"] = """package wex.ui.core;
+public class WexStore {public static final WexStore INSTANCE=new WexStore();
+public void putString(String key,String value){throw new AssertionError("No preferences writes");}}"""
     sources["wex/ui/core/feature/SettingsChanges.java"] = """package wex.ui.core.feature;public class SettingsChanges {
 public interface Listener{void onChanged();void onFailure(String message);}public static boolean hasPending(){return false;}
 public static void subscribe(Listener l){}public static void unsubscribe(Listener l){}
 public static boolean getBool(wex.ui.core.WexStore s,String k,boolean d){return d;}public static boolean saveBool(String k,boolean v){throw new AssertionError("No preferences writes");}}
 """
     sources["wex/ui/core/feature/LocationPrivacy.java"] = "package wex.ui.core.feature;public class LocationPrivacy{public static final String KEY_ENABLED=\"location\";public static boolean isEnabled(){return false;}}"
+    # The location action is outside the system bar contract.
+    sources["org/json/JSONObject.java"] = """package org.json;
+public class JSONObject {public double getDouble(String key){throw new AssertionError("No place reads");}}"""
+    sources["wex/ui/core/feature/WeatherLocation.java"] = """package wex.ui.core.feature;
+final class WeatherLocation {
+interface Result {void complete(java.util.List<org.json.JSONObject> places,String error);}
+static void locate(android.content.Context context,Result result){throw new AssertionError("No weather location");}
+static void saveCurrent(org.json.JSONObject place){throw new AssertionError("No place writes");}
+static String label(org.json.JSONObject place){throw new AssertionError("No place labels");}}"""
+    sources["wex/ui/core/feature/HomeSidePanelFeature.java"] = """package wex.ui.core.feature;
+final class HomeSidePanelFeature {static void refreshOpenDrawers(){throw new AssertionError("No drawer refresh");}}"""
     sources["wex/ui/core/feature/ImagePicker.java"] = "package wex.ui.core.feature;public class ImagePicker{public static final ImagePicker INSTANCE=new ImagePicker();public void toast(android.app.Activity a,String s){}}"
     # The panel body is an isolated Compose view; only the host contract is under test here.
     sources["android/os/Bundle.java"] = """package android.os;import java.util.*;

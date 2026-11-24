@@ -1,6 +1,6 @@
 --- WeKit/app/src/main/java/dev/ujhhgtg/wekit/features/items/beautify/home_screen_panel/HomeSidePanelDataCards.kt
 +++ src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelDataCards.kt
-@@ -1,760 +1,739 @@
+@@ -1,760 +1,736 @@
 -package dev.ujhhgtg.wekit.features.items.beautify.home_screen_panel
 -
 -import androidx.annotation.StringRes
@@ -972,11 +972,8 @@
 +        onDelete = onDeleteCard?.let { delete -> { delete(card.id) } },
 +    ) {
 +        val contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-+        val location = snapshot?.city?.let { city ->
-+            listOfNotNull(city.city, city.district?.takeIf(String::isNotBlank))
-+                .distinct()
-+                .joinToString(" · ")
-+        } ?: stringResource(R.string.wekit_sp_home_side_panel_weather)
++        val location = (card.city ?: snapshot?.city)?.let(::weatherPlaceLabel)
++            ?: stringResource(R.string.wekit_sp_home_side_panel_weather)
 +        Column {
 +            Row(
 +                modifier = Modifier

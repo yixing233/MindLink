@@ -2,6 +2,10 @@ package wex.ui.core.feature;
 
 import android.app.Activity;
 import android.graphics.Bitmap;
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -34,6 +38,7 @@ import wex.ui.core.WexStore;
 public final class SidePanelChecks {
     private static int checks;
     private static final AtomicInteger connections = new AtomicInteger();
+    private static final AtomicInteger searchFixtures = new AtomicInteger();
     private static void check(boolean condition, String message) {
         checks++; if (!condition) throw new AssertionError(message);
     }
@@ -73,12 +78,127 @@ public final class SidePanelChecks {
         while(!ready.getAsBoolean()&&System.nanoTime()<until){Handler.drain();Thread.sleep(5);}
         Handler.drain(); check(ready.getAsBoolean(),"bounded asynchronous completion");
     }
-    private static void installNoNetwork() {
+    private static void installNoNetwork(boolean allowSearchFixture) {
         URL.setURLStreamHandlerFactory(protocol -> "https".equals(protocol) ? new URLStreamHandler() {
             @Override protected URLConnection openConnection(URL url) {
+                if (allowSearchFixture && url.getHost().equals("nominatim.openstreetmap.org")
+                        && url.getPath().equals("/search") && url.getQuery().contains("q=%E9%9B%81%E5%A1%94%E5%8C%BA")) {
+                    searchFixtures.incrementAndGet();
+                    return new java.net.HttpURLConnection(url) {
+                        @Override public int getResponseCode() { return 200; }
+                        @Override public void connect() { }
+                        @Override public void disconnect() { }
+                        @Override public boolean usingProxy() { return false; }
+                        @Override public java.io.InputStream getInputStream() {
+                            String payload = "[{\"category\":\"boundary\",\"display_name\":\"雁塔区, 西安市, 陕西省, 中国\","
+                                    + "\"lat\":\"34.224\",\"lon\":\"108.944\",\"address\":{\"state\":\"陕西省\","
+                                    + "\"city\":\"雁塔区\",\"country_code\":\"cn\"}},"
+                                    + "{\"category\":\"shop\",\"lat\":\"34.224\",\"lon\":\"108.944\",\"address\":{\"city\":\"雁塔区\"}}]";
+                            return new java.io.ByteArrayInputStream(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                        }
+                    };
+                }
                 connections.incrementAndGet(); throw new AssertionError("No real network is permitted in side-panel tests");
             }
         } : null);
+    }
+
+    private static Bundle placeEditor(WeatherPlaceController controller, HomeSidePanelLayout.Card card) {
+        return card(controller.decorate(HomeSidePanelSnapshot.build(true, true, List.of(card), Map.of(), Map.of(), false)), 0)
+                .getBundle("placeEditor");
+    }
+
+    private static void weatherPlace() throws Exception {
+        WexStore store = WexStore.INSTANCE;
+        long now = android.os.SystemClock.elapsedRealtimeNanos();
+        Location fix = new Location(34.216, 108.95, 30, now);
+        check(WeatherLocation.usable(fix, now, 100), "fresh accurate fix accepted");
+        check(!WeatherLocation.usable(fix, now + TimeUnit.MINUTES.toNanos(3), 100)
+                && !WeatherLocation.usable(fix, now - 1, 100)
+                && !WeatherLocation.usable(new Location(34, 108, 1400, now), now, 1000),
+                "stale, future and imprecise fixes rejected");
+        Address district = new Address("陕西省", "西安市", null, "雁塔区");
+        JSONObject place = WeatherLocation.devicePlace(fix, district);
+        check(place.getString("district").equals("雁塔区"), "system sublocality resolves to district");
+        check(WeatherLocation.devicePlace(fix, new Address("陕西省", null, "雁塔区", null))
+                .getString("district").equals("雁塔区"), "county recorded as sub-administrative area is retained");
+        check(WeatherLocation.label(WeatherLocation.devicePlace(fix, new Address("陕西省", "西安市", null, "某街道")))
+                .endsWith("区县未识别"), "street or city-only data does not claim district precision");
+        String fingerprint = HomeSidePanelData.weatherFingerprint(place.toString());
+        check(fingerprint.equals(HomeSidePanelData.weatherFingerprint(place.put("accuracy", 55)
+                .put("locatedAt", 255).toString())), "freshness and accuracy metadata leave cache identity unchanged");
+        check(HomeSidePanelData.weatherFingerprint(place.put("longitude", JSONObject.NULL).toString()).isEmpty(),
+                "missing coordinate pair rejected");
+        place = WeatherLocation.devicePlace(fix, district);
+        String endpoint = HomeSidePanelData.weatherEndpoint(place);
+        check(endpoint.contains("latitude=34.2160&longitude=108.9500") && !endpoint.contains("locationKey"),
+                "coordinate weather has no city code override");
+        check(HomeSidePanelData.weatherEndpoint(HomeSidePanelData.city("101010100")).contains("locationKey=weathercn%3A101010100"),
+                "legacy city code still drives code requests");
+        JSONObject manual = WeatherLocation.place(new JSONObject().put("address", new JSONObject()
+                .put("state", "陕西省").put("city", "西安市").put("city_district", "雁塔区")), 34.216, 108.95);
+        check(WeatherLocation.label(manual).equals("陕西省 · 西安市 · 雁塔区"), "manual results include complete district label");
+        JSONObject parentInLabel = WeatherLocation.place(new JSONObject().put("display_name", "雁塔区, 西安市, 陕西省, 中国")
+                .put("address", new JSONObject().put("city", "雁塔区").put("state", "陕西省").put("country_code", "cn")),
+                34.224, 108.944);
+        check(parentInLabel.getString("city").equals("西安市") && parentInLabel.getString("district").equals("雁塔区"),
+                "district encoded as city keeps the parent from the result hierarchy");
+
+        List<String> applied = new ArrayList<>();
+        WeatherPlaceController controller = new WeatherPlaceController(new Activity(), () -> {}, (id, config) -> applied.add(id));
+        HomeSidePanelLayout.Card a = make(HomeSidePanelLayout.CardType.WEATHER, "first");
+        HomeSidePanelLayout.Card b = make(HomeSidePanelLayout.CardType.WEATHER, "second");
+        a.weatherCity = b.weatherCity = WeatherLocation.CURRENT;
+        LocationManager.cached = new Location(34.2, 108.9, 30, now - TimeUnit.MINUTES.toNanos(3));
+        LocationManager.fresh = fix;
+        controller.ensureCurrent(List.of(a), false);
+        Handler.drain();
+        check(Geocoder.pending.isEmpty(), "auto-needs consent before requesting a fix");
+        store.flags.put(LocationPrivacy.KEY_ENABLED, true);
+        controller.ensureCurrent(List.of(a), false);
+        Handler.drain();
+        Geocoder.GeocodeListener obsolete = Geocoder.pending.remove();
+        controller.locate(b.id);
+        Handler.drain();
+        Geocoder.GeocodeListener current = Geocoder.pending.remove();
+        obsolete.onGeocode(List.of(new Address("北京市", "北京市", null, "东城区")));
+        Handler.drain();
+        check(WeatherLocation.saved().isEmpty(), "manual locate supersedes pending automatic fix");
+        current.onGeocode(List.of(district));
+        Handler.drain();
+        check(applied.equals(List.of(b.id)) && HomeSidePanelData.city(WeatherLocation.saved()).getString("district").equals("雁塔区"),
+                "active fix is stored and belongs to the requesting card");
+        controller.locate(a.id);
+        Handler.drain();
+        controller.cancelCard(a.id);
+        Geocoder.pending.remove().onGeocode(List.of(district));
+        Handler.drain();
+        check(applied.size() == 1, "deleted or closed card drops in-flight results");
+        controller.locate(a.id);
+        Handler.drain();
+        store.flags.put(LocationPrivacy.KEY_ENABLED, false);
+        Geocoder.pending.remove().onGeocode(List.of(district));
+        Handler.drain();
+        check(applied.size() == 1, "permission revocation drops in-flight results");
+
+        store.flags.put(LocationPrivacy.KEY_ENABLED, true);
+        controller.search(a.id, "雁塔区");
+        await(() -> !placeEditor(controller, a).getBoolean("busy"));
+        Bundle result = placeEditor(controller, a);
+        List<Bundle> choices = result.<Bundle>getParcelableArrayList("choices");
+        check(searchFixtures.get() == 1 && choices.size() == 1 && choices.get(0).getString("district").equals("雁塔区"),
+                "submit-only search publishes administrative choices, excluding shops");
+        String previousToken = result.getString("token");
+        controller.search(a.id, "雁塔区");
+        await(() -> !placeEditor(controller, a).getBoolean("busy"));
+        String activeToken = placeEditor(controller, a).getString("token");
+        check(searchFixtures.get() == 1 && !previousToken.equals(activeToken), "repeated query reuses cached data with a new token");
+        controller.choose(a.id, previousToken, 0);
+        controller.choose(b.id, activeToken, 0);
+        check(applied.size() == 1, "previous searches and other cards cannot select current results");
+        controller.choose(a.id, activeToken, 0);
+        controller.choose(a.id, activeToken, 0);
+        check(applied.equals(List.of(b.id, a.id)), "choice applies to the requested card exactly once");
     }
 
     private static void schema() throws Exception {
@@ -262,11 +382,28 @@ public final class SidePanelChecks {
         check(SidePanelComposeBridge.lastSnapshot.values.getString("editorRoute","").equals("card_settings:quote"),"card settings route flows through snapshot");
         check(SidePanelComposeBridge.lastCallbacks.actions.containsKey("update_hitokoto_settings:quote"),"hitokoto settings update callback registered");
         check(SidePanelComposeBridge.lastCallbacks.actions.containsKey("update_lunar:date")&&SidePanelComposeBridge.lastCallbacks.actions.containsKey("update_wallet_mask:wallet")
-                &&SidePanelComposeBridge.lastCallbacks.actions.containsKey("update_weather_city:weather"),"per-field update callbacks registered for lunar/wallet/weather");
+                &&SidePanelComposeBridge.lastCallbacks.actions.containsKey("locate_weather:weather")
+                &&SidePanelComposeBridge.lastCallbacks.actions.get("search_weather_city:weather") instanceof java.util.function.Consumer
+                &&SidePanelComposeBridge.lastCallbacks.actions.get("select_weather_city:weather") instanceof java.util.function.Consumer,
+                "weather actions carry per-call platform payloads");
         invoke("add_card");
         check(SidePanelComposeBridge.lastSnapshot.values.getString("editorRoute","").equals("add_card"),"add card route flows through snapshot");
         for(String type:new String[]{"date_time","weather","wallet","hitokoto","image","horizontal_actions","vertical_actions"})
-            check(SidePanelComposeBridge.lastCallbacks.actions.containsKey("add_card:"+type),"add-card callback for each of the 7 card types: "+type);
+            check(SidePanelComposeBridge.lastCallbacks.actions.containsKey("add_card:"+type) == type.equals("horizontal_actions"),
+                    "add-card callback only for missing types: "+type);
+        Runnable pendingAdd = SidePanelComposeBridge.lastCallbacks.actions.get("add_card:horizontal_actions");
+        pendingAdd.run();
+        pendingAdd.run();
+        @SuppressWarnings("unchecked") List<HomeSidePanelLayout.Card> withNewCard =
+                (List<HomeSidePanelLayout.Card>) get(session, "editorDraft");
+        HomeSidePanelLayout.Card newcomer = withNewCard.get(withNewCard.size() - 1);
+        check(withNewCard.size() == 7 && newcomer.type == HomeSidePanelLayout.CardType.HORIZONTAL_ACTIONS,
+                "two taps through the same stale callback append only one card");
+        invoke("delete:" + newcomer.id);
+        invoke("add_card");
+        check(SidePanelComposeBridge.lastCallbacks.actions.containsKey("add_card:horizontal_actions"), "deleted draft type can be added again");
+        invoke("enter_edit");
+        check(get(session, "editorDraft") == withNewCard, "return from add-card keeps the same draft");
         // Async data refresh during editing must not wipe the draft (editing snapshot keeps editorDraft cards).
         SelfProfile.publish();Handler.drain();
         check(get(session,"editorDraft")!=null&&SidePanelComposeBridge.lastSnapshot.values.getBoolean("editing"),"async refresh never wipes editing draft");
@@ -317,7 +454,7 @@ public final class SidePanelChecks {
             Handler.drain();
             check(Boolean.TRUE.equals(SidePanelComposeBridge.active.get(root)) && get(session, "editorDraft") == draft,
                     "resume reactivates the editor with the same draft");
-            invoke("add_card:date_time");
+            invoke("add_card:weather");
             @SuppressWarnings("unchecked") List<HomeSidePanelLayout.Card> cards =
                     (List<HomeSidePanelLayout.Card>) get(session, "editorDraft");
             check(cards.size() == 2, "add-card action remains responsive after edit/resume");
@@ -694,10 +831,11 @@ public final class SidePanelChecks {
     }
 
     public static void main(String[] args) throws Throwable {
-        Looper.getMainLooper();installNoNetwork();
+        Looper.getMainLooper();installNoNetwork(args[0].equals("weather-place"));
         switch(args[0]) {
             case "schema":schema();break;
             case "data":data();break;
+            case "weather-place":weatherPlace();break;
             case "host":host();break;
             case "editor":editor();break;
             case "editor-lifecycle":editorLifecycle();break;

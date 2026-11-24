@@ -8,6 +8,8 @@
 package dev.mindlink.sidepanel.vendor.wekit
 
 import dev.mindlink.ui.LucideIcons
+import dev.mindlink.ui.LiquidTopBarButton
+import dev.mindlink.ui.LiquidTopScaffold
 import android.graphics.PorterDuff
 import android.widget.ImageView
 import androidx.compose.animation.core.Animatable
@@ -18,6 +20,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -102,7 +105,8 @@ fun HomeSidePanelHome(
             var previous = withFrameNanos { it }
             while (reorder.draggedId != null) {
                 val now = withFrameNanos { it }
-                val step = reorder.scrollStep(edge) * ((now - previous) / 16_666_667f).coerceAtMost(2f)
+                val step = reorder.scrollStep(edge, listState.layoutInfo.beforeContentPadding.toFloat()) *
+                    ((now - previous) / 16_666_667f).coerceAtMost(2f)
                 previous = now
                 if (step != 0f) listState.scrollBy(step)
                 reorder.reorder()
@@ -135,6 +139,16 @@ fun HomeSidePanelHome(
         }
     }
     val editorTranslation = with(LocalDensity.current) { 8.dp.toPx() }
+    val bottomInset = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom).asPaddingValues().calculateBottomPadding()
+    LiquidTopScaffold(header = {
+        HomeSidePanelProfileHeader(
+            profile = state.profile,
+            editing = state.editing,
+            saveEnabled = state.imageImportingCardIds.isEmpty(),
+            panelState = panelState,
+            modifier = Modifier.padding(start = 18.dp, top = 14.dp, end = 18.dp, bottom = 14.dp),
+        )
+    }) { top ->
     Box(Modifier.fillMaxSize()) {
     LazyColumn(
         state = listState,
@@ -168,20 +182,9 @@ fun HomeSidePanelHome(
                 scaleY = 1f - 0.015f * progress
                 translationY = editorTranslation * progress * editorMotionDirection
             },
-        contentPadding = WindowInsets.safeDrawing
-            .only(WindowInsetsSides.Top + WindowInsetsSides.Bottom)
-            .asPaddingValues(),
+        contentPadding = PaddingValues(top = top, bottom = bottomInset),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        item(key = "profile-header") {
-            HomeSidePanelProfileHeader(
-                profile = state.profile,
-                editing = state.editing,
-                saveEnabled = state.imageImportingCardIds.isEmpty(),
-                panelState = panelState,
-                modifier = Modifier.padding(start = 18.dp, top = 14.dp, end = 18.dp),
-            )
-        }
         if (state.editing) item(key = "editing-hint") {
             Text("长按卡片拖动排序 · 点设置调整内容", style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 18.dp))
@@ -223,6 +226,7 @@ fun HomeSidePanelHome(
         Canvas(Modifier.fillMaxSize()) {
             translate(top = reorder.overlayTop()) { drawLayer(cardLayers.getValue(id)) }
         }
+    }
     }
     }
 }
@@ -401,52 +405,18 @@ private fun HomeSidePanelProfileHeader(
             }
         }
         if (editing) {
-            Row {
-                val discardDescription = stringResource(R.string.wekit_sp_home_side_panel_discard_editing)
-                IconButton(
-                    onClick = panelState::discardEditing,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .semantics { contentDescription = discardDescription },
-                ) {
-                    Icon(
-                        LucideIcons.X,
-                        contentDescription = null,
-                    )
-                }
-                val saveDescription = stringResource(R.string.wekit_sp_home_side_panel_save_editing)
-                IconButton(
-                    onClick = panelState::saveEditing,
-                    enabled = saveEnabled,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .semantics { contentDescription = saveDescription },
-                ) {
-                    Icon(
-                        LucideIcons.Save,
-                        contentDescription = null,
-                    )
-                }
-                val addDescription = stringResource(R.string.wekit_sp_home_side_panel_add_card)
-                IconButton(
-                    onClick = panelState::openAddCard,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .semantics { contentDescription = addDescription },
-                ) {
-                    Icon(
-                        LucideIcons.Plus,
-                        contentDescription = null,
-                    )
-                }
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                LiquidTopBarButton(LucideIcons.X, stringResource(R.string.wekit_sp_home_side_panel_discard_editing),
+                    panelState::discardEditing, diameter = 40.dp)
+                LiquidTopBarButton(LucideIcons.Save, stringResource(R.string.wekit_sp_home_side_panel_save_editing),
+                    panelState::saveEditing, enabled = saveEnabled, diameter = 40.dp)
+                LiquidTopBarButton(LucideIcons.Plus, stringResource(R.string.wekit_sp_home_side_panel_add_card),
+                    panelState::openAddCard, diameter = 40.dp)
             }
         } else {
-            IconButton(onClick = panelState::openPanelSettings) {
-                Icon(
-                    LucideIcons.Settings,
-                    contentDescription = stringResource(R.string.wekit_sp_home_side_panel_settings),
-                )
-            }
+            LiquidTopBarButton(LucideIcons.Pencil, "编辑侧栏", panelState::enterEditing, diameter = 44.dp)
+            LiquidTopBarButton(LucideIcons.Settings, stringResource(R.string.wekit_sp_home_side_panel_settings),
+                panelState::openPanelSettings, diameter = 44.dp)
         }
     }
 }

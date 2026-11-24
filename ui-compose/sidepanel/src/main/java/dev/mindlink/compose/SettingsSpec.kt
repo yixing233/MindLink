@@ -174,8 +174,8 @@ internal fun SettingsState.pageOf(id: String): SettingsPage? =
 
 private fun topBarPage() = SettingsPage(
     id = "top_bar",
-    title = "首页顶栏",
-    summary = "悬浮卡片、资料卡、搜索框与快捷入口",
+    title = "首页与朋友圈顶栏",
+    summary = "悬浮卡片、顶部渐变模糊、资料卡与快捷入口",
     status = {
         "卡片 ${onOff(it, "top_floating_cards")} · 资料卡 ${onOff(it, "top_profile_enabled")} · 快捷入口 ${onOff(it, "top_scan_enabled")}"
     },
@@ -199,6 +199,18 @@ private fun topBarPage() = SettingsPage(
                 materialLink,
             ),
             master = Setting.Flag("top_floating_cards", "启用悬浮卡片"),
+        ),
+        Section(
+            "朋友圈顶栏",
+            "返回和相机按钮使用悬浮卡片，适配封面展开与列表滚动后的顶栏",
+            listOf(
+                Setting.Flag(
+                    "top_moments_progressive_blur", "顶部渐进模糊",
+                    "状态栏与按钮后方渐变模糊，向下逐渐清晰；保留相机点击和长按操作",
+                ),
+                materialLink,
+            ),
+            master = Setting.Flag("top_moments_cards", "启用朋友圈悬浮按钮"),
         ),
         Section(
             "资料卡",
@@ -490,21 +502,21 @@ private fun networkPage() = SettingsPage(
         "location_network_enabled",
         "启用联网数据",
         "不上传聊天、联系人或资料正文",
-        confirm = "手动更新定位时，经纬度会发送给 Nominatim 查询城市，并保存在本地；" +
-            "小米天气会接收保存的经纬度以获取日历天气；侧栏天气会向小米发送所选城市代码。\n" +
+        confirm = "侧栏跟随当前位置时，会在打开侧栏后获取设备位置，由系统地名服务识别区县。" +
+            "手动搜索时，输入的地名会发送给 Nominatim。日历和侧栏天气会向小米发送经纬度或已保存的城市代码。\n" +
             "一言会向 v1.hitokoto.cn 发送分类与长度条件。\n不会上传聊天、联系人、昵称、头像或状态正文。",
     ),
     sections = listOf(
         Section(
             "定位",
-            "需要先在系统设置中授予微信定位权限",
+            "需要先在系统设置中授予微信精确定位权限",
             listOf(Setting.Button("updateLocation", "更新定位")),
         ),
         Section(
             "会发送的数据",
             null,
             listOf(
-                Setting.Note("定位：经纬度发送给 Nominatim 查询城市，结果只保存在本地。"),
+                Setting.Note("定位：经纬度交给系统地名服务识别区县；手动搜索的地名发送给 Nominatim。"),
                 Setting.Note("天气：小米天气接收保存的经纬度或所选城市代码。"),
                 Setting.Note("一言：向 v1.hitokoto.cn 发送分类与长度条件。"),
             ),

@@ -209,11 +209,8 @@ fun HomeSidePanelWeatherCard(
         onDelete = onDeleteCard?.let { delete -> { delete(card.id) } },
     ) {
         val contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-        val location = snapshot?.city?.let { city ->
-            listOfNotNull(city.city, city.district?.takeIf(String::isNotBlank))
-                .distinct()
-                .joinToString(" · ")
-        } ?: stringResource(R.string.wekit_sp_home_side_panel_weather)
+        val location = (card.city ?: snapshot?.city)?.let(::weatherPlaceLabel)
+            ?: stringResource(R.string.wekit_sp_home_side_panel_weather)
         Column {
             Row(
                 modifier = Modifier

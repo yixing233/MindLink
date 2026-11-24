@@ -19,6 +19,7 @@ public final class ChatFooterOverlayChecks {
         decorationLifecycle();
         listReplacementReleasesSpace();
         pullBounceKeepsTail();
+        nestedBounceKeepsMessagesAboveCard();
         nativeVisibilityAndSmallWindow();
         movedFooterDoesNotRestoreOldLift();
         deepInputAndGestureBand();
@@ -210,8 +211,73 @@ public final class ChatFooterOverlayChecks {
         pull.scrollY = 40;
         for (int i = 0; i < 8; i++) overlay.apply(0, 0, 356, 10, 12, true);
         list.decorations.get(0).getItemOffsets(offsets, new View(tree.footer.getContext()), list, state);
-        check(offsets.bottom == 126, "the bounce settles with the same tail, so the last message never dips behind the card");
+        check(offsets.bottom == 126, "the scroll-based bounce settles with the same tail");
         overlay.restore();
+    }
+
+    /** Device tree: the outer bounce translates a FrameLayout containing the old pull view. */
+    private static void nestedBounceKeepsMessagesAboveCard() {
+        Tree tree = new Tree();
+        ViewGroup bounce = new com.tencent.mm.ui.widget.pulldown.MMWeUIBounceView(tree.footer.getContext());
+        ViewGroup content = new ViewGroup(tree.footer.getContext());
+        ViewGroup pull = new com.tencent.mm.ui.base.MMPullDownView(tree.footer.getContext());
+        RecyclerView list = new RecyclerView(tree.footer.getContext());
+        tree.root.addView(bounce, 0, new ViewGroup.LayoutParams(400, 1000));
+        bounce.addView(content, new ViewGroup.LayoutParams(400, 1000));
+        content.addView(pull, new ViewGroup.LayoutParams(400, 1000));
+        pull.addView(list, new ViewGroup.LayoutParams(400, 1000));
+        bounce.layout(0, 0, 400, 1000); content.layout(0, 0, 400, 1000);
+        pull.layout(0, 0, 400, 1000); list.layout(0, 40, 400, 1040); pull.scrollY = 40;
+        list.contentHeight = 2000; list.scrollOffset = 1000;
+        View lastMessage = new View(tree.footer.getContext());
+        list.addView(lastMessage, new ViewGroup.LayoutParams(400, 100));
+        ChatFooterOverlay overlay = new ChatFooterOverlay(tree.footer);
+        settleMessages(tree, list, overlay, 0, 874, 356);
+        int scroll = list.scrollOffset, invalidations = list.invalidations;
+        int[] lastAt = new int[2], footerAt = new int[2];
+        for (float shift : new float[]{0, -30.5f, -100, -260, -260, -180, -75.5f, -1, 0}) {
+            content.setTranslationY(shift);
+            // Both bounce mechanisms can coexist; neither changes the footer obstruction.
+            pull.scrollY = shift < -100 ? 60 : 40;
+            for (int frame = 0; frame < 4; frame++) {
+                list.layoutItems(); overlay.apply(0, 0, 356, 10, 12, true);
+                int bottom = list.contentHeight - list.scrollOffset;
+                lastMessage.layout(0, bottom - 100, 400, bottom);
+                lastMessage.getLocationOnScreen(lastAt); tree.footer.getLocationOnScreen(footerAt);
+                check(list.tailHeight == 126, "translated bounce retains tail on every frame, shift=" + shift);
+                check(lastAt[1] + lastMessage.getHeight() <= footerAt[1],
+                        "last message stays above card during pull and return, shift=" + shift);
+            }
+        }
+        check(list.scrollOffset == scroll && list.invalidations == invalidations,
+                "bounce never relayouts the tail or corrects the message scroll anchor");
+        check(list.getHeight() == 1000 && list.getPaddingBottom() == 0,
+                "bounce keeps full-height underlay and native message viewport");
+        // A real keyboard lift on the list branch and footer remains in screen geometry.
+        bounce.setTranslationY(-300); tree.footer.setTranslationY(-300);
+        content.setTranslationY(-80);
+        settleMessages(tree, list, overlay, 1, 874, 356);
+        check(list.tailHeight == 126, "keyboard lift shared by list and card is not double reserved");
+        bounce.setTranslationY(0); // footer-only IME lift must still enlarge the obstruction.
+        settleMessages(tree, list, overlay, 1, 874, 356);
+        check(list.tailHeight == 426, "footer-only IME lift remains part of the obstruction while bouncing");
+        tree.footer.setTranslationY(0); content.setTranslationY(0);
+        settleMessages(tree, list, overlay, 0, 874, 356);
+        list.scrollBy(0, -400); int history = list.scrollOffset;
+        for (float shift : new float[]{90, 180, 30, 0}) {
+            content.setTranslationY(shift);
+            for (int frame = 0; frame < 4; frame++) {
+                list.layoutItems(); overlay.apply(0, 0, 356, 10, 12, true);
+            }
+            check(list.tailHeight == 126 && list.scrollOffset == history,
+                    "top pull preserves tail and history reading position");
+        }
+        content.setTranslationY(-50);
+        check(ChatTailSpacer.pullOffset(list, bounce) == 0,
+                "a bounce at the shared footer ancestor is outside the correction scope");
+        overlay.restore(); list.layoutItems();
+        check(list.tailHeight == 0 && content.getTranslationY() == -50,
+                "release clears owned spacing without changing the native bounce translation");
     }
 
     private static void listReplacementReleasesSpace() {

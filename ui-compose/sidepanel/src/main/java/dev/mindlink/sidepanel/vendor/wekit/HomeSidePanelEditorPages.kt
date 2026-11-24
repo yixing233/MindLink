@@ -4,7 +4,7 @@
 //        HomeSidePanelAddPages.kt + HomeSidePanelCardSettings.kt
 // MindLink adaptations (2026-11-16): Compose editor pages replacing the removed Java
 // LinearLayout editor. Routes/callbacks come from Java snapshots; drag-in is phase two.
-// Weather settings keep the existing city-code input (no city database ported yet).
+// Weather settings support foreground district location and explicit place search.
 // 2026-11-22: shared editor scaffold (pinned header with back arrow, scrolling body, pinned
 // bottom actions, single inset pass), live card preview, grouped sections, Hitokoto length
 // fields + category select-all/clear + unsaved-changes confirmation, weather current city.
@@ -15,7 +15,8 @@ package dev.mindlink.sidepanel.vendor.wekit
 
 import dev.mindlink.ui.LucideIcons
 import dev.mindlink.ui.MindLinkCard
-import dev.mindlink.ui.MindLinkIconButton
+import dev.mindlink.ui.LiquidTopBarButton
+import dev.mindlink.ui.LiquidTopScaffold
 import dev.mindlink.ui.MindLinkListRow
 import dev.mindlink.ui.MindLinkSectionHeader
 import dev.mindlink.ui.MindLinkSwitchRow
@@ -144,19 +145,15 @@ private fun HomeSidePanelEditorScaffold(
     body: @Composable (PaddingValues) -> Unit,
 ) {
     val insets = WindowInsets.safeDrawing
-    val top = insets.only(WindowInsetsSides.Top).asPaddingValues()
     val bottom = insets.only(WindowInsetsSides.Bottom).asPaddingValues().calculateBottomPadding()
     Column(modifier = Modifier.fillMaxSize()) {
-        MindLinkTopBar(
-            title,
-            Modifier.padding(top),
-            navigation = { MindLinkIconButton(navigationIcon, navigationLabel, onNavigate) },
-        )
-        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+        LiquidTopScaffold(Modifier.weight(1f), header = {
+            MindLinkTopBar(title, navigation = { LiquidTopBarButton(navigationIcon, navigationLabel, onNavigate) })
+        }) { top ->
             body(
                 PaddingValues(
                     start = EDITOR_EDGE,
-                    top = 4.dp,
+                    top = top + 4.dp,
                     end = EDITOR_EDGE,
                     bottom = if (bottomBar == null) EDITOR_EDGE + bottom else EDITOR_EDGE,
                 ),
@@ -220,21 +217,25 @@ private fun EditorDivider() {
 
 // ------------------------------------------------------------------ add card
 
-/** Add-card page: every card type shows a real preview card; tapping appends it to the draft. */
+/** Only types missing from this draft may be added. */
 @Composable
 fun HomeSidePanelAddCardPage(panelState: HomeSidePanelState) {
+    val existingTypes = panelState.uiState.renderedLayout.cards.mapTo(mutableSetOf()) { it.type }
+    val availableTypes = HOME_SIDE_PANEL_CARD_TYPES.filterNot(existingTypes::contains)
     HomeSidePanelEditorScaffold(
         title = stringResource(R.string.wekit_sp_home_side_panel_add_card),
-        onNavigate = panelState::discardEditing,
-        navigationIcon = LucideIcons.X,
-        navigationLabel = stringResource(R.string.wekit_sp_home_side_panel_discard_editing),
+        onNavigate = { panelState.editCard("") },
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = padding,
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
-            items(HOME_SIDE_PANEL_CARD_TYPES, key = HomeSidePanelCardType::name) { type ->
+            if (availableTypes.isEmpty()) item {
+                Text("所有类型的卡片均已添加", style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            items(availableTypes, key = HomeSidePanelCardType::name) { type ->
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         text = homeSidePanelCardTypeName(type),
@@ -448,68 +449,50 @@ private fun HomeSidePanelWalletSettings(card: WalletCardConfig, panelState: Home
     }
 }
 
-/** Weather city settings: the persisted Java model is a city code string, so this page
- *  keeps a code input (WeKit's city-database search is not ported in phase one). */
+/** Explicit foreground fix or place search; selections remain in the sidebar draft until Save. */
 @Composable
 private fun HomeSidePanelWeatherSettings(card: WeatherCardConfig, panelState: HomeSidePanelState) {
-    val city = card.city
-    var code by remember(card.id, city?.cityNum) { mutableStateOf(city?.cityNum ?: "") }
-    LaunchedEffect(city?.cityNum) { if (city?.cityNum != null) code = city.cityNum }
-    val trimmed = code.trim()
-    val canApply = trimmed.isNotEmpty() && trimmed != city?.cityNum
-    val runtime = (panelState.runtimeState(card.id) as? HomeSidePanelCardRuntimeState.Weather)?.state
+    var query by remember(card.id) { mutableStateOf("") }
+    val runtime = panelState.runtimeState(card.id) as? HomeSidePanelCardRuntimeState.Weather
+    val editor = runtime?.editor ?: WeatherPlaceEditor()
     HomeSidePanelEditorScaffold(
         title = stringResource(R.string.wekit_sp_home_side_panel_card_weather),
         onNavigate = { panelState.editCard("") },
     ) { padding ->
         EditorScrollColumn(padding) {
-            if (runtime != null) {
-                EditorPreview {
-                    HomeSidePanelWeatherCard(
-                        card = card,
-                        content = WeatherCardContent.Runtime(runtime),
-                        editMode = false,
-                        interactionEnabled = false,
-                    )
-                }
+            if (runtime != null) EditorPreview {
+                HomeSidePanelWeatherCard(card, WeatherCardContent.Runtime(runtime.state), false, interactionEnabled = false)
             }
-            EditorSection(stringResource(R.string.wekit_sp_home_side_panel_current_city)) {
-                val name = city?.let { listOfNotNull(it.city, it.district).joinToString("").trim() }.orEmpty()
-                val detail = city?.let { listOf(it.province, it.cityNum).filter(String::isNotBlank).joinToString(" · ") }
+            EditorSection("天气位置", "选择后返回编辑页保存") {
                 MindLinkListRow(
-                    title = when {
-                        city == null -> stringResource(R.string.wekit_sp_home_side_panel_city_not_set)
-                        name.isNotEmpty() -> name
-                        else -> city.cityNum
-                    },
-                    summary = detail?.takeIf { it.isNotEmpty() && it != name },
+                    title = card.city?.let(::weatherPlaceLabel) ?: "尚未选择地点",
+                    summary = if (editor.current) "跟随当前位置" + (card.city?.accuracy?.let { " · 定位精度约 ${it.roundToInt()} 米" } ?: "")
+                        else "固定地点",
                 )
+                OutlinedButton(
+                    onClick = { panelState.locateWeather(card.id) },
+                    enabled = !editor.busy,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = EDITOR_EDGE, vertical = 8.dp),
+                ) { Text(if (editor.busy) "正在查询…" else "使用当前位置") }
             }
-            EditorSection(
-                stringResource(R.string.wekit_sp_home_side_panel_change_city),
-                stringResource(R.string.wekit_sp_home_side_panel_city_code_summary),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(EDITOR_EDGE),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
+            EditorSection("手动选择", "输入城市或区县名称，例如“西安市雁塔区”，点击搜索后选择地点") {
+                Row(Modifier.fillMaxWidth().padding(EDITOR_EDGE), horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(
-                        value = code,
-                        onValueChange = { value -> code = value.filter(Char::isDigit).take(12) },
-                        modifier = Modifier.weight(1f),
-                        singleLine = true,
-                        label = { Text(stringResource(R.string.wekit_sp_home_side_panel_city_code)) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        value = query, onValueChange = { query = it.take(80) }, modifier = Modifier.weight(1f),
+                        singleLine = true, label = { Text("城市或区县") },
                     )
-                    Button(
-                        onClick = { panelState.updateWeatherCity(card.id, trimmed) },
-                        enabled = canApply,
-                        modifier = Modifier.height(56.dp),
-                    ) {
-                        Text(stringResource(R.string.wekit_sp_home_side_panel_apply))
-                    }
+                    Button(onClick = { panelState.searchWeatherCity(card.id, query.trim()) },
+                        enabled = !editor.busy && query.trim().length >= 2, modifier = Modifier.height(56.dp)) { Text("搜索") }
                 }
+                if (editor.message.isNotBlank()) Text(editor.message,
+                    modifier = Modifier.padding(horizontal = EDITOR_EDGE, vertical = 8.dp), style = MaterialTheme.typography.bodySmall)
+                editor.choices.forEachIndexed { index, place ->
+                    TextButton(onClick = { panelState.selectWeatherCity(card.id, editor.token, index) },
+                        enabled = !editor.busy, modifier = Modifier.fillMaxWidth()) { Text(weatherPlaceLabel(place)) }
+                }
+                Text("地点数据 © OpenStreetMap contributors", modifier = Modifier.padding(EDITOR_EDGE),
+                    style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }

@@ -60,6 +60,7 @@ final class HomeTopBarCards {
      */
     static final String KEY_PROGRESSIVE = "top_cards_progressive_blur";
     private static final long SCAN_MS = 400L;
+    private static final int CONTACTS_DISCOVER_TOP_GAP_DP = 12;
     private static final String LAUNCHER = "com.tencent.mm.ui.LauncherUI";
     private static final String TOOLBAR = "androidx.appcompat.widget.Toolbar";
     private static final String ACTION_BAR = "androidx.appcompat.widget.ActionBarContainer";
@@ -308,7 +309,7 @@ final class HomeTopBarCards {
                 releaseOnScreen();
             } else if (shown && !cards.empty()) {
                 if (page.getPaddingTop() != 0 && frosted.containsKey(page)) nextScan = 0L;
-                underlay(activity, content, bar, page);
+                underlay(activity, content, bar, page, slot);
                 if (holdingReveal && reveal == null && selectedPage(pager, slot)) {
                     // Let the inset pass lay out the destination before the glass samples it.
                     if (revealFrames++ == 0 || revealFrames < 4 && (page.isLayoutRequested() || toolbar.isLayoutRequested()))
@@ -501,7 +502,7 @@ final class HomeTopBarCards {
          * host reset (group switch, closing the pull-down page, layout changes) one bar height
          * too low, and the host then slid the action bar down by the same amount.</p>
          */
-        private void underlay(Activity activity, View content, View bar, View page) {
+        private void underlay(Activity activity, View content, View bar, View page, int slot) {
             if (!bar.isShown() || bar.getHeight() <= 0) return;
             int[] at = new int[2];
             bar.getLocationInWindow(at);
@@ -522,6 +523,9 @@ final class HomeTopBarCards {
             StringBuilder covered = report ? new StringBuilder() : null;
             StringBuilder padded = report ? new StringBuilder() : null;
             int layoutBarBottom = NavigationBottomSpace.layoutTop(bar) + bar.getHeight();
+            // Give Contacts and Discover a little space between the cards and their first row.
+            int topGap = slot == 1 || slot == 2
+                    ? Math.round(CONTACTS_DISCOVER_TOP_GAP_DP * page.getResources().getDisplayMetrics().density) : 0;
             ArrayDeque<View> queue = new ArrayDeque<>(); queue.add(page);
             for (int visited = 0; !queue.isEmpty() && visited < 400; visited++) {
                 View view = queue.removeFirst();
@@ -551,7 +555,7 @@ final class HomeTopBarCards {
                 }
                 if (scroller(view)) {
                     if (view.getWidth() >= content.getWidth() * 0.6f && top + view.getHeight() > layoutBarBottom) {
-                        pad((ViewGroup) view, layoutBarBottom - top);
+                        pad((ViewGroup) view, layoutBarBottom - top + topGap);
                         if (padded != null) padded.append(' ').append(view.getClass().getSimpleName()).append('@').append(top);
                     }
                     continue;
@@ -927,7 +931,11 @@ final class HomeTopBarCards {
      */
     static final class Cards extends Drawable implements Drawable.Callback {
         private final ChatGlassSurface glass;
-        private final LiquidGlassDecoration leftShadow = new LiquidGlassDecoration(), rightShadow = new LiquidGlassDecoration();
+        private final LiquidGlassDecoration leftShadow = new LiquidGlassDecoration();
+        private final List<LiquidGlassDecoration> rightShadows = new ArrayList<>();
+        private final List<RectF> rightButtons = new ArrayList<>(), nextButtons = new ArrayList<>();
+        private final List<View> rightIcons = new ArrayList<>(), nextIcons = new ArrayList<>();
+        private final WeakHashMap<View, Float> hiddenIcons = new WeakHashMap<>();
         final RectF left = new RectF(), right = new RectF();
         private final RectF nextLeft = new RectF(), nextRight = new RectF();
         private final float density;
@@ -980,7 +988,11 @@ final class HomeTopBarCards {
             return true;
         }
 
-        void stop() { glass.stop(); leftShadow.release(); rightShadow.release(); band.release(); releaseBandBackdrop(); }
+        void stop() {
+            glass.stop(); leftShadow.release(); band.release(); releaseBandBackdrop();
+            for (LiquidGlassDecoration shadow : rightShadows) shadow.release();
+            restoreHiddenIcons();
+        }
 
         /** No card content at all: the bar of a page with its own full-height header ("我"). */
         boolean empty() { return left.isEmpty() && right.isEmpty(); }
@@ -1002,6 +1014,7 @@ final class HomeTopBarCards {
         boolean layout(View toolbar) {
             int width = toolbar.getWidth(), height = toolbar.getHeight();
             nextLeft.setEmpty(); nextRight.setEmpty();
+            nextButtons.clear(); nextIcons.clear();
             if (width > 0 && height > 0) {
                 float top = toolbar.getPaddingTop(), bottom = height - toolbar.getPaddingBottom();
                 float available = Math.max(0f, bottom - top);
@@ -1033,8 +1046,13 @@ final class HomeTopBarCards {
                     if (nextLeft.width() < nextLeft.height()) nextLeft.setEmpty();
                 }
             }
-            if (nextLeft.equals(left) && nextRight.equals(right)) return false;
+            if (nextLeft.equals(left) && nextRight.equals(right)
+                    && nextButtons.equals(rightButtons) && nextIcons.equals(rightIcons)) return false;
             left.set(nextLeft); right.set(nextRight);
+            rightButtons.clear(); rightButtons.addAll(nextButtons);
+            rightIcons.clear(); rightIcons.addAll(nextIcons);
+            while (rightShadows.size() < rightButtons.size()) rightShadows.add(new LiquidGlassDecoration());
+            while (rightShadows.size() > rightButtons.size()) rightShadows.remove(rightShadows.size() - 1).release();
             return true;
         }
 
@@ -1056,9 +1074,11 @@ final class HomeTopBarCards {
             return run.width() > 0f && run.height() > 0f ? run : null;
         }
 
-        /** Right card: from the first action's centre to the last one's, closed by half circles. */
+        /** Keep equal-sized circles centered in the native action slots. */
         private void actions(View toolbar, View profile, int width, float centerY, float cardHeight) {
-            float first = Float.MAX_VALUE, last = -Float.MAX_VALUE;
+            restoreHiddenIcons();
+            List<RectF> anchors = new ArrayList<>();
+            List<View> icons = new ArrayList<>();
             ArrayDeque<View> queue = new ArrayDeque<>(); queue.add(toolbar);
             for (int visited = 0; !queue.isEmpty() && visited < 160; visited++) {
                 View view = queue.removeFirst();
@@ -1066,8 +1086,10 @@ final class HomeTopBarCards {
                 if (view != toolbar && view.isClickable() && view.getWidth() <= width * 0.35f) {
                     RectF b = bounds(toolbar, view);
                     if (b.centerX() > width * 0.55f) {
-                        first = Math.min(first, b.centerX());
-                        last = Math.max(last, b.centerX());
+                        anchors.add(new RectF(b));
+                        View icon = firstIcon(view);
+                        icons.add(icon);
+                        hideIcon(icon);
                     }
                     continue; // an action's own children are part of it
                 }
@@ -1076,8 +1098,83 @@ final class HomeTopBarCards {
                     for (int i = 0; i < group.getChildCount(); i++) queue.addLast(group.getChildAt(i));
                 }
             }
-            if (first > last) return;
-            nextRight.set(first - cardHeight / 2f, centerY - cardHeight / 2f, last + cardHeight / 2f, centerY + cardHeight / 2f);
+            anchors.sort((a, b) -> Float.compare(a.centerX(), b.centerX()));
+            if (anchors.isEmpty()) return;
+
+            // Match the left card's height while preserving only the visual hairline between
+            // adjacent actions. These are the native 144px hit slots, so an 8dp constraint here
+            // needlessly shrinks both circles and makes them look smaller than the left card.
+            float edge = 4f * density;
+            float gap = Math.max(2f, Math.round(density * 2f));
+            float radius = cardHeight / 2f;
+            for (int i = 0; i < anchors.size(); i++) {
+                RectF anchor = anchors.get(i);
+                float x = anchor.centerX();
+                radius = Math.min(radius, Math.min(x - edge, width - edge - x));
+                if (i > 0) radius = Math.min(radius, (x - anchors.get(i - 1).centerX() - gap) / 2f);
+            }
+            if (radius < 12f * density) { restoreHiddenIcons(); return; }
+            for (int i = 0; i < anchors.size(); i++) {
+                RectF anchor = anchors.get(i);
+                float x = anchor.centerX();
+                float y = anchor.centerY();
+                RectF circle = new RectF(x - radius, y - radius, x + radius, y + radius);
+                nextRight.union(circle);
+                nextButtons.add(circle);
+                nextIcons.add(icons.get(i));
+            }
+        }
+
+        private void hideIcon(View icon) {
+            if (icon == null) return;
+            if (!hiddenIcons.containsKey(icon)) hiddenIcons.put(icon, icon.getAlpha());
+            if (icon.getAlpha() != 0f) icon.setAlpha(0f);
+        }
+
+        private void restoreHiddenIcons() {
+            for (java.util.Map.Entry<View, Float> entry : hiddenIcons.entrySet()) {
+                View icon = entry.getKey();
+                if (icon != null) icon.setAlpha(entry.getValue());
+            }
+            hiddenIcons.clear();
+        }
+
+        private void drawIcon(Canvas canvas, View icon, RectF circle) {
+            if (!(icon instanceof ImageView)) return;
+            Drawable drawable = ((ImageView) icon).getDrawable();
+            if (drawable == null) return;
+            int size = Math.min(Math.round(24f * density), Math.min(icon.getWidth(), icon.getHeight()));
+            if (size <= 0) return;
+            Rect old = new Rect(drawable.getBounds());
+            int[] state = drawable.getState();
+            int level = drawable.getLevel();
+            drawable.setState(icon.getDrawableState());
+            drawable.setLevel(level);
+            try {
+                // The native glyphs are padded and their visible centers differ from the hit
+                // slot centers by 12px. Rebinding the drawable to this circle is what makes the
+                // glyph optically belong to the new floating button instead of inheriting that
+                // native asymmetry.
+                int left = Math.round(circle.centerX() - size / 2f);
+                int top = Math.round(circle.centerY() - size / 2f);
+                drawable.setBounds(left, top, left + size, top + size);
+                drawable.draw(canvas);
+            } finally {
+                drawable.setBounds(old);
+                drawable.setState(state);
+                drawable.setLevel(level);
+            }
+        }
+
+        private static View firstIcon(View root) {
+            if (root instanceof ImageView && ((ImageView) root).getDrawable() != null) return root;
+            if (!(root instanceof ViewGroup)) return null;
+            ViewGroup group = (ViewGroup) root;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                View icon = firstIcon(group.getChildAt(i));
+                if (icon != null) return icon;
+            }
+            return null;
         }
 
         /** The native title ("微信(1)", "通讯录"…), when it is compact text; never inside {@code skip}. */
@@ -1161,7 +1258,10 @@ final class HomeTopBarCards {
                 configured = signature;
             }
             card(canvas, leftShadow, left, dark);
-            card(canvas, rightShadow, right, dark);
+            for (int i = 0; i < rightButtons.size(); i++) {
+                card(canvas, rightShadows.get(i), rightButtons.get(i), dark);
+                drawIcon(canvas, rightIcons.get(i), rightButtons.get(i));
+            }
         }
 
         /**
@@ -1199,6 +1299,7 @@ final class HomeTopBarCards {
             if (rect.isEmpty()) return;
             float radius = rect.height() / 2f;
             shadow.dropShadow(canvas, rect, radius, density, dark);
+            glass.configure(dark ? 0xFF242424 : 0xFFF7F7F7, radius, density, dark, mode, blur);
             glass.setBounds((int) Math.floor(rect.left), (int) Math.floor(rect.top),
                     (int) Math.ceil(rect.right), (int) Math.ceil(rect.bottom));
             glass.draw(canvas);

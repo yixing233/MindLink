@@ -40,14 +40,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import dev.mindlink.ui.LiquidTopBarButton
 import dev.mindlink.ui.MindLinkCard
 import dev.mindlink.ui.MindLinkColors
 import dev.mindlink.ui.MindLinkListRow
 import dev.mindlink.ui.MindLinkPage
 import dev.mindlink.ui.MindLinkSectionHeader
 import dev.mindlink.ui.MindLinkTheme
-import dev.mindlink.ui.MindLinkIconButton
 import dev.mindlink.ui.MindLinkTopBar
 import java.util.concurrent.TimeUnit
 import java.util.WeakHashMap
@@ -131,12 +132,13 @@ object DesktopUi {
     @Composable
     private fun DesktopScreen(activity: Activity, state: Navigation) {
         val document = state.document
-        MindLinkPage {
-            MindLinkTopBar(document?.let { documents[it] }.orEmpty().ifBlank { "MindLink" }) {
+        MindLinkPage(header = {
+            MindLinkTopBar(document?.let { documents[it] }.orEmpty().ifBlank { "WeLiquid" }, navigation = {
                 if (document != null) {
-                    MindLinkIconButton(LucideIcons.X, "返回", { state.document = null })
+                    LiquidTopBarButton(LucideIcons.ArrowLeft, "返回", { state.document = null })
                 }
-            }
+            })
+        }) { top ->
             if (document != null) {
                 val text = remember(document) {
                     runCatching { activity.assets.open("mindlink/$document").bufferedReader().use { it.readText() } }
@@ -145,7 +147,7 @@ object DesktopUi {
                 val paragraphs = remember(text) { text.split("\n\n") }
                 LazyColumn(
                     state = rememberLazyListState(),
-                    contentPadding = PaddingValues(16.dp),
+                    contentPadding = PaddingValues(start = 16.dp, top = top + 16.dp, end = 16.dp, bottom = 16.dp),
                 ) {
                     items(paragraphs.size) { index ->
                         Text(
@@ -155,13 +157,13 @@ object DesktopUi {
                     }
                 }
             } else {
-                Home(activity) { state.document = it }
+                Home(activity, top) { state.document = it }
             }
         }
     }
 
     @Composable
-    private fun Home(activity: Activity, openDocument: (String) -> Unit) {
+    private fun Home(activity: Activity, top: Dp, openDocument: (String) -> Unit) {
         val pm = activity.packageManager
         val version = remember { packageVersion(pm, "dev.mindlink").orEmpty() }
         val wechat = remember { packageVersion(pm, "com.tencent.mm") }
@@ -178,16 +180,17 @@ object DesktopUi {
         var confirmRestart by remember { mutableStateOf(false) }
         var restarting by remember { mutableStateOf(false) }
         var restartError by remember { mutableStateOf<String?>(null) }
+        val padding = MindLinkColors.CONTENT_PADDING_DP.dp
         LazyColumn(
             state = rememberLazyListState(),
-            contentPadding = PaddingValues(MindLinkColors.CONTENT_PADDING_DP.dp),
+            contentPadding = PaddingValues(start = padding, top = top + padding, end = padding, bottom = padding),
             verticalArrangement = Arrangement.spacedBy(MindLinkColors.SECTION_GAP_DP.dp),
         ) {
             item {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                     icon?.let { Image(it, contentDescription = null, modifier = Modifier.size(64.dp)) }
                     Column {
-                        Text("MindLink", style = MaterialTheme.typography.titleLarge)
+                        Text("WeLiquid", style = MaterialTheme.typography.titleLarge)
                         Text(version, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }

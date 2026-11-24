@@ -11,7 +11,7 @@ import java.util.Map;
 final class BootstrapDoubles {
     static final List<String> ORDER = List.of("resolver", "host-profile", "profile", "system-bars", "database",
             "text-status", "conversation-storage", "conversation-list", "background",
-            "navigation", "side-panel", "header", "footer", "home-top-cards");
+            "navigation", "side-panel", "header", "footer", "home-top-cards", "moments-top-cards", "native-top-cards");
     static final List<String> calls = new ArrayList<>();
     static final Map<String, Throwable> failures = new LinkedHashMap<>();
     static final Map<String, Object[]> arguments = new LinkedHashMap<>();
@@ -72,4 +72,10 @@ final class FloatingChatFooterFeature {
 }
 final class HomeTopBarCards {
     static void init() { BootstrapDoubles.call("home-top-cards"); }
+}
+final class MomentsTopBarCards {
+    static void init(ClassLoader loader) { BootstrapDoubles.call("moments-top-cards", loader); }
+}
+final class NativeTopBarCards {
+    static void init() { BootstrapDoubles.call("native-top-cards"); }
 }

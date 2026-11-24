@@ -97,7 +97,7 @@ final class ModuleDashboardPage extends FrameLayout {
     }
     private void settings(LinearLayout root){
         LinearLayout guide=ModulePreferenceViews.panel(activity,false);guide.setPadding(dp(16),dp(16),dp(16),dp(16));guide.setBackground(new ModulePreferenceViews.Surface((SettingsTheme.accent(activity)&0xFFFFFF)|0x14000000,dp(22.5f)));guide.setTag("mdl_usage_notice");
-        guide.addView(ModulePreferenceViews.text(activity,"MindLink",17,true,SettingsTheme.ink(activity)),new LinearLayout.LayoutParams(-1,-2));
+        guide.addView(ModulePreferenceViews.text(activity,"WeLiquid",17,true,SettingsTheme.ink(activity)),new LinearLayout.LayoutParams(-1,-2));
         TextView note=ModulePreferenceViews.text(activity,"功能配置在微信内；模块激活状态请在 LSPosed 中确认",14,false,SettingsTheme.sub(activity));note.setPadding(0,dp(4),0,0);guide.addView(note,new LinearLayout.LayoutParams(-1,-2));root.addView(guide,ModulePreferenceViews.block(activity));
         LinearLayout usage=ModulePreferenceViews.group(root,activity,"模块使用",false);
         ModulePreferenceViews.row(usage,activity,"wechat","打开微信",null,()->launchWechat());
@@ -113,7 +113,7 @@ final class ModuleDashboardPage extends FrameLayout {
         LinearLayout status=ModulePreferenceViews.group(root,activity,"宿主状态",false);
         ModulePreferenceViews.info(status,activity,"只读观察",state.stateTitle());ModulePreferenceViews.info(status,activity,"说明",state.stateDetail());ModulePreferenceViews.info(status,activity,"模块激活","未知；请在 LSPosed 中确认");
         LinearLayout environment=ModulePreferenceViews.group(root,activity,"环境信息",false);
-        ModulePreferenceViews.info(environment,activity,"MindLink",state.moduleVersion);ModulePreferenceViews.info(environment,activity,"微信版本",state.wechatVersion);ModulePreferenceViews.info(environment,activity,"Android",state.androidVersion);ModulePreferenceViews.info(environment,activity,"设备",state.device);ModulePreferenceViews.info(environment,activity,"最后日志更新",state.lastHeartbeat);ModulePreferenceViews.info(environment,activity,"开启项（已保存）",state.enabledCount==null?"未知":String.valueOf(state.enabledCount));
+        ModulePreferenceViews.info(environment,activity,"WeLiquid",state.moduleVersion);ModulePreferenceViews.info(environment,activity,"微信版本",state.wechatVersion);ModulePreferenceViews.info(environment,activity,"Android",state.androidVersion);ModulePreferenceViews.info(environment,activity,"设备",state.device);ModulePreferenceViews.info(environment,activity,"最后日志更新",state.lastHeartbeat);ModulePreferenceViews.info(environment,activity,"开启项（已保存）",state.enabledCount==null?"未知":String.valueOf(state.enabledCount));
         LinearLayout actions=ModulePreferenceViews.group(root,activity,"诊断操作",false);ModulePreferenceViews.row(actions,activity,"copy","复制脱敏诊断",null,()->copy(state.summary()));ModulePreferenceViews.row(actions,activity,"log","查看日志",null,()->showLog());
     }
     private void updateBack(){if(!disposed&&resumed&&isAttachedToWindow()&&pages.current()!=ModulePageState.Page.SETTINGS){if(!backRegistered){activity.getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT,backCallback);backRegistered=true;}}else unregisterBack();}
@@ -132,7 +132,7 @@ final class ModuleDashboardPage extends FrameLayout {
         });
         dialog.setOnDismissListener(d->task.cancel(true));
     }
-    private void copy(String value){try{ClipboardManager manager=(ClipboardManager)activity.getSystemService(Context.CLIPBOARD_SERVICE);if(manager==null){toast("剪贴板不可用");return;}manager.setPrimaryClip(ClipData.newPlainText("MindLink diagnostics",value));toast("已复制脱敏诊断");}catch(RuntimeException error){toast("无法复制诊断");}}
+    private void copy(String value){try{ClipboardManager manager=(ClipboardManager)activity.getSystemService(Context.CLIPBOARD_SERVICE);if(manager==null){toast("剪贴板不可用");return;}manager.setPrimaryClip(ClipData.newPlainText("WeLiquid diagnostics",value));toast("已复制脱敏诊断");}catch(RuntimeException error){toast("无法复制诊断");}}
     private void launchWechat(){try{Intent intent=activity.getPackageManager().getLaunchIntentForPackage(ModuleDashboardState.WECHAT);if(intent==null)throw new IllegalStateException();activity.startActivity(intent);}catch(Exception error){toast("无法打开微信");}}
     private void openLink(String uri){try{activity.startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(uri)));}catch(Exception error){toast("无法打开链接");}}
     private void toast(String value){android.widget.Toast.makeText(activity,value,android.widget.Toast.LENGTH_SHORT).show();}

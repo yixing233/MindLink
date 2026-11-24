@@ -78,10 +78,10 @@ SOURCES["android/graphics/Outline.java"] = SOURCES["android/graphics/Outline.jav
     "public class Outline {", "public class Outline { public void setOval(int l,int t,int r,int b){}")
 SOURCES["android/graphics/drawable/GradientDrawable.java"] = SOURCES["android/graphics/drawable/GradientDrawable.java"].replace(
     "public int color,changes;", "public void setCornerRadii(float[] radii){} public int color,changes;")
-# The shared footer View double already declares setFocusable(boolean); the
+# The shared footer View double already declares setFocusable(boolean) and getTop(); the
 # side-panel additions below inject their own, so drop the duplicate first.
 SOURCES["android/view/View.java"] = SOURCES["android/view/View.java"].replace(
-    "public void setFocusable(boolean value){focusable=value;}", "")
+    "public void setFocusable(boolean value){focusable=value;}", "").replace("public int getTop(){return t;}", "")
 SOURCES["android/view/View.java"] = SOURCES["android/view/View.java"].replace("public View(Context c)", r'''private Object tag;private OnClickListener click;public interface OnClickListener {void onClick(View v);}public interface OnFocusChangeListener {void onFocusChange(View v,boolean focus);}public void setTag(Object t){tag=t;}public Object getTag(){return tag;}public View findViewWithTag(Object t){if(t.equals(tag))return this;if(this instanceof ViewGroup)for(View v:((ViewGroup)this).children){View found=v.findViewWithTag(t);if(found!=null)return found;}return null;}public void setOnClickListener(OnClickListener l){click=l;}public void performClick(){if(click!=null)click.onClick(this);}public void setOnFocusChangeListener(OnFocusChangeListener l){}public void setClickable(boolean v){}public void setFocusable(boolean v){}public void setEnabled(boolean v){}public void setMinimumHeight(int v){}public void setContentDescription(String v){}public void setBackgroundColor(int c){}public void setPivotX(float v){}public void setPivotY(float v){}public void setScaleX(float v){}public void setScaleY(float v){}public void setTranslationX(float v){}public int getTop(){return t;}public void removeCallbacks(Runnable r){new android.os.Handler(android.os.Looper.getMainLooper()).removeCallbacks(r);}public boolean postDelayed(Runnable r,long d){return new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(r,d);}public boolean dispatchTouchEvent(MotionEvent e){return false;}public View(Context c)''')
 SOURCES["android/view/ViewGroup.java"] = SOURCES["android/view/ViewGroup.java"].replace(
     "public boolean getClipToPadding()", "public void removeAllViews(){for(View v:new ArrayList<>(children))removeView(v);}public boolean getClipToPadding()")
@@ -94,9 +94,28 @@ SOURCES["android/animation/ValueAnimator.java"] = SOURCES["android/animation/Val
 SOURCES["android/view/ViewConfiguration.java"] = r'''package android.view;public class ViewConfiguration {private final int slop;private ViewConfiguration(int s){slop=s;}public static ViewConfiguration get(android.content.Context c){return new ViewConfiguration(Math.round(8*c.getResources().getDisplayMetrics().density));}public int getScaledTouchSlop(){return slop;}}'''
 SOURCES["android/view/VelocityTracker.java"] = r'''package android.view;public class VelocityTracker {private final java.util.ArrayList<float[]> samples=new java.util.ArrayList<>();private float vx;public static VelocityTracker obtain(){return new VelocityTracker();}public void addMovement(MotionEvent e){samples.add(new float[]{e.getRawX(),e.getEventTime()});}public void computeCurrentVelocity(int units){vx=0;if(samples.isEmpty())return;float[] last=samples.get(samples.size()-1);float[] first=last;for(float[] s:samples)if(last[1]-s[1]<=100){first=s;break;}if(last[1]>first[1])vx=(last[0]-first[0])*units/(last[1]-first[1]);}public float getXVelocity(){return vx;}public void recycle(){}}'''
 
+SOURCES["android/content/Context.java"] = SOURCES["android/content/Context.java"].replace(
+    "public Context getApplicationContext()", """public static final String LOCATION_SERVICE="location";
+    public Object getSystemService(String name){return android.location.LocationManager.INSTANCE;}
+    public int checkSelfPermission(String permission){return android.location.LocationManager.permission ? 0 : -1;}
+    public Context getApplicationContext()""")
+SOURCES["android/os/SystemClock.java"] = SOURCES["android/os/SystemClock.java"].replace(
+    "public static long uptimeMillis()", """public static long elapsedRealtimeNanos(){return System.nanoTime();}
+    public static long elapsedRealtime(){return uptimeMillis();}public static long uptimeMillis()""")
+SOURCES["android/os/Bundle.java"] = SOURCES["android/os/Bundle.java"].replace(
+    "public int getInt(String k)", """public int getInt(String k,int d){return containsKey(k)?getInt(k):d;}
+    public boolean getBoolean(String k,boolean d){return containsKey(k)?getBoolean(k):d;}
+    public int getInt(String k)""")
+SOURCES["org/json/JSONObject.java"] = SOURCES["org/json/JSONObject.java"].replace(
+    "public long getLong", "public double getDouble(String k){return ((Number)get(k)).doubleValue();}"
+    "public Object remove(String k){return decode(value.remove(k));}public long getLong")
+SOURCES["org/json/JSONArray.java"] = SOURCES["org/json/JSONArray.java"].replace(
+    "JSONArray(JsonArray v)", "public JSONArray(String text){value=JsonParser.parseString(text).getAsJsonArray();}JSONArray(JsonArray v)")
+
 PRODUCTION = ("HomeSidePanelFeature", "HomeSidePanelData", "HomeSidePanelWallet",
-              "HomeSidePanelSnapshot", "ProfileView", "HomeSidePanelLayout", "LocationPrivacy")
-CASES = ("schema", "data", "host", "editor", "editor-lifecycle", "gestures", "wallet", "toolbar", "resume", "images", "status-icons", "image-status-failures")
+              "HomeSidePanelSnapshot", "ProfileView", "HomeSidePanelLayout", "LocationPrivacy",
+              "WeatherLocation", "WeatherPlaceController")
+CASES = ("schema", "data", "weather-place", "host", "editor", "editor-lifecycle", "gestures", "wallet", "toolbar", "resume", "images", "status-icons", "image-status-failures")
 
 
 def execute(command):
@@ -114,6 +133,8 @@ def main():
     parser.add_argument("--jdk", required=True, type=Path)
     parser.add_argument("--gson", type=Path)
     parser.add_argument("--sdk", type=Path)
+    parser.add_argument("--host-build", type=Path, default=ROOT / "build",
+                        help="build root containing current out and stub classes used with --sdk")
     parser.add_argument("--negative-replay", action="store_true")
     args = parser.parse_args()
     gson = args.gson
@@ -163,9 +184,8 @@ def main():
             if android.is_dir():
                 android = sorted((android / "platforms").glob("*/android.jar"))[-1]
             sdk_classes = base / "sdk-classes"; sdk_classes.mkdir()
-            classpath = ";".join(map(str, (android, ROOT / "build/out", ROOT / "build/stub")))
-            names = [name for name in PRODUCTION if name not in ("HomeSidePanelLayout", "LocationPrivacy")]
-            names += ["SidePanelComposeBridge", "ComposePayloadLoader"]
+            classpath = ";".join(map(str, (android, args.host_build / "out", args.host_build / "stub")))
+            names = [*PRODUCTION, "SidePanelComposeBridge", "ComposePayloadLoader"]
             print("Compile scoped family against actual Android SDK (no full build)", flush=True)
             execute([javac, "-J-Duser.language=en", "-source", "11", "-target", "11", "-encoding", "UTF-8",
                      "-classpath", classpath, "-sourcepath", empty, "-d", sdk_classes,

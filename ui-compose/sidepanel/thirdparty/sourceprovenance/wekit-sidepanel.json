@@ -10,8 +10,8 @@
       "sourceSha256": "0004f4b0aba45a75dae957763bf8401af960e379e09d67dd24b3b8cd2bab092a",
       "sourceLines": 760,
       "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelDataCards.kt",
-      "targetSha256": "309c49e09d02f29eb3b92b9c14e21558696715453c1d5e8fd88c9a9bcc0ed515",
-      "modifications": "resource namespace and platform localized context/error text only; DateTime/Weather/Wallet/Hitokoto bodies retained",
+      "targetSha256": "9b54a4ef5e123c49a9cbeb2364272b46f6ae74da71a88a6cac9c0b2bc1298b3e",
+      "modifications": "resource namespace and platform localized context/error text only; DateTime/Weather/Wallet/Hitokoto bodies retained; 2026-11-24: display configured district and location precision status.",
       "diff": "HomeSidePanelDataCards.kt.patch"
     },
     {
@@ -55,8 +55,8 @@
       "sourceSha256": "2d2207a28725be0530a4379030ebe0624441055692ea175d56143f40c7663abe",
       "sourceLines": 727,
       "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelWeather.kt",
-      "targetSha256": "54191953e87465e57eab0b774af61fae93e1f3ab74dedbd93409964d7621ea0f",
-      "modifications": "full display models and original icon-code mapping only; network/location/database/services/default city omitted; errors are platform strings; 2026-11-21: Xiaomi v3 code 32 maps to fog.",
+      "targetSha256": "808d5bdffbcd1bd42f495fcb2ae3b3c2caa04d239261c637a041a83a6a1e6e0b",
+      "modifications": "full display models and original icon-code mapping only; network/location/database/services/default city omitted; errors are platform strings; 2026-11-21: Xiaomi v3 code 32 maps to fog.; 2026-11-24: add location source, fix accuracy and place picker state.",
       "diff": "HomeSidePanelWeather.kt.patch"
     },
     {
@@ -82,8 +82,8 @@
       "sourceSha256": "ff39ce97b45033e4b45ef4ca23b13ccaf5ad80260e6956fc79a984c9d9095ff4",
       "sourceLines": 722,
       "target": "src/main/java/dev/mindlink/sidepanel/vendor/wekit/HomeSidePanelHome.kt",
-      "targetSha256": "488c388579bacbd71c5c5cd7b3af824fbc83ec6ff2da8a949df1e8b5979da513",
-      "modifications": "original LazyColumn, in-place editor pulse, 58dp header, 32dp toolbar and all card dispatch retained; drag/full editor host omitted; typed callbacks/platform Bitmap bind existing host; 2026-11-21: list-owned long press, overlay draft reorder, edge scrolling and accessible move actions.; drag preview preserves recorded drawing and dimensions; original shape forwarded; 2026-11-22: image cards dispatch to the shared card editor",
+      "targetSha256": "6fc598414f01ea5ddb35a00c087fbb68b5287476d874fd2ff343be4f2a0a3eb1",
+      "modifications": "original LazyColumn, in-place editor pulse, 58dp header, 32dp toolbar and all card dispatch retained; drag/full editor host omitted; typed callbacks/platform Bitmap bind existing host; 2026-11-21: list-owned long press, overlay draft reorder, edge scrolling and accessible move actions.; drag preview preserves recorded drawing and dimensions; original shape forwarded; 2026-11-22: image cards dispatch to the shared card editor; 2026-11-24: pinned blurred profile header and explicit edit action",
       "diff": "HomeSidePanelHome.kt.patch"
     },
     {

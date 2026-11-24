@@ -347,6 +347,7 @@ public final class HomeSidePanelFeature {
             }
         };
         final HomeSidePanelSnapshot.Images images;
+        final WeatherPlaceController weatherPlaces;
         View compose;
         Bundle composeState;
         List<HomeSidePanelLayout.Card> displayCards = new ArrayList<>();
@@ -395,6 +396,13 @@ public final class HomeSidePanelFeature {
 
         DrawerSession(Activity activity, FrameLayout decor, View content) {
             this.activity = activity;
+            this.weatherPlaces = new WeatherPlaceController(activity, this::updateSnapshot, (id, config) -> {
+                HomeSidePanelLayout.Card latest = card(id);
+                if (latest != null && latest.type == HomeSidePanelLayout.CardType.WEATHER && editorDraft != null && !detached) {
+                    latest.weatherCity = config;
+                    refreshEditingSnapshot();
+                }
+            });
             this.decor = decor;
             this.content = content;
             overlay = new FrameLayout(activity);
@@ -483,15 +491,17 @@ public final class HomeSidePanelFeature {
                     || activity.isFinishing() || activity.isDestroyed()) return;
             updating = true;
             try {
+                if (!closing && activityResumed && progress > 0f)
+                    weatherPlaces.ensureCurrent(editorDraft == null ? displayCards : editorDraft, false);
                 if (editorDraft != null) {
                     // Editing state: the draft (not the saved layout) feeds the Compose editor pages.
-                    SidePanelComposeBridge.update(compose, HomeSidePanelSnapshot.build(true, true, editorRoute,
+                    SidePanelComposeBridge.update(compose, weatherPlaces.decorate(HomeSidePanelSnapshot.build(true, true, editorRoute,
                             editorDraft, walletMasks, images.snapshot(editorDraft),
-                            activityResumed && progress > 0f), callbacks());
+                            activityResumed && progress > 0f)), callbacks());
                 } else {
-                    SidePanelComposeBridge.update(compose, HomeSidePanelSnapshot.build(true, false,
+                    SidePanelComposeBridge.update(compose, weatherPlaces.decorate(HomeSidePanelSnapshot.build(true, false,
                             displayCards, walletMasks, images.snapshot(displayCards),
-                            activityResumed && progress > 0f), callbacks());
+                            activityResumed && progress > 0f)), callbacks());
                 }
             } catch (RuntimeException | LinkageError error) { bridgeError("更新", error); }
             finally { updating = false; }
@@ -503,8 +513,8 @@ public final class HomeSidePanelFeature {
                 updating = true;
                 try {
                     compose = SidePanelComposeBridge.build(activity, composeState,
-                            HomeSidePanelSnapshot.build(true, false, displayCards, walletMasks,
-                                    images.snapshot(displayCards), activityResumed && progress > 0f), callbacks());
+                            weatherPlaces.decorate(HomeSidePanelSnapshot.build(true, false, displayCards, walletMasks,
+                                    images.snapshot(displayCards), activityResumed && progress > 0f)), callbacks());
                     drawer.removeAllViews();
                     drawer.addView(compose, new FrameLayout.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -546,6 +556,7 @@ public final class HomeSidePanelFeature {
             if (editorDraft != null) {
                 // Add-card page: one callback per card type carrying the serial name.
                 for (HomeSidePanelLayout.CardType type : HomeSidePanelLayout.CardType.values()) {
+                    if (!canAddEditorCard(type)) continue;
                     final String serialName = type.serialName;
                     actions.put("add_card:" + serialName, () -> addEditorCard(serialName));
                 }
@@ -581,16 +592,23 @@ public final class HomeSidePanelFeature {
                         actions.put("toggle_wallet:" + id, () -> toggleWallet(id));
                         break;
                     case WEATHER:
-                        actions.put("update_weather_city:" + id, WeatherCityInput.pending(activity, code -> {
-                            HomeSidePanelLayout.Card latest = card(id);
-                            if (latest != null && editorDraft != null) {
-                                latest.weatherCity = code;
-                                refreshEditingSnapshot();
-                            }
+                        actions.put("locate_weather:" + id, () -> {
+                            if (weatherEditorOpen(id)) weatherPlaces.locate(id);
+                        });
+                        actions.put("search_weather_city:" + id, SidePanelComposeBridge.input(input -> {
+                            if (weatherEditorOpen(id)) weatherPlaces.search(id, input.getString("query", ""));
+                        }));
+                        actions.put("select_weather_city:" + id, SidePanelComposeBridge.input(input -> {
+                            if (weatherEditorOpen(id)) weatherPlaces.choose(id, input.getString("token", ""), input.getInt("index", -1));
                         }));
                         actions.put("refresh_weather:" + id, () -> {
                             HomeSidePanelLayout.Card latest = card(id);
-                            if (latest != null) HomeSidePanelData.refreshWeather(latest);
+                            if (latest != null) {
+                                if (WeatherLocation.CURRENT.equals(latest.weatherCity) && WeatherLocation.needsFix()) {
+                                    weatherPlaces.ensureCurrent(java.util.Collections.singletonList(latest), true);
+                                    updateSnapshot();
+                                } else HomeSidePanelData.refreshWeather(latest);
+                            }
                         });
                         break;
                     case HITOKOTO:
@@ -704,27 +722,45 @@ public final class HomeSidePanelFeature {
         private void enterEditor(String route) {
             if (editorDraft == null) showEditor(HomeSidePanelFeature.loadLayout());
             if (editorDraft == null) return;
-            editorRoute = route == null ? ROUTE_EDIT_HOME : route;
+            String next = route == null ? ROUTE_EDIT_HOME : route;
+            if (!next.equals(editorRoute) && editorRoute.startsWith(ROUTE_CARD_SETTINGS))
+                weatherPlaces.cancelCard(editorRoute.substring(ROUTE_CARD_SETTINGS.length()));
+            editorRoute = next;
             updateSnapshot();
+        }
+
+        private boolean weatherEditorOpen(String id) {
+            return !closing && !detached && activityResumed && editorDraft != null && card(id) != null
+                    && (ROUTE_CARD_SETTINGS + id).equals(editorRoute);
         }
 
         /** add_card:<serialName> appends a default card of that type to the draft. */
         private void addEditorCard(String serialName) {
             if (editorDraft == null) showEditor(HomeSidePanelFeature.loadLayout());
             if (editorDraft == null) return;
+            HomeSidePanelLayout.CardType type;
             try {
-                editorDraft.add(HomeSidePanelLayout.card(HomeSidePanelLayout.CardType.from(serialName), false));
+                type = HomeSidePanelLayout.CardType.from(serialName);
             } catch (IllegalArgumentException error) { return; }
-            HomeSidePanelLayout.Card added = editorDraft.get(editorDraft.size() - 1);
-            if (added.type == HomeSidePanelLayout.CardType.WEATHER && added.weatherCity == null) added.weatherCity = "101010100";
+            if (!canAddEditorCard(type)) return;
+            HomeSidePanelLayout.Card added = HomeSidePanelLayout.card(type, false);
+            if (type == HomeSidePanelLayout.CardType.WEATHER && added.weatherCity == null) added.weatherCity = WeatherLocation.CURRENT;
+            editorDraft.add(added);
             editorRoute = ROUTE_EDIT_HOME;
             updateSnapshot();
+        }
+
+        private boolean canAddEditorCard(HomeSidePanelLayout.CardType type) {
+            if (editorDraft == null) return false;
+            for (HomeSidePanelLayout.Card card : editorDraft) if (card.type == type) return false;
+            return true;
         }
 
         private void deleteEditorCard(String id) {
             if (editorDraft == null) return;
             HomeSidePanelLayout.Card target = card(id);
             if (target != null) {
+                weatherPlaces.cancelCard(id);
                 editorDraft.remove(target);
                 if (ROUTE_CARD_SETTINGS.equals(editorRoute) || editorRoute.startsWith(ROUTE_CARD_SETTINGS)) editorRoute = ROUTE_EDIT_HOME;
                 updateSnapshot();
@@ -815,6 +851,7 @@ public final class HomeSidePanelFeature {
             // Do not delete previously saved user images. Only newly imported, unused draft assets are ours.
             cleanupOrphanAssets(originalAssets, imageAssets(editorDraft));
             editorDraft = null; originalAssets = null;
+            weatherPlaces.cancel();
             walletMasks.clear();
             rebuild();
         }
@@ -833,6 +870,7 @@ public final class HomeSidePanelFeature {
 
         private void discardEditor() {
             composeGesture = false;
+            weatherPlaces.cancel();
             if (editorDraft == null) return;
             cleanupDraftAssets(editorDraft, originalAssets);
             editorDraft = null; originalAssets = null;
@@ -854,6 +892,7 @@ public final class HomeSidePanelFeature {
         }
 
         private void unsubscribe() {
+            weatherPlaces.cancel();
             MAIN.removeCallbacks(awaitIdentity);
             MAIN.removeCallbacks(dataChanged);
             SelfProfile.unsubscribe(dataChanged);
@@ -1230,30 +1269,6 @@ public final class HomeSidePanelFeature {
             XposedBridge.log(TAG + message);
         } catch (Throwable ignored) {
         }
-    }
-
-    /** One-slot pending carrier for a Compose settings page commit (platform types only).
-     *  The Compose side stores the payload here; the host consumes it exactly once on callback. */
-    static final class WeatherCityInput {
-        interface Consumer { void accept(String cityCode); }
-        private static volatile Consumer pending;
-
-        private WeatherCityInput() { }
-
-        static Runnable pending(android.app.Activity activity, Consumer consumer) {
-            pending = consumer;
-            return () -> {
-                Consumer current = pending;
-                pending = null;
-                if (current != null) current.accept(WeatherCityPayload.CODE);
-            };
-        }
-    }
-
-    /** City code payload written by the Compose settings page before invoking the callback. */
-    public static final class WeatherCityPayload {
-        public static volatile String CODE = "";
-        private WeatherCityPayload() { }
     }
 
     /** One-slot pending carrier for hitokoto settings committed from the Compose page. */

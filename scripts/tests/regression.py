@@ -64,7 +64,7 @@ def static_checks():
     for key in ["conversation_filter_enabled", "bottom_bar_enabled", "home_side_panel_enabled"]:
         assert 'flag("%s"' % key in model, key
     # 聊天新分组：顶栏和输入栏均由专用可调卡接线。
-    assert 'flag("floating_chat_header_enabled", false, FloatingChatHeaderFeature::refresh)' in model
+    assert 'flag("floating_chat_header_enabled", true, FloatingChatHeaderFeature::refresh)' in model
     assert "floating_chat_header_enabled" in read("java_src/wex/ui/core/feature/FloatingChatHeaderFeature.java")
     assert 'flag("floating_chat_footer_enabled", false, FloatingChatFooterFeature::refresh)' in model
     assert "floating_chat_footer_enabled" in read("java_src/wex/ui/core/feature/FloatingChatFooterFeature.java")
@@ -244,7 +244,7 @@ def static_checks():
     assert "setPortHeighPx" in footer and "yFromBottomWithoutPanel" in footer
     assert "floating_footer_fullscreen" in footer and "FULLSCREEN_TRANSLATIONS" in footer
     assert "StripState.capture" in footer and "panel.setVisibility(visibility)" in footer
-    assert 'flag("floating_chat_header_enabled", false, FloatingChatHeaderFeature::refresh)' in model
+    assert 'flag("floating_chat_header_enabled", true, FloatingChatHeaderFeature::refresh)' in model
     assert 'flag("floating_chat_footer_enabled", false, FloatingChatFooterFeature::refresh)' in model
     settings_checks(shell)
     filter_checks()
@@ -594,6 +594,7 @@ def runtime_checks(jdk):
         run([sys.executable, "-I", "-B", ROOT / "scripts/tests/systembar_checks.py", "--jdk", jdk,
              "--out", tmp / "systembars-missing-getter", "--missing-getter"])
         run([sys.executable, "-I", ROOT / "scripts/tests/backdrop_recovery_checks.py", "--jdk", jdk])
+        run([sys.executable, "-I", ROOT / "scripts/tests/moments_topbar_checks.py", "--jdk", jdk])
         run([sys.executable, "-I", ROOT / "scripts/tests/database_capture_checks.py", "--jdk", jdk])
         run([sys.executable, "-I", ROOT / "scripts/tests/resolver_checks.py", "--jdk", jdk])
         run([sys.executable, "-I", ROOT / "scripts/tests/text_status_checks.py", "--jdk", jdk])

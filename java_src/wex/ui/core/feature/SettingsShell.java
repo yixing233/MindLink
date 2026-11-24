@@ -129,26 +129,23 @@ public final class SettingsShell {
             toast(activity, "请先在系统设置中授予微信定位权限，再更新定位");
             return;
         }
-        try {
-            Class<?> helper = loadModuleClass(activity, "wex.ui.core.feature.LocationHelper");
-            Class<?> callbackType = Class.forName("w3.e", true, helper.getClassLoader());
-            Object callback = java.lang.reflect.Proxy.newProxyInstance(callbackType.getClassLoader(),
-                    new Class[]{callbackType}, new java.lang.reflect.InvocationHandler() {
-                        @Override
-                        public Object invoke(Object proxy, Method method, Object[] args) {
-                            if ("invoke".equals(method.getName()) && args != null && args.length == 2) {
-                                toast(activity, String.valueOf(args[1]));
-                            }
-                            return null;
-                        }
-                    });
-            toast(activity, "正在定位...");
-            helper.getMethod("updateLocation", Activity.class, callbackType)
-                    .invoke(helper.getField("INSTANCE").get(null), activity, callback);
-        } catch (Throwable t) {
-            log("更新定位失败 " + t);
-            toast(activity, "更新定位失败，请查看日志");
-        }
+        toast(activity, "正在获取精确位置…");
+        WeatherLocation.locate(activity, (places, error) -> {
+            if (activity.isFinishing() || activity.isDestroyed()) return;
+            if (places.isEmpty()) { toast(activity, error); return; }
+            try {
+                org.json.JSONObject place = places.get(0);
+                WeatherLocation.saveCurrent(place);
+                wex.ui.core.WexStore store = wex.ui.core.WexStore.INSTANCE;
+                String latitude = String.valueOf(place.getDouble("latitude"));
+                String longitude = String.valueOf(place.getDouble("longitude"));
+                store.putString("wp_lat", latitude); store.putString("wp_lon", longitude);
+                store.putString("weather_city", WeatherLocation.label(place));
+                store.putString("weather_time", "0");
+                HomeSidePanelFeature.refreshOpenDrawers();
+                toast(activity, "定位成功：" + WeatherLocation.label(place));
+            } catch (Exception failure) { toast(activity, "位置保存未完成，请重试"); }
+        });
     }
 
     static void toast(Activity activity, String message) {

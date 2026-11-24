@@ -35,6 +35,13 @@ public final class SidePanelComposeBridge {
         public final Map<String, Runnable> actions;
         Callbacks(Map<String, Runnable> actions) { this.actions = new LinkedHashMap<>(actions); }
     }
+    private static final class Input implements Runnable, java.util.function.Consumer<Bundle> {
+        private final java.util.function.Consumer<Bundle> consumer;
+        Input(java.util.function.Consumer<Bundle> consumer) { this.consumer = consumer; }
+        @Override public void run() { }
+        @Override public void accept(Bundle value) { consumer.accept(value); }
+    }
+    static Runnable input(java.util.function.Consumer<Bundle> consumer) { return new Input(consumer); }
     public static View build(Activity activity, Bundle saved, Snapshot snapshot, Callbacks callbacks) {
         builds++;
         return created(activity, snapshot, callbacks);
@@ -90,7 +97,11 @@ public final class SidePanelComposeBridge {
             required(card, "id", String.class);
             switch (required(card, "cardType", String.class)) {
                 case "date_time": required(card, "showLunarCalendar", Boolean.class); break;
-                case "weather": validateState(required(card, "state", Bundle.class), true); break;
+                case "weather":
+                    required(card, "currentLocation", Boolean.class);
+                    if (card.containsKey("city")) required(card, "city", Bundle.class);
+                    validateState(required(card, "state", Bundle.class), true);
+                    break;
                 case "hitokoto":
                     Bundle settings = required(card, "settings", Bundle.class);
                     required(settings, "categories", String.class);

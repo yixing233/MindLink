@@ -209,7 +209,9 @@ final class ChatTailSpacer implements InvocationHandler {
     static View recycler(View root) { return recycler(root, new int[]{0}, 0); }
 
     private static final String PULL_VIEW = "com.tencent.mm.ui.base.MMPullDownView";
-    private static final Map<Class<?>, Boolean> PULL_TYPES = new HashMap<>();
+    private static final String BOUNCE_VIEW = "com.tencent.mm.ui.widget.pulldown.MMWeUIBounceView";
+    private static final int SCROLL_PULL = 1, TRANSLATED_CONTENT = 2;
+    private static final Map<Class<?>, Integer> PULL_TYPES = new HashMap<>();
 
     /**
      * How far a pull-to-bounce currently displaces {@code list}, in px (positive = moved up).
@@ -221,27 +223,37 @@ final class ChatTailSpacer implements InvocationHandler {
      * it; the tail must not, or a bottom overscroll shrinks the tail and the bounce first lands
      * the last message behind the input card before the tail grows back.</p>
      *
+     * <p>The newer {@code MMWeUIBounceView} wraps that pull view in a content FrameLayout
+     * and translates the content during nested overscroll. Exclude that direct child's
+     * translation too. Other translations, including keyboard lifts, remain in the screen
+     * geometry. Reading the displacement leaves the host's gesture and rebound untouched.</p>
+     *
      * <p>Only ancestors strictly between {@code list} and {@code stop} count: offsets above
      * {@code stop} move the input card by the same amount.</p>
      */
     static int pullOffset(View list, View stop) {
         int offset = 0;
+        float translation = 0f;
         View child = list;
         for (int depth = 0; depth < 16 && child.getParent() instanceof View; depth++) {
             View parent = (View) child.getParent();
             if (parent == stop) break;
-            if (isPullView(parent.getClass())) offset += parent.getScrollY() - child.getTop();
+            int type = pullType(parent.getClass());
+            if ((type & SCROLL_PULL) != 0) offset += parent.getScrollY() - child.getTop();
+            if ((type & TRANSLATED_CONTENT) != 0) translation += child.getTranslationY();
             child = parent;
         }
-        return offset;
+        return offset - Math.round(translation);
     }
 
-    private static boolean isPullView(Class<?> type) {
-        Boolean known = PULL_TYPES.get(type);
+    private static int pullType(Class<?> type) {
+        Integer known = PULL_TYPES.get(type);
         if (known != null) return known;
-        boolean pull = false;
-        for (Class<?> current = type; current != null && !pull; current = current.getSuperclass())
-            pull = PULL_VIEW.equals(current.getName());
+        int pull = 0;
+        for (Class<?> current = type; current != null; current = current.getSuperclass()) {
+            if (PULL_VIEW.equals(current.getName())) pull |= SCROLL_PULL;
+            if (BOUNCE_VIEW.equals(current.getName())) pull |= TRANSLATED_CONTENT;
+        }
         PULL_TYPES.put(type, pull);
         return pull;
     }

@@ -26,7 +26,7 @@ import java.util.Objects;
  * ready status requires iconId and description; image keys reference Snapshot.images, not URLs.
  * each card requires id:string, cardType:string. The original card IDs/action IDs are never remapped.
  * date_time: showLunarCalendar:boolean.
- * weather: city?:Bundle, state:Bundle {kind:loading|ready|error, refreshing?:boolean,
+ * weather: city?:Bundle, currentLocation:boolean, placeEditor?:Bundle, state:Bundle {kind:loading|ready|error, refreshing?:boolean,
  * message?:string, snapshot?:Bundle, cached?:Bundle}. ready requires snapshot; error requires message.
  * WeatherSnapshot requires city:Bundle {countryCode,province,city,cityNum:string, district?:string,
  * latitude?:double,longitude?:double}, weatherCode,temperature,feelsLike,high,low,humidity,
@@ -49,11 +49,24 @@ import java.util.Objects;
  * run:<cardId>:<actionId>,delete_action:<cardId>:<actionId>,add_action:<cardId>,
  * image_scale:<cardId>:crop|fit|fill_bounds|auto_ratio,image_height:<cardId>:<heightDp>.
  * Image resize callbacks are pre-bound to the finite 80..800 step-8 values; no Kotlin lambda crosses.
+ * Weather editing uses locate_weather:<cardId> plus search_weather_city / select_weather_city,
+ * which accept a Bundle through the platform Consumer interface.
  * Display long-press calls enter_edit; editing long-press owns a drag and commits one draft move on drop.
  * Card settings badges call card_settings:<cardId>; cancellation does not commit the preview order.
  * payment_code is only a callback to the existing native host navigation, not a payment operation.
  */
 public final class SidePanelComposeBridge {
+    /** A boot-classloader interface carries per-invocation editor input across isolated runtimes. */
+    static Runnable input(java.util.function.Consumer<Bundle> consumer) {
+        return new Input(consumer);
+    }
+
+    private static final class Input implements Runnable, java.util.function.Consumer<Bundle> {
+        private final java.util.function.Consumer<Bundle> consumer;
+        Input(java.util.function.Consumer<Bundle> consumer) { this.consumer = consumer; }
+        @Override public void run() { }
+        @Override public void accept(Bundle input) { mainThread(); consumer.accept(new Bundle(input)); }
+    }
     private static final String ENTRY = "dev.mindlink.compose.SidePanelUi";
     private static final String PREFIX = "sidepanel-compose-payload";
     private static final String TAG = "mdl_isolated_side_panel";

@@ -189,14 +189,14 @@ public final class FloatingChatHeaderFeature {
 
     private static void unavailable(String stage, Throwable error) { log("stage=" + stage + " unavailable=" + error.getClass().getSimpleName()); }
 
-    static boolean enabled() { return WexStore.INSTANCE.getBool(KEY_ENABLED, false); }
+    static boolean enabled() { return WexStore.INSTANCE.getBool(KEY_ENABLED, true); }
     static int cornerRadiusDp() { return BubbleSettings.readInt(KEY_CORNER, 24, 0, 32); }
     static int sideMarginDp() { return BubbleSettings.readInt(KEY_SIDE, 12, 0, 32); }
     static int topGapDp() { return BubbleSettings.readInt(KEY_TOP_GAP, 4, 0, 24); }
     static int extraGapDp() { return BubbleSettings.readInt(KEY_EXTRA_GAP, 8, 0, 24); }
     static int elevationDp() { return BubbleSettings.readInt(KEY_ELEVATION, 4, 0, 16); }
     static int componentGapDp() { return BubbleSettings.readInt(KEY_COMPONENT_GAP, 8, 0, 24); }
-    static boolean separatedStyle() { return "SEPARATED".equalsIgnoreCase(WexStore.INSTANCE.getString(KEY_STYLE, "INTEGRATED")); }
+    static boolean separatedStyle() { return "SEPARATED".equalsIgnoreCase(WexStore.INSTANCE.getString(KEY_STYLE, "SEPARATED")); }
 
     public static void refresh() {
         MAIN.post(() -> {

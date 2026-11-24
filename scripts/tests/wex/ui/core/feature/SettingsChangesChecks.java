@@ -85,7 +85,8 @@ public final class SettingsChangesChecks {
         store.nullStrings = false;
 
         for (String key : new String[]{"bubble_mode", "bubble_enabled", "bubble_glass_blur_dp", "top_nickname",
-                "top_profile_enabled", "chat_toolbar_enabled", "chat_toolbar_reply", "log_enabled",
+                "top_profile_enabled", "top_moments_cards", "top_moments_progressive_blur",
+                "chat_toolbar_enabled", "chat_toolbar_reply", "log_enabled",
                 "location_network_enabled", "tab_bg_alpha_0", "tab_bg_alpha_3", "nav_bar_glass_mode",
                 "nav_bar_blur_radius", "nav_bar_scale", "nav_bar_use_floating", "floating_chat_header_top_gap",
                 "floating_chat_header_layout_style", "floating_chat_footer_bottom_gap", "floating_chat_footer_panel_above"}) {

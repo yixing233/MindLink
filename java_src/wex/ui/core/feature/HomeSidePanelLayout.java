@@ -100,7 +100,7 @@ final class HomeSidePanelLayout {
         List<Card> cards = new ArrayList<Card>();
         cards.add(card(CardType.DATE_TIME, false));
         Card weather = card(CardType.WEATHER, false);
-        weather.weatherCity = "101010100";
+        weather.weatherCity = WeatherLocation.CURRENT;
         cards.add(weather);
         cards.add(card(CardType.WALLET, false));
         Card actions = card(CardType.VERTICAL_ACTIONS, false);

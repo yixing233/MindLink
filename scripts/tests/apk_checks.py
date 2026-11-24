@@ -92,6 +92,7 @@ def main():
     parser.add_argument("--jdk", required=True, type=Path)
     parser.add_argument("--build-tools", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--app-label", default="WeLiquid", help="Expected application display name")
     parser.add_argument("--allow-primary-rebuild", action="store_true",
                         help="Allow primary DEX byte changes only when its class membership is unchanged")
     parser.add_argument("--allow-desktop-removal", action="store_true",
@@ -173,7 +174,7 @@ def main():
     assert "Verified using v3 scheme (APK Signature Scheme v3): true" in new_signature, "v3 signature absent"
     tool([args.build_tools / "zipalign.exe", "-c", "-p", "4", args.apk], args.output / "zipalign.txt")
     badging = tool([args.build_tools / "aapt2.exe", "dump", "badging", args.apk], args.output / "badging.txt")
-    assert "package: name='dev.mindlink'" in badging and "application-label:'MindLink'" in badging, "identity changed"
+    assert "package: name='dev.mindlink'" in badging and f"application-label:'{args.app_label}'" in badging, "unexpected application identity"
     xml = tool([args.build_tools / "aapt2.exe", "dump", "xmltree", "--file", "AndroidManifest.xml", args.apk], args.output / "manifest-tree.txt")
     if args.allow_desktop_removal:
         assert "launchable-activity:" not in badging, "standalone desktop launcher still packaged"

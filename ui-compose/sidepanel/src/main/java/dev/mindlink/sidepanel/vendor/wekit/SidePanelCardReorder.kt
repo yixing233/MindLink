@@ -53,10 +53,10 @@ internal class SidePanelCardReorder(
 
     fun overlayTop(): Float = top - layoutInfo().viewportStartOffset
 
-    fun scrollStep(edge: Float): Float {
+    fun scrollStep(edge: Float, topClearance: Float = 0f): Float {
         if (draggedId == null) return 0f
         val info = layoutInfo()
-        val start = info.viewportStartOffset + edge
+        val start = info.viewportStartOffset + topClearance + edge
         val end = info.viewportEndOffset - edge
         return when {
             fingerY < start -> -((start - fingerY) / edge).coerceIn(0f, 1f) * edge / 5f

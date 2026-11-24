@@ -34,7 +34,13 @@ public final class ChatHeaderToolbarChecks {
 
     public static void main(String[] args) throws Throwable {
         String variant = args[0];
-        if ("separated-geometry".equals(variant)) { separatedGeometry(); return; }
+        if ("separated-geometry".equals(variant)) {
+            check(FloatingChatHeaderFeature.enabled() && FloatingChatHeaderFeature.separatedStyle(),
+                    "chat uses the split header when no preference is saved");
+            separatedGeometry(); return;
+        }
+        // The lifecycle fixtures below exercise an explicitly selected integrated header.
+        WexStore.INSTANCE.strings.put("floating_chat_header_layout_style", "INTEGRATED");
         toolSettingsRoundtrip();
         flags(true, true);
         if ("pre-fix-header".equals(variant)) {
@@ -317,18 +323,26 @@ public final class ChatHeaderToolbarChecks {
             java.lang.reflect.Field pillField = decoration.getClass().getDeclaredField("title");
             pillField.setAccessible(true);
             android.graphics.RectF pill = (android.graphics.RectF) pillField.get(decoration);
-            check(Math.abs(pill.left - 68f) < 0.6f && Math.abs(pill.right - 488f) < 0.6f,
+            check(Math.abs(pill.left - 68f) < 0.6f && Math.abs(pill.right - 508f) < 0.6f,
                     "long title pill spans from the left circle to the right one, got " + pill.left + ".." + pill.right);
-            check(titleRule.width == 404 && title.getMaxWidth() == 404, "long title host gets the whole pill minus the inner gaps, got " + titleRule.width);
-            check(Math.abs(title.getTranslationX() + 22f) < 0.6f, "long title host is centred in the wider pill, got dx=" + title.getTranslationX());
+            check(titleRule.width == 424 && title.getMaxWidth() == 424, "long title host gets the whole pill minus the inner gaps, got " + titleRule.width);
+            check(Math.abs(title.getTranslationX() + 12f) < 0.6f, "long title host is centred in the wider pill, got dx=" + title.getTranslationX());
+            java.lang.reflect.Field buttonsField = decoration.getClass().getDeclaredField("rightButtons");
+            buttonsField.setAccessible(true);
+            @SuppressWarnings("unchecked") List<android.graphics.RectF> buttons =
+                    (List<android.graphics.RectF>) buttonsField.get(decoration);
+            check(buttons.size() == 2 && buttons.get(0).right < buttons.get(1).left
+                    && buttons.get(0).width() == buttons.get(0).height()
+                    && buttons.get(1).width() == buttons.get(1).height(),
+                    "adjacent right-side actions get separate circular surfaces");
             // A short title goes back to the symmetric pill and the native position.
             title.setText("1234567890");
             title.layout(300 - titleRule.width / 2, 0, 300 + titleRule.width / 2, 60);
             state = apply.invoke(null, header, state, corner, gap, elevation);
             pill = (android.graphics.RectF) pillField.get(decorationOf(state));
-            check(Math.abs(pill.left - 112f) < 0.6f && Math.abs(pill.right - 488f) < 0.6f,
+            check(Math.abs(pill.left - 92f) < 0.6f && Math.abs(pill.right - 508f) < 0.6f,
                     "short title keeps the centred pill, got " + pill.left + ".." + pill.right);
-            check(titleRule.width == 360 && title.getTranslationX() == 0f, "short title host is centred again, got w=" + titleRule.width + " dx=" + title.getTranslationX());
+            check(titleRule.width == 400 && title.getTranslationX() == 0f, "short title host is centred again, got w=" + titleRule.width + " dx=" + title.getTranslationX());
             restore.invoke(null, state);
             check(titleRule.width == -2 && title.getTranslationX() == 0f && title.getMaxWidth() == Integer.MAX_VALUE,
                     "restore returns native title width, position and limit");
@@ -509,8 +523,11 @@ public final class ChatHeaderToolbarChecks {
             int expectedPadding = Math.max(2, Math.round(30f));
             check(decorationParams.leftMargin == -expectedPadding && decorationParams.topMargin == -expectedPadding,
                 "white-bar: decoration outdented by negative shadow margins got " + decorationParams.leftMargin + "/" + decorationParams.topMargin + " expected -" + expectedPadding);
-            check(layer.getLayoutParams().width == 600 + expectedPadding * 2 && layer.getLayoutParams().height == 60 + expectedPadding * 2,
-                "white-bar: decoration enlarged by shadow padding got " + layer.getLayoutParams().width + "x" + layer.getLayoutParams().height);
+            int bandHeight = Math.round(60 * ProgressiveTopBlur.HEIGHT_FACTOR);
+            check(layer.getLayoutParams().width == 600 + expectedPadding * 2
+                    && layer.getLayoutParams().height == bandHeight + expectedPadding * 2,
+                "white-bar: decoration contains the gradient band and shadow padding got "
+                        + layer.getLayoutParams().width + "x" + layer.getLayoutParams().height);
 
             // Dark-mode stroke: WeKit strokes each pill 1dp 0x24FFFFFF in dark mode. The
             // stroke width is latched by refresh() under dark theme; a re-apply in dark
@@ -585,8 +602,9 @@ public final class ChatHeaderToolbarChecks {
                     "notification parent must not leave the glass layer at zero or stale size");
             int[] layerAt = new int[2], rootAt = new int[2];
             layer.getLocationInWindow(layerAt); parts.getLocationInWindow(rootAt);
-            check(layerAt[0] == rootAt[0] - 30 && layerAt[1] == rootAt[1] - 30,
-                    "notification glass follows the title through parent padding and resize");
+            int bandTop = rootAt[1] - Math.max(0, Math.min(rootAt[1], 128));
+            check(layerAt[0] == rootAt[0] - 30 && layerAt[1] == bandTop - 30,
+                    "notification glass follows the header horizontally and reaches the window top");
             android.graphics.Canvas canvas = new android.graphics.Canvas();
             Method draw = decoration.getClass().getDeclaredMethod("onDraw", android.graphics.Canvas.class);
             draw.setAccessible(true); draw.invoke(decoration, canvas);

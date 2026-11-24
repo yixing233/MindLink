@@ -85,8 +85,9 @@ final class HomeSidePanelSnapshot {
                     value.putBoolean("showLunarCalendar", card.showLunarCalendar);
                     break;
                 case WEATHER:
-                    // Persisted Java city config remains unchanged. Only the data snapshot carries a city model.
-                    value.putString("city", safe(card.weatherCity));
+                    value.putBoolean("currentLocation", WeatherLocation.CURRENT.equals(card.weatherCity));
+                    try { value.putBundle("city", HomeSidePanelData.toBundle(HomeSidePanelData.city(HomeSidePanelData.resolvedCity(card.weatherCity)))); }
+                    catch (Exception ignored) { }
                     value.putBundle("state", HomeSidePanelData.weatherState(card, requestIfExpired));
                     break;
                 case WALLET:
